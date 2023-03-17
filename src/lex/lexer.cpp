@@ -8,39 +8,31 @@
 
 namespace comp {
 
-	void Lexer::process(const fs::path& src_path) {
-		std::ifstream source_file(src_path);
-		if (!source_file.is_open())
-			throw std::runtime_error("File not found");
+	struct Lexer::DefHandler {
+		Lexer& lexer;
 
-		std::ofstream yylex_file("lex.yy.c");
+		DefHandler(Lexer& lexer): lexer(lexer) {}
 
-		SourceHandler h(yylex_file);
-		int lineno = 0; // Line number, from 0
+		void operator()(string&& s) {
+			// Here process macro.
+			// Assume that it obeys "define before use"
+			size_t p1 = s.find_first_of(" \t"), p2 = s.find_first_not_of(" \t", p1);
+			if (p1 != std::string::npos && p2 != std::string::npos)
+				lexer.definitions.emplace(s.substr(0, p1), lexer.get_re(s.substr(p2)).second);
+		}
+	};
 
+	struct Lexer::RuleHandler {
+		Lexer& lexer;
 		std::ostringstream action; // Action string
 		std::string re; // The leading expression
-		for (std::string s; std::getline(source_file, s); lineno++) {
-			if (h.code(s))
-				continue;
-			else if (s == "%%") {
-				if (++h.section == 2) {
-					// TODO Generate and output FA
-				}
-				continue;
-			}
-			if (h.section == 0) {
-				// Here process macro.
-				// Assume that it obeys "define before use"
-				size_t p1 = s.find_first_of(" \t"), p2 = s.find_first_not_of(" \t", p1);
-				if (p1 != std::string::npos && p2 != std::string::npos)
-					definitions.emplace(s.substr(0, p1), get_re(s.substr(p2)).second);
-				continue;
-			}
-			// Here section == 1
+
+		RuleHandler(Lexer& lexer): lexer(lexer) {}
+
+		void operator()(string&& s) {
 			if (s.length() == 0 || isblank(s[0])) {
 				action << s << '\n';
-				continue;
+				return;
 			}
 			// Now s[0] is not blank
 			// New rule
@@ -50,10 +42,37 @@ namespace comp {
 				action.str("");
 			}
 			// Now find the RE
-			auto [p, ss] = get_re(s);
+			auto [p, ss] = lexer.get_re(s);
 			re = std::move(ss);
 			action << ((std::string_view)s).substr(p);
 			// TODO Support multiple RE with one action
+		}
+	};
+
+	void Lexer::process(const fs::path& src_path) {
+		std::ifstream source_file(src_path);
+		if (!source_file.is_open())
+			throw std::runtime_error("File not found");
+
+		std::ofstream yylex_file("lex.yy.c");
+
+		SourceHandler h(yylex_file);
+		DefHandler hDef(*this);
+		RuleHandler hRule(*this);
+
+		for (std::string s; std::getline(source_file, s); h.lineno++) {
+			if (h.code(s))
+				continue;
+			else if (s == "%%") {
+				if (++h.section == 2) {
+					// TODO Generate and output FA
+				}
+				continue;
+			}
+			if (h.section == 0)
+				hDef(std::move(s));
+			else // Here section == 1
+				hRule(std::move(s));
 		}
 	}
 
