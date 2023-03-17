@@ -1,12 +1,20 @@
-add_rules("mode.debug", "mode.release")
-
--- add_requires("vcpkg::fmt")
+set_project("seu-compiler")
 
 set_languages("c++23")
+set_warnings("all", "error")
+add_cxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
+add_mxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
+
+add_rules("mode.debug", "mode.release")
+
+add_includedirs("include")
+
+add_requires("vcpkg::fmt")
 
 target("lex")
     set_kind("binary")
     add_files("src/lex/*.cpp")
+    add_packages("vcpkg::fmt")
 
 target("yacc")
     set_kind("binary")

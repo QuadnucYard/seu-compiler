@@ -5,5 +5,7 @@ build/
 # MacOS Cache
 .DS_Store
 
-# vscode
-.vscode
+# Include project files only
+/*
+!/include
+!/src
