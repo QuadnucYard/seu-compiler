@@ -15,34 +15,21 @@ namespace comp {
 
 		std::ofstream yylex_file("lex.yy.c");
 
+		SourceHandler h(yylex_file);
+		int lineno = 0; // Line number, from 0
+
 		std::ostringstream action; // Action string
 		std::string re; // The leading expression
-		bool coded = false; // If wrapped by %{, %}
-		int section = 0; // Section number, from 0 to 2
-		int lineno = 0; // Line number, from 0
 		for (std::string s; std::getline(source_file, s); lineno++) {
-			if (coded) {
-				if (s == "%}")
-					coded = false;
-				else
-					yylex_file << s << '\n';
+			if (h.code(s))
 				continue;
-			}
-			if (s == "%{") {
-				coded = true;
-				continue;
-			}
-			if (s == "%%") {
-				if (++section == 2) {
+			else if (s == "%%") {
+				if (++h.section == 2) {
 					// TODO Generate and output FA
 				}
 				continue;
 			}
-			if (section == 2) {
-				yylex_file << s << '\n';
-				continue;
-			}
-			if (section == 0) {
+			if (h.section == 0) {
 				// Here process macro.
 				// Assume that it obeys "define before use"
 				size_t p1 = s.find_first_of(" \t"), p2 = s.find_first_not_of(" \t", p1);
@@ -66,6 +53,7 @@ namespace comp {
 			auto [p, ss] = get_re(s);
 			re = std::move(ss);
 			action << ((std::string_view)s).substr(p);
+			// TODO Support multiple RE with one action
 		}
 	}
 

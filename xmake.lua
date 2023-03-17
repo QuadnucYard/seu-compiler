@@ -13,12 +13,15 @@ add_requires("vcpkg::fmt")
 
 target("lex")
     set_kind("binary")
+    add_files("src/common/*.cpp")
     add_files("src/lex/*.cpp")
     add_packages("vcpkg::fmt")
 
 target("yacc")
     set_kind("binary")
+    add_files("src/common/*.cpp")
     add_files("src/yacc/*.cpp")
+    add_packages("vcpkg::fmt")
 
 --
 -- If you want to known more usage about xmake, please see https://xmake.io

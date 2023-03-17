@@ -1,18 +1,14 @@
+#include "common/recognizer.hpp"
 #include <filesystem>
 #include <unordered_map>
 
-namespace fs = std::filesystem;
-
 namespace comp {
-
-	template <typename T = std::string>
-	using dict = std::unordered_map<std::string, T>;
 
 	struct LexRule {
 
 	};
 
-	class Lexer {
+	class Lexer: public Recognizer {
 	private:
 		static constexpr char WILDCARD = -1;
 
