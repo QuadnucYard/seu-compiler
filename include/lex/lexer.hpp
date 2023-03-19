@@ -5,11 +5,9 @@
 
 namespace comp {
 
-	struct LexRule {
+	struct LexRule {};
 
-	};
-
-	class Lexer: public Recognizer {
+	class Lexer : public Recognizer {
 	private:
 		static constexpr char WILDCARD = -1;
 
@@ -24,4 +22,4 @@ namespace comp {
 		struct DefHandler;
 		struct RuleHandler;
 	};
-}
+} // namespace comp

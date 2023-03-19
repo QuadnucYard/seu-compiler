@@ -16,4 +16,4 @@ namespace comp {
 		}
 		return false;
 	}
-}
+} // namespace comp

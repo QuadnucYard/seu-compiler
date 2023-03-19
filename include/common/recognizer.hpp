@@ -1,7 +1,7 @@
 #pragma once
 #include <filesystem>
-#include <unordered_map>
 #include <fstream>
+#include <unordered_map>
 
 namespace fs = std::filesystem;
 
@@ -20,12 +20,12 @@ namespace comp {
 
 	protected:
 		struct SourceHandler {
-			int section = 0; // Section number, from 0 to 2
-			int lineno = 1; // Line number, from 1
+			int section = 0;	// Section number, from 0 to 2
+			int lineno = 1;		// Line number, from 1
 			bool coded = false; // If wrapped by %{, %}
 			std::ostream& output_file;
 
-			inline SourceHandler(std::ostream& output_file): output_file(output_file) {}
+			inline SourceHandler(std::ostream& output_file) : output_file(output_file) {}
 
 			/// @brief Handle code block
 			/// @param s Line of input.
@@ -33,4 +33,4 @@ namespace comp {
 			bool code(const std::string& s);
 		};
 	};
-}
+} // namespace comp

@@ -1,12 +1,12 @@
 #pragma once
 #include "common/recognizer.hpp"
 #include <span>
-#include <vector>
 #include <sul/dynamic_bitset.hpp>
+#include <vector>
 
 namespace comp {
 
-	/// @brief Symbol id. Negative for terminals? 
+	/// @brief Symbol id. Negative for terminals?
 	using sid_t = int;
 	/// @brief Vector of symbols.
 	using symbol_vec = std::vector<sid_t>;
@@ -19,13 +19,13 @@ namespace comp {
 
 	using grammar_rule_list = std::vector<grammar_rule>;
 
-	/// The iterator of 
+	/// The iterator of
 	using grammar_rule_group = std::span<grammar_rule_list>;
 
 	struct nonterminal {
 		string name;
 		grammar_rule_group productions;
-		sul::dynamic_bitset<> first; // Set of first
+		sul::dynamic_bitset<> first;  // Set of first
 		sul::dynamic_bitset<> follow; // Set of follow
 		bool nullable;
 	};
@@ -34,6 +34,5 @@ namespace comp {
 	public:
 		grammar_rule_list rules;
 		std::vector<nonterminal> nonterminals;
-
 	};
-}
+} // namespace comp

@@ -11,7 +11,7 @@ namespace comp {
 	struct Lexer::DefHandler {
 		Lexer& lexer;
 
-		DefHandler(Lexer& lexer): lexer(lexer) {}
+		DefHandler(Lexer& lexer) : lexer(lexer) {}
 
 		void operator()(string&& s) {
 			// Here process macro.
@@ -25,9 +25,9 @@ namespace comp {
 	struct Lexer::RuleHandler {
 		Lexer& lexer;
 		std::ostringstream action; // Action string
-		std::string re; // The leading expression
+		std::string re;			   // The leading expression
 
-		RuleHandler(Lexer& lexer): lexer(lexer) {}
+		RuleHandler(Lexer& lexer) : lexer(lexer) {}
 
 		void operator()(string&& s) {
 			if (s.length() == 0 || isblank(s[0])) {
@@ -98,12 +98,18 @@ namespace comp {
 		for (size_t i = 0; i < s.length(); i++) {
 			char c = s[i];
 			if (escaped) { // Escape chars
-				if (c == '0') c = '\0';
-				else if (c == 'r') c = '\r';
-				else if (c == 'n') c = '\n';
-				else if (c == 't') c = '\t';
-				else if (c == 'v') c = '\v';
-				else if (c == 'b') c = '\b';
+				if (c == '0')
+					c = '\0';
+				else if (c == 'r')
+					c = '\r';
+				else if (c == 'n')
+					c = '\n';
+				else if (c == 't')
+					c = '\t';
+				else if (c == 'v')
+					c = '\v';
+				else if (c == 'b')
+					c = '\b';
 				res += c;
 				escaped = false;
 				continue;
@@ -126,23 +132,28 @@ namespace comp {
 				break;
 			case '(':
 			case '[':
-				bra.push(c); break;
+				bra.push(c);
+				break;
 			case '{':
 				brace_start = i;
-				bra.push(c); break;
+				bra.push(c);
+				break;
 			case ')':
-				match('('); break;
+				match('(');
+				break;
 			case ']':
-				match('['); break;
+				match('[');
+				break;
 			case '}':
 				match('{');
 				res += definitions.at(s.substr(brace_start + 1, i - brace_start - 1));
 				brace_start = -1;
 				continue;
 			case ' ':
-				if (is_squared()) break; // Fallthrough trick
+				if (is_squared())
+					break; // Fallthrough trick
 			case '\t':
-				return { i, res };
+				return {i, res};
 			default:
 				break;
 			}
@@ -151,8 +162,7 @@ namespace comp {
 		}
 		if (quoted || escaped || !bra.empty())
 			throw syntax_error("Syntax error");
-		return { s.length(), res };
+		return {s.length(), res};
 	}
 
-}
-
+} // namespace comp

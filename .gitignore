@@ -9,3 +9,4 @@ build/
 /*
 !/include
 !/src
+!.clang-format

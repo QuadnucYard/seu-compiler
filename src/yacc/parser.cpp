@@ -15,7 +15,7 @@ namespace comp {
 		std::ostream& tab_inc_file;
 		int token_index = 258;
 
-		DeclHandler(Parser& parser, std::ostream& tab_inc_file): parser(parser), tab_inc_file(tab_inc_file) {}
+		DeclHandler(Parser& parser, std::ostream& tab_inc_file) : parser(parser), tab_inc_file(tab_inc_file) {}
 
 		void operator()(string&& s) {
 			std::istringstream iss(s);
@@ -39,7 +39,7 @@ namespace comp {
 		string prev;
 		string t;
 
-		RulesHandler(Parser& parser): parser(parser) {}
+		RulesHandler(Parser& parser) : parser(parser) {}
 
 		void operator()(string&& s) {
 			iss.str(s);
@@ -102,7 +102,7 @@ extern YYSTYPE yylval;)";
 				hDecl(std::move(s));
 			} else {
 				// Here section == 1
-			// ! Currently not support actions
+				// ! Currently not support actions
 				hRule(std::move(s));
 			}
 		}
@@ -114,6 +114,6 @@ extern YYSTYPE yylval;)";
 		 * 终结符的数量多少？对应token数量，256起步
 		 * 这个级别，bitset为64B，umap每个元素12B起步……集合操作也不如bitset
 		 * 直接上mini_set吧
-		*/
+		 */
 	}
-}
+} // namespace comp

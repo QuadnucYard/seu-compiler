@@ -1,6 +1,6 @@
 #pragma once
-#include <string>
 #include <sstream>
+#include <string>
 
 namespace qy {
 	inline bool is_blank_lead(std::string_view s) {
@@ -19,14 +19,16 @@ namespace qy {
 		return trim_left(trim_right(s));
 	}
 
-	template<typename I>
+	template <typename I>
 	std::ostream& join(I it, I end_it, std::ostream& o, std::string_view sep = "") {
-		if (it != end_it) o << *it++;
-		while (it != end_it) o << sep << *it++;
+		if (it != end_it)
+			o << *it++;
+		while (it != end_it)
+			o << sep << *it++;
 		return o;
 	}
 
-	template<typename I>
+	template <typename I>
 	std::string join(I it, I end_it, std::string_view sep = "") {
 		std::ostringstream ostr;
 		join(it, end_it, ostr, sep);
@@ -37,4 +39,4 @@ namespace qy {
 		return join(std::begin(c), std::end(c), sep);
 	}
 
-}
+} // namespace qy

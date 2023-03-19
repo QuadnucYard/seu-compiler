@@ -1,12 +1,11 @@
 #pragma once
-#include "common/recognizer.hpp"
 #include "analyzer.hpp"
+#include "common/recognizer.hpp"
 
 namespace comp {
 
-	class Parser: public Recognizer {
+	class Parser : public Recognizer {
 	private:
-
 		/// @brief Raw description of rules
 		struct RawRule {
 			string lhs;
@@ -15,6 +14,7 @@ namespace comp {
 
 	public:
 		void process(const fs::path& src_path);
+
 	private:
 		string start_symbol;
 		std::vector<RawRule> rules;
@@ -23,4 +23,4 @@ namespace comp {
 		struct DeclHandler;
 		struct RulesHandler;
 	};
-}
+} // namespace comp
