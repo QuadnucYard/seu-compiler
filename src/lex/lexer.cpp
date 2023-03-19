@@ -74,6 +74,8 @@ namespace comp {
 			else // Here section == 1
 				hRule(std::move(s));
 		}
+		// 这里好像没处理最后一个rule
+		// 需要加个判断，is_valid 表示有读rule
 	}
 
 	std::pair<size_t, std::string> Lexer::get_re(const std::string& s) const {
@@ -144,7 +146,7 @@ namespace comp {
 			default:
 				break;
 			}
-			if (brace_start == -1) // If outside the braces
+			if (brace_start == static_cast<size_t>(-1)) // If outside the braces
 				res += c;
 		}
 		if (quoted || escaped || !bra.empty())

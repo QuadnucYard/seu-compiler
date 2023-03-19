@@ -4,24 +4,27 @@ set_languages("c++23")
 set_warnings("all", "error")
 add_cxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
 add_mxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
+if is_plat("windows") then
+    add_cxflags("/wd4819") -- Add this if using msvc
+end
 
 add_rules("mode.debug", "mode.release")
 
-add_includedirs("include")
-
 add_requires("vcpkg::fmt")
+add_repositories("dynamic_bitset git@github.com:pinam45/dynamic_bitset.git")
+
+add_includedirs(".xmake\\windows\\x64\\repositories\\dynamic_bitset\\include")
+add_includedirs("include")
 
 target("lex")
     set_kind("binary")
-    add_files("src/common/*.cpp")
-    add_files("src/lex/*.cpp")
-    add_packages("vcpkg::fmt")
+    add_files("src/common/*.cpp", "src/lex/*.cpp")
+    add_packages("vcpkg::fmt", "dynamic_bitset")
 
 target("yacc")
     set_kind("binary")
-    add_files("src/common/*.cpp")
-    add_files("src/yacc/*.cpp")
-    add_packages("vcpkg::fmt")
+    add_files("src/common/*.cpp", "src/yacc/*.cpp")
+    add_packages("vcpkg::fmt", "dynamic_bitset")
 
 --
 -- If you want to known more usage about xmake, please see https://xmake.io

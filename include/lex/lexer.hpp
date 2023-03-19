@@ -1,3 +1,4 @@
+#pragma once
 #include "common/recognizer.hpp"
 #include <filesystem>
 #include <unordered_map>

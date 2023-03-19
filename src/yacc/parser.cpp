@@ -35,7 +35,7 @@ namespace comp {
 	struct Parser::RulesHandler {
 		Parser& parser;
 		std::istringstream iss;
-		GrammarRule rule;
+		RawRule rule;
 		string prev;
 		string t;
 
@@ -52,7 +52,7 @@ namespace comp {
 					rule.rhs.push_back({});
 				} else if (t == ";") {
 					parser.rules.push_back(std::move(rule));
-					rule = {};
+					rule.rhs.clear();
 				} else if (!rule.rhs.empty()) {
 					rule.rhs.back().push_back(t);
 				}
@@ -107,5 +107,13 @@ extern YYSTYPE yylval;)";
 			}
 		}
 		// End process
+
+		/**
+		 * 终结符和非终结符
+		 * 全部离散化。终结符的id在之前已经有了，但还需要进一步离散化
+		 * 终结符的数量多少？对应token数量，256起步
+		 * 这个级别，bitset为64B，umap每个元素12B起步……集合操作也不如bitset
+		 * 直接上mini_set吧
+		*/
 	}
 }
