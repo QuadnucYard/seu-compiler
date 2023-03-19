@@ -1,6 +1,5 @@
 #pragma once
 #include "analyzer.hpp"
-#include "common/recognizer.hpp"
 
 namespace comp {
 
@@ -16,9 +15,13 @@ namespace comp {
 		void process(const fs::path& src_path);
 
 	private:
+		sid_t get_symbol_id(const string& name) const;
+
+	private:
 		string start_symbol;
 		std::vector<RawRule> rules;
-		std::unordered_map<int, int> token_map; // Token id to index
+		dict<sid_t> symbol_map; // Token id to index, token为正数，nonterminal为负数
+		SyntacticAnalyzer analyzer;
 
 		struct DeclHandler;
 		struct RulesHandler;
