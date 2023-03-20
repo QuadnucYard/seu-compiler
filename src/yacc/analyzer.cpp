@@ -1,5 +1,6 @@
 #include "yacc/analyzer.hpp"
 #include <algorithm>
+#include <fmt/core.h>
 #include <map>
 
 namespace comp {
@@ -42,29 +43,53 @@ namespace comp {
 
 			for (auto& [k, v] : nexts) {
 				v.kernel_size = v.items.size();
-				if (auto it = std::ranges::find(states, v); it == states.end()) {
-					states.emplace_back(v);
+				if (!std::ranges::contains(states, v)) {
 					atn.emplace(static_cast<sid_t>(i),
-								std::pair{static_cast<sid_t>(it - states.begin()), k});
+								std::pair{static_cast<sid_t>(states.size()), k});
+					states.emplace_back(v);
 				}
 			}
+		}
+
+		for (size_t i = 0; auto& s : states) {
+			fmt::print("I{}:\n{}\n", i++, to_string(s));
 		}
 	}
 
 	string SyntacticAnalyzer::to_string(const symbol_set& set) const {
-		return {};
+		string s{};
+		for (size_t i = 0; i < tokens.size(); i++)
+			if (set.test(i))
+				s.append(tokens[i]);
+		return "{" + s + "}";
 	}
 
 	string SyntacticAnalyzer::to_string(const item& it) const {
-		return {};
+		string s{nonterminals[it.prod->lhs].name};
+		s.append(" ->");
+		for (size_t i = 0; i < it.prod->rhs.size(); i++) {
+			auto sym = it.prod->rhs[i];
+			s.push_back(static_cast<sid_t>(i) == it.dot ? '.' : ' ');
+			if (sym >= 0)
+				s.append(tokens[sym]);
+			else
+				s.append(nonterminals[-sym].name);
+		}
+		if (!it.has_next())
+			s.push_back('.');
+		s.append("\t").append(to_string(it.follow));
+		return s;
 	}
 
 	string SyntacticAnalyzer::to_string(const item_set& is) const {
-		return {};
+		string s{};
+		for (auto& it : is.items)
+			s.append(to_string(it)).append("\n");
+		return s;
 	}
 
 	symbol_set SyntacticAnalyzer::single_set(sid_t s) const {
-		symbol_set set(token_num);
+		symbol_set set(tokens.size());
 		set.set(s);
 		return set;
 	}
@@ -93,29 +118,31 @@ namespace comp {
 
 	SyntacticAnalyzer::item_set SyntacticAnalyzer::closure(const item_set& is) const {
 		item_set result{is};
-		std::map<std::pair<const production*, unsigned>, size_t> close; // 用 unordered 会无法编译……
+		std::map<item::key_type, size_t> close; // 用 unordered 会无法编译……
 
 		for (size_t i = 0; i < result.items.size(); i++)
-			close.emplace(std::pair{result.items[i].prod, result.items[i].dot}, i);
+			close.emplace(result.items[i].key(), i);
 
 		for (size_t i = 0; i < result.items.size(); i++) {
-			auto& it = result.items[i];
+			const auto& it = result.items[i];
+			assert(it.follow.capacity() >= tokens.size());
 			if (!it.has_next())
 				continue;
 			if (sid_t s = it.next(); s < 0) {
 				// 这里其实所有左部相同的都会参与
 				for (auto& p : nonterminals[-s].productions) {
+					const auto& it = result.items[i]; // Caution realloc trap!!
 					// 下面的计算可能有问题
 					item new_item{&p, 0,
 								  !it.has_next1()  ? it.follow
 								  : it.next1() < 0 ? nonterminals[-it.next1()].first
 												   : single_set(it.next1())};
-					std::pair index{new_item.prod, new_item.dot};
+					std::pair index{new_item.key()};
 					if (auto _i = close.find(index); _i != close.end()) {
-						result.items[_i->second].follow |= new_item.follow;
+						result.items.at(_i->second).follow |= new_item.follow;
 					} else {
 						close.emplace(index, result.items.size());
-						result.items.emplace_back(new_item); // TODO Get follow
+						result.items.emplace_back(new_item);
 					}
 				}
 			}

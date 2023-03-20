@@ -40,6 +40,8 @@ namespace comp {
 	class SyntacticAnalyzer {
 	private:
 		struct item {
+			using key_type = std::pair<const production*, unsigned>;
+
 			const production* prod;
 			unsigned dot;
 			symbol_set follow;
@@ -55,6 +57,8 @@ namespace comp {
 			inline sid_t next1() const { return prod->rhs[dot + 1]; }
 
 			inline item next_item() const { return {prod, dot + 1, follow}; }
+
+			inline key_type key() const { return {prod, dot}; }
 
 			inline bool operator==(const item& o) const = default;
 			inline auto operator<=>(const item& o) const = default;
@@ -92,7 +96,7 @@ namespace comp {
 
 	public:
 		static const sid_t END_MARKER = 0;
-		size_t token_num;
+		std::vector<string> tokens;
 		production_list rules;
 		std::vector<nonterminal> nonterminals;
 	};

@@ -18,6 +18,7 @@ namespace comp {
 		sid_t get_symbol_id(const string& name) const;
 
 	private:
+		inline static constexpr string aug_start{"$start"};
 		string start_symbol;
 		std::vector<RawRule> rules;
 		dict<sid_t> symbol_map; // Token id to index, token为正数，nonterminal为负数

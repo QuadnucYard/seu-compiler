@@ -13,14 +13,10 @@ namespace comp {
 	struct Parser::DeclHandler {
 		Parser& parser;
 		std::ostream& tab_inc_file;
-		int token_index = 128;
 
 		DeclHandler(Parser& parser, std::ostream& tab_inc_file) :
 			parser(parser), tab_inc_file(tab_inc_file) {
-			// 暂时不考虑 token id 离散化
-			for (int i = 32; i < 128; i++) {
-				parser.symbol_map.emplace(fmt::format("'{}'", static_cast<char>(i)), i);
-			}
+			parser.analyzer.tokens.emplace_back("$");
 		}
 
 		void operator()(string&& s) {
@@ -32,12 +28,13 @@ namespace comp {
 					iss >> parser.start_symbol;
 				else if (kw == "%token") {
 					while (iss >> kw) {
+						auto token_index = static_cast<sid_t>(parser.analyzer.tokens.size());
 						parser.symbol_map[kw] = token_index;
-						fmt::print(tab_inc_file, "\t{} = {},\n", kw, token_index++);
+						parser.analyzer.tokens.emplace_back(kw);
+						fmt::print(tab_inc_file, "\t{} = {},\n", kw, token_index);
 					}
 				}
 			}
-			parser.analyzer.token_num = token_index;
 		}
 	};
 
@@ -50,8 +47,9 @@ namespace comp {
 		bool ended;
 
 		RulesHandler(Parser& parser) : parser(parser) {
-			parser.rules.push_back({"$start"});
-			parser.symbol_map.emplace("$start", 0);
+			// BUG: Here aug_start is empty!
+			parser.rules.push_back({aug_start, {}});
+			parser.symbol_map.emplace(aug_start, 0);
 		}
 
 		void operator()(string&& s) {
@@ -85,8 +83,14 @@ namespace comp {
 			for (size_t i = 0; i < parser.rules.size(); i++) {
 				for (auto&& r : parser.rules[i].rhs) {
 					symbol_vec sv;
-					for (auto&& s : r)
+					for (auto& s : r) {
+						// Register tokens
+						if (!parser.symbol_map.contains(s)) {
+							parser.symbol_map.emplace(s, static_cast<sid_t>(ana.tokens.size()));
+							ana.tokens.emplace_back(s);
+						}
 						sv.push_back(parser.get_symbol_id(s));
+					}
 					ana.rules.emplace_back(static_cast<sid_t>(i), sv, "");
 					// TODO action也是与rule对应的
 				}
@@ -95,9 +99,8 @@ namespace comp {
 			// 必须要在最后，这样才能保证rules是固定的，span有效
 			for (size_t i = 0, s = 0; i < parser.rules.size(); i++) {
 				size_t sz = parser.rules[i].rhs.size();
-				ana.nonterminals.emplace_back(parser.rules[i].lhs,
-											  std::span{ana.rules.begin() + s, sz},
-											  parser.analyzer.token_num);
+				ana.nonterminals.emplace_back(
+					parser.rules[i].lhs, std::span{ana.rules.begin() + s, sz}, ana.tokens.size());
 				s += sz;
 			}
 			parser.analyzer.process();
