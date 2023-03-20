@@ -9,4 +9,5 @@ build/
 /*
 !/include
 !/src
+!/test
 !.clang-format

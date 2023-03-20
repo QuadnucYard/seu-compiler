@@ -10,7 +10,7 @@ end
 
 add_rules("mode.debug", "mode.release")
 
-add_requires("vcpkg::fmt")
+add_requires("vcpkg::fmt", "vcpkg::tl-ranges")
 add_repositories("dynamic_bitset git@github.com:pinam45/dynamic_bitset.git")
 
 add_includedirs(".xmake\\windows\\x64\\repositories\\dynamic_bitset\\include")
@@ -24,7 +24,10 @@ target("lex")
 target("yacc")
     set_kind("binary")
     add_files("src/common/*.cpp", "src/yacc/*.cpp")
-    add_packages("vcpkg::fmt", "dynamic_bitset")
+    add_packages("vcpkg::fmt", "vcpkg::tl-ranges", "dynamic_bitset")
+
+target("test_graph")
+    add_files("test/test_graph.cpp")
 
 --
 -- If you want to known more usage about xmake, please see https://xmake.io

@@ -1,14 +1,17 @@
 #include "yacc/analyzer.hpp"
+#include "utils/graph.hpp"
 #include "utils/myalgo.hpp"
 #include <algorithm>
 #include <fmt/core.h>
 #include <map>
+#include <ranges>
+#include <tl/enumerate.hpp>
 
 namespace comp {
 
-	bool SyntacticAnalyzer::item_set::contains(const item& i) const {
-		return std::ranges::contains(items, i);
-	}
+	// bool SyntacticAnalyzer::item_set::contains(const item& i) const {
+	// 	return std::ranges::contains(items, i);
+	// }
 
 	SyntacticAnalyzer::item_set SyntacticAnalyzer::item_set::get_goto(sid_t symbol) const {
 		item_set result;
@@ -28,8 +31,7 @@ namespace comp {
 
 	void SyntacticAnalyzer::process() {
 		get_nullables();
-		for (int i = 0; i < 5; i++)
-			get_firsts();
+		get_firsts();
 
 		// Print firsts
 		for (auto& t : nonterminals) {
@@ -87,7 +89,7 @@ namespace comp {
 		s.append(" ->");
 		for (size_t i = 0; i < it.prod->rhs.size(); i++) {
 			auto sym = it.prod->rhs[i];
-			s.push_back(static_cast<sid_t>(i) == it.dot ? '.' : ' ');
+			s.push_back(std::cmp_equal(i, it.dot) ? '.' : ' ');
 			if (sym >= 0)
 				s.append(tokens[sym]);
 			else
@@ -121,15 +123,43 @@ namespace comp {
 	}
 
 	void SyntacticAnalyzer::get_firsts() {
-		// ! Suppose no null-production
-		for (auto& sym : nonterminals)
-			for (auto& p : sym.productions)
-				if (!p.rhs.empty()) {
-					if (p.rhs[0] >= 0)
-						sym.first.set(p.rhs[0]);
-					else
-						sym.first |= nonterminals[-p.rhs[0]].first;
+		qy::unweighted_graph g0(nonterminals.size());
+
+		// 1. Init graph and firsts
+
+		for (auto& nt : nonterminals) 
+			for (auto& p : nt.productions) 
+				for (sid_t s : p.rhs) {
+					if (s >= 0) {
+						nt.first.set(s);
+					} else {
+						g0.add_edge(p.lhs, -s);
+						if (nonterminals[-s].nullable)
+							continue;
+					}
+					break;
 				}
+
+		// 2. Get SCC and order.
+		// TODO Can first computation be optimized?
+
+		auto [g, scc] = g0.induce_scc();
+		auto seq = g.topological_sort();
+
+		std::vector<symbol_set> firsts(g.size(), symbol_set(tokens.size()));
+		for (auto [i, s] : tl::views::enumerate(scc))
+			firsts[s] |= nonterminals[i].first;
+
+		// 3. 在新图上合并first
+
+		for (sid_t u : std::views::reverse(seq))
+			for (sid_t v : g.iter_edges(u))
+				firsts[u] |= firsts[v];
+
+		// 4. 再转回来
+
+		for (auto [i, s] : tl::views::enumerate(scc))
+			nonterminals[i].first = firsts[s];
 	}
 
 	SyntacticAnalyzer::item_set SyntacticAnalyzer::initial_closure() const {

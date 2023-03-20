@@ -67,7 +67,7 @@ namespace comp {
 			size_t kernel_size;
 			std::vector<item> items;
 
-			bool contains(const item& i) const;
+			// bool contains(const item& i) const;
 
 			/// @brief Get the derived set of items.
 			/// @param symbol The next symbol.
