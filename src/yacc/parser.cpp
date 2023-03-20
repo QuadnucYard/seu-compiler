@@ -95,7 +95,7 @@ namespace comp {
 					// TODO action也是与rule对应的
 				}
 			}
-			ana.rules[0].rhs.push_back(SyntacticAnalyzer::END_MARKER); // Add end-marker
+			// ana.rules[0].rhs.push_back(SyntacticAnalyzer::END_MARKER); // Add end-marker
 			// 必须要在最后，这样才能保证rules是固定的，span有效
 			for (size_t i = 0, s = 0; i < parser.rules.size(); i++) {
 				size_t sz = parser.rules[i].rhs.size();

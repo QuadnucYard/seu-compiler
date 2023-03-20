@@ -27,14 +27,13 @@ namespace comp {
 	struct nonterminal {
 		string name;
 		production_group productions;
-		symbol_set first;  // Set of first
-		symbol_set follow; // Set of follow
+		symbol_set first; // Set of first
 		bool nullable{false};
 
 		nonterminal() = default;
 
 		nonterminal(const string& name, production_group productions, size_t size) :
-			name(name), productions(productions), first(size), follow(size) {}
+			name(name), productions(productions), first(size) {}
 	};
 
 	class SyntacticAnalyzer {
@@ -82,6 +81,7 @@ namespace comp {
 
 	public:
 		void process();
+		const string& get_symbol_name(sid_t sym) const;
 		string to_string(const symbol_set& set) const;
 		string to_string(const item& it) const;
 		string to_string(const item_set& is) const;
@@ -90,7 +90,6 @@ namespace comp {
 		symbol_set single_set(sid_t s) const;
 		void get_nullables();
 		void get_firsts();
-		void get_follows();
 		item_set initial_closure() const;
 		item_set closure(const item_set& is) const;
 

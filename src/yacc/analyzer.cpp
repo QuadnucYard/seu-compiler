@@ -1,4 +1,5 @@
 #include "yacc/analyzer.hpp"
+#include "utils/myalgo.hpp"
 #include <algorithm>
 #include <fmt/core.h>
 #include <map>
@@ -27,8 +28,15 @@ namespace comp {
 
 	void SyntacticAnalyzer::process() {
 		get_nullables();
-		get_firsts();
-		get_follows();
+		for (int i = 0; i < 5; i++)
+			get_firsts();
+
+		// Print firsts
+		for (auto& t : nonterminals) {
+			fmt::print("First({})={}\n", t.name, to_string(t.first));
+		}
+		fmt::print("\n");
+
 		// Generate closures
 		auto initial = initial_closure();
 		std::vector<item_set> states{initial};
@@ -43,17 +51,27 @@ namespace comp {
 
 			for (auto& [k, v] : nexts) {
 				v.kernel_size = v.items.size();
-				if (!std::ranges::contains(states, v)) {
-					atn.emplace(static_cast<sid_t>(i),
-								std::pair{static_cast<sid_t>(states.size()), k});
+				sid_t to;
+				if (auto idx = qy::ranges::index_of(states, v); idx == -1) {
+					to = static_cast<sid_t>(states.size());
 					states.emplace_back(v);
+				} else {
+					to = static_cast<sid_t>(idx);
 				}
+				atn.emplace(static_cast<sid_t>(i), std::pair{to, k});
 			}
 		}
 
 		for (size_t i = 0; auto& s : states) {
 			fmt::print("I{}:\n{}\n", i++, to_string(s));
 		}
+		for (auto& [u, e] : atn) {
+			fmt::print("({}, {}, {})\n", u, e.first, get_symbol_name(e.second));
+		}
+	}
+
+	const string& SyntacticAnalyzer::get_symbol_name(sid_t sym) const {
+		return sym >= 0 ? tokens[sym] : nonterminals[-sym].name;
 	}
 
 	string SyntacticAnalyzer::to_string(const symbol_set& set) const {
@@ -106,11 +124,13 @@ namespace comp {
 		// ! Suppose no null-production
 		for (auto& sym : nonterminals)
 			for (auto& p : sym.productions)
-				if (p.rhs.size() > 1 && p.rhs[0] >= 0)
-					sym.first.set(p.rhs[0]);
+				if (!p.rhs.empty()) {
+					if (p.rhs[0] >= 0)
+						sym.first.set(p.rhs[0]);
+					else
+						sym.first |= nonterminals[-p.rhs[0]].first;
+				}
 	}
-
-	void SyntacticAnalyzer::get_follows() {}
 
 	SyntacticAnalyzer::item_set SyntacticAnalyzer::initial_closure() const {
 		return {1, std::vector<item>{{&rules[0], 0, single_set(END_MARKER)}}};
