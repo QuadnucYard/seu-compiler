@@ -13,7 +13,7 @@ namespace comp {
 	struct Parser::DeclHandler {
 		Parser& parser;
 		std::ostream& tab_inc_file;
-		int token_index = 258;
+		int token_index = 128;
 
 		DeclHandler(Parser& parser, std::ostream& tab_inc_file) :
 			parser(parser), tab_inc_file(tab_inc_file) {
@@ -37,6 +37,7 @@ namespace comp {
 					}
 				}
 			}
+			parser.analyzer.token_num = token_index;
 		}
 	};
 
@@ -95,9 +96,11 @@ namespace comp {
 			for (size_t i = 0, s = 0; i < parser.rules.size(); i++) {
 				size_t sz = parser.rules[i].rhs.size();
 				ana.nonterminals.emplace_back(parser.rules[i].lhs,
-											  std::span{ana.rules.begin() + s, sz});
+											  std::span{ana.rules.begin() + s, sz},
+											  parser.analyzer.token_num);
 				s += sz;
 			}
+			parser.analyzer.process();
 		}
 	};
 
