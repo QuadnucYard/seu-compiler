@@ -9,6 +9,8 @@ if is_plat("windows") then
 end
 
 add_rules("mode.debug", "mode.release")
+add_rules("c.unity_build")
+add_rules("c++.unity_build")
 
 install_package = function (package_path)
     return function () 
