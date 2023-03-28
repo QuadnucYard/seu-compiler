@@ -1,7 +1,7 @@
 #pragma once
 #include "common/recognizer.hpp"
+#include <bitset>
 #include <span>
-#include <sul/dynamic_bitset.hpp>
 #include <vector>
 
 namespace comp {
@@ -11,7 +11,7 @@ namespace comp {
 	/// @brief Vector of symbols.
 	using symbol_vec = std::vector<sid_t>;
 
-	using symbol_set = sul::dynamic_bitset<>;
+	using symbol_set = std::bitset<512>;
 
 	struct production {
 		sid_t lhs;

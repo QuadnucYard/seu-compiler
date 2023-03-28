@@ -109,7 +109,7 @@ namespace comp {
 	}
 
 	symbol_set SyntacticAnalyzer::single_set(sid_t s) const {
-		symbol_set set(tokens.size());
+		symbol_set set;
 		set.set(s);
 		return set;
 	}
@@ -175,7 +175,6 @@ namespace comp {
 
 		for (size_t i = 0; i < result.items.size(); i++) {
 			const auto& it = result.items[i];
-			assert(it.follow.capacity() >= tokens.size());
 			if (!it.has_next())
 				continue;
 			if (sid_t s = it.next(); s < 0) {

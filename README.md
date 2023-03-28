@@ -20,3 +20,7 @@ To build and run this project, you need some environment configurations.
 We notice that MSVC has better intellisense in intensive template usage scenerios, but it has poor, confusing compiling information over G++.
 
 According to incomplete compilation tests, the code can be built either with mingw(G++) or windows(MSCV). For compatibility, we avoid some features like `__int128` in gcc. If you find compilation problems, please check the version of compiler first, as the project is developed with the latest toolchain.
+
+### Note more
+
+This project uses git submodules. In order to successfully build, you need to use `git clone ... --recurse-submodules` when cloning it. If you have already cloned it, execute `git submodule update --init --recursive` to pull submodules.

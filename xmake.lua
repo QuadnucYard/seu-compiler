@@ -23,24 +23,23 @@ install_package = function (package_path)
     end
 end
 
-package("dynamic_bitset", install_package("ext/dynamic_bitset"))
+-- package("dynamic_bitset", install_package("ext/dynamic_bitset"))
 package("tl-ranges", install_package("ext/tl-ranges"))
 
-add_requires("fmt", "tl-ranges", "dynamic_bitset")
+add_requires("fmt", "tl-ranges")
 
 add_includedirs("include")
-add_includedirs("ext/dynamic_bitset/include") -- Cann't be omitted
 add_includedirs("ext/tl-ranges/include")
 
 target("lex")
     set_kind("binary")
     add_files("src/common/*.cpp", "src/lex/*.cpp")
-    add_packages("fmt", "dynamic_bitset")
+    add_packages("fmt")
 
 target("yacc")
     set_kind("binary")
     add_files("src/common/*.cpp", "src/yacc/*.cpp")
-    add_packages("fmt", "tl-ranges", "dynamic_bitset")
+    add_packages("fmt", "tl-ranges")
 
 target("test_graph")
     add_files("test/test_graph.cpp")
