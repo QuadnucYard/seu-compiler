@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <fmt/core.h>
 #include <map>
+#include <queue>
 #include <ranges>
 #include <tl/enumerate.hpp>
 
@@ -42,6 +43,7 @@ namespace comp {
 		// Generate closures
 		auto initial = initial_closure();
 		std::vector<item_set> states{initial};
+		// std::map<item_set, size_t> states_map{{initial, 0}};
 		std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> atn;
 		for (size_t i = 0; i < states.size(); i++) {
 			std::unordered_map<sid_t, item_set> nexts;
@@ -60,6 +62,13 @@ namespace comp {
 				} else {
 					to = static_cast<sid_t>(idx);
 				}
+				/* if (auto idx = states_map.find(v); idx == states_map.end()) {
+					to = static_cast<sid_t>(states.size());
+					states_map.emplace(v, states.size());
+					states.emplace_back(v);
+				} else {
+					to = static_cast<sid_t>(idx->second);
+				} */
 				atn.emplace(static_cast<sid_t>(i), std::pair{to, k});
 			}
 		}
@@ -168,12 +177,19 @@ namespace comp {
 
 	SyntacticAnalyzer::item_set SyntacticAnalyzer::closure(const item_set& is) const {
 		item_set result{is};
+		std::queue<size_t> open;
 		std::map<item::key_type, size_t> close; // 用 unordered 会无法编译……
-
-		for (size_t i = 0; i < result.items.size(); i++)
-			close.emplace(result.items[i].key(), i);
-
+		// ERROR! 这个算法是有后效性的
 		for (size_t i = 0; i < result.items.size(); i++) {
+			close.emplace(result.items[i].key(), i);
+			open.emplace(i);
+		}
+
+		// TODO 应该也可以做个图出来？
+
+		while (!open.empty()) {
+			size_t i = open.front();
+			open.pop();
 			const auto& it = result.items[i];
 			if (!it.has_next())
 				continue;
@@ -188,9 +204,15 @@ namespace comp {
 												   : single_set(it.next1())};
 					std::pair index{new_item.key()};
 					if (auto _i = close.find(index); _i != close.end()) {
-						result.items.at(_i->second).follow |= new_item.follow;
+						auto& it2 = result.items.at(_i->second);
+						auto new_follow = it2.follow | new_item.follow;
+						if (it2.follow != new_follow) {
+							it2.follow = new_follow;
+							open.emplace(_i->second);
+						}
 					} else {
 						close.emplace(index, result.items.size());
+						open.emplace(result.items.size());
 						result.items.emplace_back(new_item);
 					}
 				}

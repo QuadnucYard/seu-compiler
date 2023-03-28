@@ -11,7 +11,7 @@ namespace comp {
 	/// @brief Vector of symbols.
 	using symbol_vec = std::vector<sid_t>;
 
-	using symbol_set = std::bitset<512>;
+	using symbol_set = std::bitset<128>;
 
 	struct production {
 		sid_t lhs;
@@ -77,6 +77,11 @@ namespace comp {
 			bool operator==(const item_set& o) const;
 
 			// inline auto operator<=>(const item_set& o) const = default;
+			// inline bool operator<(const item_set& o) const {
+			// 	return kernel_size < o.kernel_size ||
+			// 		   kernel_size == o.kernel_size &&
+			// 			   std::ranges::lexicographical_compare(items, o.items);
+			// }
 		};
 
 	public:
