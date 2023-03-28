@@ -8,15 +8,28 @@ namespace qy {
 	}
 
 	inline std::string_view trim_left(std::string_view s) {
-		return s.substr(s.find_first_not_of(" \t\r\n\v\f"));
+		if (auto p = s.find_first_not_of(" \t\r\n\v\f"); p != std::string::npos)
+			return s.substr(p);
+		return "";
 	}
 
 	inline std::string_view trim_right(std::string_view s) {
-		return s.substr(0, s.find_last_not_of(" \t\r\n\v\f") + 1);
+		if (auto p = s.find_last_not_of(" \t\r\n\v\f"); p != std::string::npos)
+			return s.substr(0, p + 1);
+		return "";
 	}
 
 	inline std::string_view trim(std::string_view s) {
 		return trim_left(trim_right(s));
+	}
+
+	inline bool is_quoted(std::string_view s) {
+		auto l = s.length();
+		if (l < 2 || s[0] != '"' || s[l - 1] != '"')
+			return false;
+		if (s[l - 2] == '\\')
+			return false;
+		return true;
 	}
 
 	template <typename I>

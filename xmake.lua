@@ -41,6 +41,9 @@ target("yacc")
     add_files("src/common/*.cpp", "src/yacc/*.cpp")
     add_packages("fmt", "tl-ranges")
 
+target("test_utils")
+    add_files("test/test_utils.cpp")
+
 target("test_graph")
     add_files("test/test_graph.cpp")
 
