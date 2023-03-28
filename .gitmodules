@@ -1,0 +1,6 @@
+[submodule "ext/dynamic_bitset"]
+	path = ext/dynamic_bitset
+	url = git@github.com:pinam45/dynamic_bitset.git
+[submodule "ext/tl-ranges"]
+	path = ext/tl-ranges
+	url = git@github.com:TartanLlama/ranges.git

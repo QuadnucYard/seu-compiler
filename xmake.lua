@@ -10,21 +10,37 @@ end
 
 add_rules("mode.debug", "mode.release")
 
-add_requires("vcpkg::fmt", "vcpkg::tl-ranges")
-add_repositories("dynamic_bitset git@github.com:pinam45/dynamic_bitset.git")
+install_package = function (package_path)
+    return function () 
+        add_deps("cmake")
+        set_sourcedir(path.join(os.scriptdir(), package_path))
+        on_install(function (package)
+            local configs = {}
+            table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
+            table.insert(configs, "-DBUILD_SHARED_LIBS=" .. (package:config("shared") and "ON" or "OFF"))
+            import("package.tools.cmake").install(package, configs)
+        end)
+    end
+end
 
-add_includedirs(".xmake\\windows\\x64\\repositories\\dynamic_bitset\\include")
+package("dynamic_bitset", install_package("ext/dynamic_bitset"))
+package("tl-ranges", install_package("ext/tl-ranges"))
+
+add_requires("fmt", "tl-ranges", "dynamic_bitset")
+
 add_includedirs("include")
+add_includedirs("ext/dynamic_bitset/include") -- Cann't be omitted
+add_includedirs("ext/tl-ranges/include")
 
 target("lex")
     set_kind("binary")
     add_files("src/common/*.cpp", "src/lex/*.cpp")
-    add_packages("vcpkg::fmt", "dynamic_bitset")
+    add_packages("fmt", "dynamic_bitset")
 
 target("yacc")
     set_kind("binary")
     add_files("src/common/*.cpp", "src/yacc/*.cpp")
-    add_packages("vcpkg::fmt", "vcpkg::tl-ranges", "dynamic_bitset")
+    add_packages("fmt", "tl-ranges", "dynamic_bitset")
 
 target("test_graph")
     add_files("test/test_graph.cpp")

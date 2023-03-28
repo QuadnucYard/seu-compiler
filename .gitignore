@@ -11,4 +11,6 @@ build/
 !/src
 !/test
 !.clang-format
-!README.md
+!./*.*
+!.gitmodules
+!ext
