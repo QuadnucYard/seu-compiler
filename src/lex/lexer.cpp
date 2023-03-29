@@ -38,7 +38,7 @@ namespace comp {
 			// New rule
 			if (!re.empty()) {
 				fmt::print("=={}==\n||{}||\n", re, qy::trim(action.str()));
-				// TODO Add new RE
+				lexer.dfa_builder.add_re(re);
 				action.str("");
 			}
 			// Now find the RE

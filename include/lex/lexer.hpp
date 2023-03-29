@@ -1,5 +1,6 @@
 #pragma once
 #include "common/recognizer.hpp"
+#include "fa.hpp"
 #include <filesystem>
 #include <unordered_map>
 
@@ -18,6 +19,7 @@ namespace comp {
 		std::pair<size_t, std::string> get_re(const std::string& s) const;
 		// void parse_source();
 		dict<> definitions;
+		DFABuilder dfa_builder;
 
 		struct DefHandler;
 		struct RuleHandler;

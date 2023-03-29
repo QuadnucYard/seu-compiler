@@ -24,9 +24,14 @@ namespace qy {
 		static constexpr EdgeDirector edge_dir{};
 
 	public:
+		basic_graph() {}
 		basic_graph(size_t n) : g(n) {}
 
 		size_t size() const { return g.size(); }
+
+		void reserve(size_t n) { g.reserve(n); }
+
+		void resize(size_t n) { g.resize(n); }
 
 		void add_edge(id_t u, auto&&... args) {
 			g[u].emplace_back(std::forward<decltype(args)>(args)...);
