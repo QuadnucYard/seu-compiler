@@ -1,6 +1,6 @@
 set_project("seu-compiler")
 
-set_languages("c++23")
+set_languages("c++20")
 set_warnings("all", "error")
 add_cxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
 add_mxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
@@ -45,9 +45,11 @@ target("yacc")
 
 target("test_utils")
     add_files("test/test_utils.cpp")
+    add_packages("fmt")
 
 target("test_graph")
     add_files("test/test_graph.cpp")
+    add_packages("fmt")
 
 --
 -- If you want to known more usage about xmake, please see https://xmake.io

@@ -33,8 +33,9 @@ namespace qy {
 
 		void resize(size_t n) { g.resize(n); }
 
-		void add_edge(id_t u, auto&&... args) {
+		basic_graph& add_edge(id_t u, auto&&... args) {
 			g[u].emplace_back(std::forward<decltype(args)>(args)...);
+			return *this;
 		}
 
 		auto iter_edges(id_t u) const { return std::ranges::subrange(g[u].begin(), g[u].end()); }
