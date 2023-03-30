@@ -24,6 +24,12 @@ namespace comp {
 		return result;
 	}
 
+	bool SyntacticAnalyzer::item_set::kernel_equals(const item_set& o) const {
+		return kernel_size == o.kernel_size &&
+			   std::ranges::equal(items.begin(), items.begin() + kernel_size, o.items.begin(),
+								  o.items.begin() + o.kernel_size, {}, &item::key, &item::key);
+	}
+
 	bool SyntacticAnalyzer::item_set::operator==(const item_set& o) const {
 		return kernel_size == o.kernel_size &&
 			   std::equal(items.begin(), items.begin() + kernel_size, o.items.begin(),
@@ -44,7 +50,7 @@ namespace comp {
 		auto initial = initial_closure();
 		std::vector<item_set> states{initial};
 		// std::map<item_set, size_t> states_map{{initial, 0}};
-		std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> atn;
+		std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> atn; // A state graph for test
 		for (size_t i = 0; i < states.size(); i++) {
 			std::unordered_map<sid_t, item_set> nexts;
 			states[i] = closure(states[i]);
@@ -73,12 +79,36 @@ namespace comp {
 			}
 		}
 
-		for (size_t i = 0; auto& s : states) {
+		/* for (size_t i = 0; auto& s : states) {
 			fmt::print("I{}:\n{}\n", i++, to_string(s));
 		}
 		for (auto& [u, e] : atn) {
 			fmt::print("({}, {}, {})\n", u, e.first, get_symbol_name(e.second));
+		} */
+
+		std::vector<std::vector<size_t>> kernel;
+		for (size_t i = 0; auto& is : states) {
+			if (auto it = std::ranges::find_if(
+					kernel, [&](auto& t) { return states[t.at(0)].kernel_equals(is); });
+				it != kernel.end()) {
+				it->emplace_back(i);
+			} else {
+				kernel.emplace_back(std::vector{i});
+			}
+			i++;
 		}
+		// 状态数：1960。有417个同心状态。
+
+		// 状态转换图存在上面的atn里了，可以转邻接矩阵。
+		// 下面是生成表了，分action和goto
+		// 表其实就对应邻接矩阵
+
+		/**
+		 * TODO:
+		 * 1. 构造LR(1)分析表（表的存储方式怎么方便怎么来）
+		 * 2. 构造LALR(1)分析表
+		 * 3. 输出action,goto邻接矩阵到文件
+		 */
 	}
 
 	const string& SyntacticAnalyzer::get_symbol_name(sid_t sym) const {
