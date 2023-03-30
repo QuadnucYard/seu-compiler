@@ -26,6 +26,7 @@ namespace comp {
 		Lexer& lexer;
 		std::ostringstream action; // Action string
 		std::string re;			   // The leading expression
+		int count = 1;
 
 		RuleHandler(Lexer& lexer) : lexer(lexer) {}
 
@@ -38,7 +39,8 @@ namespace comp {
 			// New rule
 			if (!re.empty()) {
 				fmt::print("=={}==\n||{}||\n", re, qy::trim(action.str()));
-				lexer.dfa_builder.add_re(re);
+				lexer.dfa_builder.add_re(re, count);
+				count++;
 				action.str("");
 			}
 			// Now find the RE
