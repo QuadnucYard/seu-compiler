@@ -192,7 +192,7 @@ namespace comp {
 		// 3. 在新图上合并first
 
 		for (sid_t u : std::views::reverse(seq))
-			for (sid_t v : g.iter_edges(u))
+			for (sid_t v : g.iter_nexts(u))
 				firsts[u] |= firsts[v];
 
 		// 4. 再转回来
