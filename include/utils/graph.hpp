@@ -27,12 +27,14 @@ namespace qy {
 		using edge_weight_type = EdgeWeight;
 		using edge_type = std::conditional_t<std::is_void_v<edge_weight_type>, std::tuple<id_t>,
 											 std::tuple<id_t, edge_weight_type>>;
-		using storage_type = std::vector<std::vector<edge_type>>;
 
 		using id_vec = std::vector<id_t>;
-		using vertices_type =
-			std::conditional_t<has_vertex_weight, std::vector<vertex_weight_type>, bool>;
-		vertices_type vertices;
+		using edge_vec = std::vector<edge_type>;
+
+		using vertex_type = std::conditional_t<
+			has_vertex_weight, std::tuple<edge_vec, vertex_weight_type>, std::tuple<edge_vec>>;
+
+		using storage_type = std::vector<vertex_type>;
 
 		struct edge_view_sentinel {};
 
@@ -47,12 +49,12 @@ namespace qy {
 
 			edge_view_iterator(const basic_graph* g) : g(g), u(0), i(0) {}
 
-			value_type operator*() const { return std::tuple_cat(std::make_tuple(u), g->g[u][i]); }
+			value_type operator*() const { return std::tuple_cat(std::make_tuple(u), g->at(u)[i]); }
 
 			edge_view_iterator& operator++() {
-				if (++i >= g->g[u].size()) {
+				if (++i >= g->at(u).size()) {
 					++u, i = 0;
-					while (u < g->size() && g->g[u].empty())
+					while (u < g->size() && g->at(u).empty())
 						++u;
 				}
 				return *this;
@@ -86,49 +88,30 @@ namespace qy {
 	public:
 		basic_graph() {}
 
-		basic_graph(size_type n) : g(n) {
-			g.resize(n);
-			if constexpr (has_vertex_weight)
-				vertices.resize(n);
-		}
+		basic_graph(size_type n) : g(n) {}
 
 		size_type size() const { return g.size(); }
 
-		void reserve(size_type n) {
-			g.reserve(n);
-			if constexpr (has_vertex_weight)
-				vertices.reserve(n);
-		}
+		void reserve(size_type n) { g.reserve(n); }
 
-		void resize(size_type n) {
-			g.resize(n);
-			if constexpr (has_vertex_weight)
-				vertices.resize(n);
-		}
+		void resize(size_type n) { g.resize(n); }
+
+		const edge_vec& at(size_type u) const { return std::get<0>(g[u]); }
+
+		edge_vec& at(size_type u) { return std::get<0>(g[u]); }
 
 		/// @brief Add an edge to the graph.
 		/// @param u The start vertex. Should grantee valid index.
 		/// @param ...args Arguments to construct the edge.
 		/// @return This.
 		basic_graph& add_edge(id_t u, auto&&... args) {
-			g[u].emplace_back(std::forward<decltype(args)>(args)...);
+			at(u).emplace_back(std::forward<decltype(args)>(args)...);
 			return *this;
 		}
 
-		std::conditional_t<has_vertex_weight, const safe_vertex_weight_type&, id_t> operator[](
-			id_t u) const {
-			if constexpr (has_vertex_weight)
-				return vertices[u];
-			else
-				return u;
-		}
+		const safe_vertex_weight_type& operator[](id_t u) const { return std::get<1>(g[u]); }
 
-		std::conditional_t<has_vertex_weight, safe_vertex_weight_type&, id_t> operator[](id_t u) {
-			if constexpr (has_vertex_weight)
-				return vertices[u];
-			else
-				return u;
-		}
+		safe_vertex_weight_type& operator[](id_t u) { return std::get<1>(g[u]); }
 
 		/// @brief Iterate all edges in the graph.
 		/// @return A range of all edges.
@@ -137,20 +120,24 @@ namespace qy {
 		/// @brief Iterate edges from given vertex.
 		/// @param u The vertex index.
 		/// @return A range of edges.
-		auto iter_edges(id_t u) const { return std::ranges::subrange(g[u].begin(), g[u].end()); }
+		auto iter_edges(size_type u) const {
+			return std::ranges::subrange(at(u).begin(), at(u).end());
+		}
 
 		/// @brief Iterate the next vertices can be reached directed.
 		/// @param u The start vertex index.
 		/// @return A range of next vertices.
-		auto iter_nexts(id_t u) const { return g[u] | std::views::transform(edge_dir); }
+		auto iter_nexts(size_type u) const {
+			return std::get<0>(g[u]) | std::views::transform(edge_dir);
+		}
 
 		/// @brief Get the reversed graph.
 		/// @return A reversed graph.
 		basic_graph reversed() const {
 			basic_graph result(size());
 			for (size_t u = 0; u < g.size(); u++)
-				for (auto& e : g[u])
-				result.add_edge(edge_dir(e), edge_dir(e, static_cast<id_t>(u)));
+				for (auto& e : iter_edges(u))
+					result.add_edge(edge_dir(e), edge_dir(e, static_cast<id_t>(u)));
 			return result;
 		}
 
@@ -161,8 +148,9 @@ namespace qy {
 			size_t n = size();
 			resize(size() + other.size());
 			for (size_t i = 0; i < other.size(); i++) {
-				for (auto& e : other.g[i])
-				add_edge(static_cast<id_t>(n + i), edge_dir(e, static_cast<id_t>(edge_dir(e) + n)));
+				for (auto& e : other.iter_edges(i))
+					add_edge(static_cast<id_t>(n + i),
+							 edge_dir(e, static_cast<id_t>(edge_dir(e) + n)));
 			}
 			return *this;
 		}
@@ -171,12 +159,12 @@ namespace qy {
 		/// @return A pair of new graph of SCCs and vertex index mapping.
 		std::pair<basic_graph, id_vec> induce_scc() const {
 			struct garbow_closure {
-				const storage_type& g;
+				const basic_graph& g;
 				id_vec low, scc_no;
 				std::stack<id_t> stack1, stack2;
 				id_t dfs_clock{0}, scc_cnt{0};
 
-				garbow_closure(const storage_type& g) : g(g), low(g.size()), scc_no(g.size()) {
+				garbow_closure(const basic_graph& g) : g(g), low(g.size()), scc_no(g.size()) {
 					for (size_t i = 0; i < g.size(); i++)
 						if (!low[i])
 							garbow(static_cast<id_t>(i));
@@ -186,7 +174,7 @@ namespace qy {
 					stack1.push(u);
 					stack2.push(u);
 					low[u] = ++dfs_clock;
-					for (auto& e : g[u]) {
+					for (auto& e : g.at(u)) {
 						id_t v = edge_dir(e);
 						if (!low[v])
 							garbow(v);
@@ -207,11 +195,11 @@ namespace qy {
 				}
 			};
 
-			garbow_closure c(g);
+			garbow_closure c(*this);
 			basic_graph g2(c.scc_cnt);
 			for (size_t i = 0; i < g.size(); i++) {
 				id_t u = c.scc_no[i];
-				for (auto& e : g[i]) {
+				for (auto& e : at(i)) {
 					id_t v = edge_dir(e);
 					if (u != c.scc_no[v])
 						g2.add_edge(u, edge_dir(e, c.scc_no[v]));
