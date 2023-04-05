@@ -15,10 +15,18 @@ void print_graph(const qy::weighted_graph& g) {
 }
 
 int main(int argc, char const* argv[]) {
+	{
+		qy::basic_graph<int, int, void> g(8); // A graph with vertex weight
+		g[3] = 666;							  // Change the weight of g[3] to 666.
+		fmt::print("{}\n", g[3]);
+	}
+
 	qy::weighted_graph g0(8);
+
+	using t1 = std::conditional_t<true, int, void>;
+
 	// Add edges.
-	g0.add_edge(0, std::pair{1, 2});
-	g0.add_edge(1, 0, 2);
+	g0.add_edge(1, 0, 2); // Add en edge from 1 to 0, weighted 2.
 	g0.add_edge(1, 0, 0);
 	g0.add_edge(1, 2, 3);
 	g0.add_edge(2, 3, 1);
@@ -27,6 +35,9 @@ int main(int argc, char const* argv[]) {
 	g0.add_edge(6, 4, 4);
 	g0.add_edge(2, 6, 0);
 	g0.add_edge(7, 6, 0);
+	g0.add_edge(7, std::tuple{6, 0}); // Also OK.
+	g0.add_edge(0, std::pair{1, 2});  // Also OK.
+	fmt::print("{}\n", g0[3]);
 	// Print edges.
 	print_graph(g0);
 
@@ -40,11 +51,11 @@ int main(int argc, char const* argv[]) {
 	g1.add_edge(0, 3).add_edge(1, 2);
 
 	{
-	fmt::print("Test scc and topo\n");
-	auto [g, s] = g0.induce_scc();
-	fmt::print("scc: {}\n", s);
-	auto ts = g.topological_sort();
-	fmt::print("topo: {}\n", ts);
+		fmt::print("Test scc and topo\n");
+		auto [g, s] = g0.induce_scc();
+		fmt::print("scc: {}\n", s);
+		auto ts = g.topological_sort();
+		fmt::print("topo: {}\n", ts);
 	}
 
 	// Test join

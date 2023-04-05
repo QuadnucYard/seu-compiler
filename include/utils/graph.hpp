@@ -9,15 +9,30 @@
 
 namespace qy {
 
-	template <typename Index, typename Edge>
+	struct __empty_struct {};
+
+	template <typename Index, typename VertexWeight, typename EdgeWeight>
 		requires std::is_integral_v<Index>
 	class basic_graph {
 	private:
+		using size_type = std::size_t;
 		using id_t = Index;
-		using id_vec = std::vector<id_t>;
-		using id_stack = std::stack<id_t>;
-		using edge_type = Edge;
+
+		using void_type = __empty_struct;
+
+		using vertex_weight_type = VertexWeight;
+		constexpr static bool has_vertex_weight = !std::is_void_v<vertex_weight_type>;
+		using safe_vertex_weight_type =
+			std::conditional_t<has_vertex_weight, vertex_weight_type, void_type>;
+		using edge_weight_type = EdgeWeight;
+		using edge_type = std::conditional_t<std::is_void_v<edge_weight_type>, std::tuple<id_t>,
+											 std::tuple<id_t, edge_weight_type>>;
 		using storage_type = std::vector<std::vector<edge_type>>;
+
+		using id_vec = std::vector<id_t>;
+		using vertices_type =
+			std::conditional_t<has_vertex_weight, std::vector<vertex_weight_type>, bool>;
+		vertices_type vertices;
 
 		struct edge_view_sentinel {};
 
@@ -70,27 +85,67 @@ namespace qy {
 
 	public:
 		basic_graph() {}
-		basic_graph(size_t n) : g(n) {}
 
-		size_t size() const { return g.size(); }
+		basic_graph(size_type n) : g(n) {
+			g.resize(n);
+			if constexpr (has_vertex_weight)
+				vertices.resize(n);
+		}
 
-		void reserve(size_t n) { g.reserve(n); }
+		size_type size() const { return g.size(); }
 
-		void resize(size_t n) { g.resize(n); }
+		void reserve(size_type n) {
+			g.reserve(n);
+			if constexpr (has_vertex_weight)
+				vertices.reserve(n);
+		}
 
+		void resize(size_type n) {
+			g.resize(n);
+			if constexpr (has_vertex_weight)
+				vertices.resize(n);
+		}
+
+		/// @brief Add an edge to the graph.
+		/// @param u The start vertex. Should grantee valid index.
+		/// @param ...args Arguments to construct the edge.
+		/// @return This.
 		basic_graph& add_edge(id_t u, auto&&... args) {
 			g[u].emplace_back(std::forward<decltype(args)>(args)...);
 			return *this;
 		}
 
-		auto edges() const { return edge_view_iterator{this}; }
-
-		auto iter_edges(id_t u) const { return std::ranges::subrange(g[u].begin(), g[u].end()); }
-
-		auto iter_nexts(id_t u) const {
-			return g[u] | std::views::transform([](auto&& e) { return edge_dir(e); });
+		std::conditional_t<has_vertex_weight, const safe_vertex_weight_type&, id_t> operator[](
+			id_t u) const {
+			if constexpr (has_vertex_weight)
+				return vertices[u];
+			else
+				return u;
 		}
 
+		std::conditional_t<has_vertex_weight, safe_vertex_weight_type&, id_t> operator[](id_t u) {
+			if constexpr (has_vertex_weight)
+				return vertices[u];
+			else
+				return u;
+		}
+
+		/// @brief Iterate all edges in the graph.
+		/// @return A range of all edges.
+		auto edges() const { return edge_view_iterator{this}; }
+
+		/// @brief Iterate edges from given vertex.
+		/// @param u The vertex index.
+		/// @return A range of edges.
+		auto iter_edges(id_t u) const { return std::ranges::subrange(g[u].begin(), g[u].end()); }
+
+		/// @brief Iterate the next vertices can be reached directed.
+		/// @param u The start vertex index.
+		/// @return A range of next vertices.
+		auto iter_nexts(id_t u) const { return g[u] | std::views::transform(edge_dir); }
+
+		/// @brief Get the reversed graph.
+		/// @return A reversed graph.
 		basic_graph reversed() const {
 			basic_graph result(size());
 			for (size_t u = 0; u < g.size(); u++)
@@ -99,6 +154,9 @@ namespace qy {
 			return result;
 		}
 
+		/// @brief Join another graph and add all edges.
+		/// @param other The other graph to be joined.
+		/// @return This;
 		basic_graph& join(const basic_graph& other) {
 			size_t n = size();
 			resize(size() + other.size());
@@ -109,6 +167,8 @@ namespace qy {
 			return *this;
 		}
 
+		/// @brief Get the strongly connect components of the graph.
+		/// @return A pair of new graph of SCCs and vertex index mapping.
 		std::pair<basic_graph, id_vec> induce_scc() const {
 			struct garbow_closure {
 				const storage_type& g;
@@ -161,6 +221,8 @@ namespace qy {
 			return {std::move(g2), std::move(c.scc_no)};
 		}
 
+		/// @brief Get the topological order of the graph.
+		/// @return A vector of vertex indices that represents the topological order.
 		id_vec topological_sort() const {
 			id_t n = static_cast<id_t>(g.size());
 			id_vec deg(n);
@@ -186,8 +248,8 @@ namespace qy {
 		storage_type g;
 	};
 
-	using unweighted_graph = basic_graph<int, std::tuple<int>>;
+	using unweighted_graph = basic_graph<int, void, void>;
 
-	using weighted_graph = basic_graph<int, std::tuple<int, int>>;
+	using weighted_graph = basic_graph<int, void, int>;
 
 } // namespace qy
