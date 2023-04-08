@@ -22,10 +22,14 @@ namespace comp {
 	struct DFA {
 		qy::weighted_graph graph;		// 存结点的图，可以默认start为0
 		std::vector<int> accept_states; // 每个点的accept情况
+		int start;						// 初始状态
 	};
 
 	/// @brief Construct DFA from a regular expression.
 	class DFABuilder {
+		constexpr static int EPSILON = 0;
+		constexpr static int NON_ACCEPT = 0;
+
 	public:
 		/// @brief Convert input RE to stored NFA.
 		/// @param re Regular expression.
