@@ -1,4 +1,5 @@
 #include "lex/fa.hpp"
+#include "lex/tompson.hpp"
 
 namespace comp {
 	void DFABuilder::add_re(const string& re, int index) {
@@ -6,7 +7,7 @@ namespace comp {
 	}
 
 	NFA DFABuilder::re2nfa(const string& re, int index) const {
-		return NFA();
+		return regexToNFA(re);
 	}
 
 	DFA DFABuilder::nfa2dfa(const NFA& nfa) const {

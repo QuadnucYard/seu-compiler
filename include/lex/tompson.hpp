@@ -1,3 +1,4 @@
+#pragma once
 #include "fa.hpp"
 #include <iostream>
 #include <map>

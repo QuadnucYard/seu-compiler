@@ -2,19 +2,9 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
-void print_graph(const qy::unweighted_graph& g) {
-	for (size_t i = 0; i < g.size(); i++)
-		for (auto [v] : g.iter_edges(static_cast<int>(i)))
-			fmt::print("{}->{}\n", i, v);
-}
-
-void print_graph(const qy::weighted_graph& g) {
-	for (size_t i = 0; i < g.size(); i++)
-		for (auto [v, w] : g.iter_edges(static_cast<int>(i)))
-			fmt::print("{}->{}: {}\n", i, v, w);
-}
-
 int main(int argc, char const* argv[]) {
+	using namespace qy;
+
 	{
 		qy::basic_graph<int, int, void> g(8); // A graph with vertex weight
 		fmt::print("{}\n", g[3]);
