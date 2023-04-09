@@ -44,8 +44,8 @@ namespace qy {
 			using value_type = decltype(std::tuple_cat(std::make_tuple(id_t{}), edge_type{}));
 
 			const basic_graph* g;
-			id_t u;
-			size_t i;
+			size_type u;
+			size_type i;
 
 			edge_view_iterator(const basic_graph* g) : g(g), u(0), i(0) {}
 

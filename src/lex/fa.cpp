@@ -19,7 +19,7 @@ namespace comp {
 		dfa.accept_states.push_back(NON_ACCEPT);
 		dfa.graph.resize(1);
 		dfa.accept_states.resize(1);
-		for (int i = 0; auto&& x : all_dfa) {
+		for (auto&& x : all_dfa) {
 			dfa.accept_states.insert(dfa.accept_states.end(), x.accept_states.begin(),
 									 x.accept_states.end());
 			int s = static_cast<int>(dfa.graph.size()) + x.start; // start在新图中的位置
