@@ -6,17 +6,20 @@
 
 namespace comp {
 
-	/// @brief Symbol id. Negative for terminals?
+	/// @brief Symbol id. 正数表示终结符，负数表示终结符，0 表示 `$` 或 `S'`
 	using sid_t = int;
 	/// @brief Vector of symbols.
 	using symbol_vec = std::vector<sid_t>;
 
+	/// @brief `bitset` 存储的符号集合
 	using symbol_set = std::bitset<128>;
 
+	/// @brief 产生式
 	struct production {
-		sid_t lhs;
-		symbol_vec rhs;
-		string action;
+		sid_t id;		// 全局序号
+		sid_t lhs;		// 左部
+		symbol_vec rhs; // 右部
+		string action;	// 语义动作
 	};
 
 	using production_list = std::vector<production>;
@@ -24,11 +27,12 @@ namespace comp {
 	/// The iterator of
 	using production_group = std::span<production>;
 
+	/// @brief 非终结符
 	struct nonterminal {
-		string name;
-		production_group productions;
-		symbol_set first; // Set of first
-		bool nullable{false};
+		string name;				  // 字面值
+		production_group productions; // 所有产生式
+		symbol_set first;			  // Set of first
+		bool nullable{false};		  // 是否可产生ε
 
 		nonterminal() = default;
 
@@ -37,13 +41,16 @@ namespace comp {
 	};
 
 	class SyntacticAnalyzer {
+	public:
+		static const sid_t END_MARKER = 0;
+
 	private:
 		struct item {
 			using key_type = std::pair<const production*, unsigned>;
 
-			const production* prod;
-			unsigned dot;
-			symbol_set follow;
+			const production* prod; // The pointer to the production.
+			unsigned dot;			// The position of the lookahead mark.
+			symbol_set follow;		// Set of follow
 
 			inline size_t size() const { return prod->rhs.size(); }
 
@@ -66,8 +73,8 @@ namespace comp {
 		};
 
 		struct item_set {
-			size_t kernel_size;
-			std::vector<item> items;
+			size_t kernel_size;		 // How many kernel items in the set.
+			std::vector<item> items; // All items in the set
 
 			// bool contains(const item& i) const;
 
@@ -76,6 +83,9 @@ namespace comp {
 			/// @return The new set of items.
 			item_set get_goto(sid_t symbol) const;
 
+			/// @brief Compare two `item_set` only by kernel items.
+			/// @param o Another item_set
+			/// @return
 			bool kernel_equals(const item_set& o) const;
 
 			bool operator==(const item_set& o) const;
@@ -90,7 +100,12 @@ namespace comp {
 
 	public:
 		void process();
+
+		/// @brief Get symbol name by symbol id.
+		/// @param sym Symbol id. May be positive or negative.
+		/// @return Name of the symbol
 		const string& get_symbol_name(sid_t sym) const;
+
 		string to_string(const symbol_set& set) const;
 		string to_string(const item& it) const;
 		string to_string(const item_set& is) const;
@@ -103,9 +118,8 @@ namespace comp {
 		item_set closure(const item_set& is) const;
 
 	public:
-		static const sid_t END_MARKER = 0;
-		std::vector<string> tokens;
-		production_list rules;
-		std::vector<nonterminal> nonterminals;
+		std::vector<string> tokens;			   // All tokens involved. Index == sid
+		production_list rules;				   // All rules involved.
+		std::vector<nonterminal> nonterminals; // All nonterminals involved. Index == -sid
 	};
 } // namespace comp

@@ -91,7 +91,8 @@ namespace comp {
 						}
 						sv.push_back(parser.get_symbol_id(s));
 					}
-					ana.rules.emplace_back(static_cast<sid_t>(i), sv, "");
+					ana.rules.emplace_back(static_cast<sid_t>(ana.rules.size()),
+										   static_cast<sid_t>(i), sv, "");
 					// TODO action也是与rule对应的
 				}
 			}
