@@ -1,7 +1,7 @@
 set_project("seu-compiler")
 
 set_languages("c++20")
-set_warnings("all", "error")
+-- set_warnings("all", "error")
 add_cxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
 add_mxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
 if is_plat("windows") then
@@ -33,6 +33,17 @@ add_requires("fmt", "tl-ranges")
 add_includedirs("include")
 add_includedirs("ext/tl-ranges/include")
 
+function add_test_target(...)
+    for _, name in ipairs{...} do
+        target("test_" .. name, function () 
+            add_files("test/test_" .. name .. ".cpp")
+            add_packages("fmt")
+        end)
+    end
+end
+
+add_test_target("utils", "graph")
+
 target("lex")
     set_kind("binary")
     add_files("src/common/*.cpp", "src/lex/*.cpp")
@@ -43,12 +54,8 @@ target("yacc")
     add_files("src/common/*.cpp", "src/yacc/*.cpp")
     add_packages("fmt", "tl-ranges")
 
-target("test_utils")
-    add_files("test/test_utils.cpp")
-    add_packages("fmt")
-
-target("test_graph")
-    add_files("test/test_graph.cpp")
+target("test_fa")
+    add_files("test/test_fa.cpp", "src/lex/fa.cpp")
     add_packages("fmt")
 
 --

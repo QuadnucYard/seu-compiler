@@ -241,3 +241,25 @@ namespace qy {
 	using weighted_graph = basic_graph<int, void, int>;
 
 } // namespace qy
+
+#if __has_include(<fmt/core.h>)
+
+	#include <fmt/core.h>
+
+namespace qy {
+	template <typename I, typename V, typename E>
+	void print_graph(const qy::basic_graph<I, V, E>& g) {
+		for (size_t i = 0; i < g.size(); i++)
+			for (auto [v, w] : g.iter_edges(static_cast<int>(i)))
+				fmt::print("({}->{}: {})\n", i, v, w);
+	}
+
+	template <typename I, typename V>
+	void print_graph(const qy::basic_graph<I, V, void>& g) {
+		for (size_t i = 0; i < g.size(); i++)
+			for (auto [v] : g.iter_edges(static_cast<int>(i)))
+				fmt::print("({}->{})\n", i, v);
+	}
+} // namespace qy
+
+#endif
