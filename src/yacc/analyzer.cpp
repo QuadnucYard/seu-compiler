@@ -185,7 +185,7 @@ namespace comp {
 		auto [g, scc] = g0.induce_scc();
 		auto seq = g.topological_sort();
 
-		std::vector<symbol_set> firsts(g.size(), symbol_set(tokens.size()));
+		std::vector<symbol_set> firsts(g.size());
 		for (auto [i, s] : tl::views::enumerate(scc))
 			firsts[s] |= nonterminals[i].first;
 

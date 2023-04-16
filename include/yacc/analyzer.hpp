@@ -36,8 +36,8 @@ namespace comp {
 
 		nonterminal() = default;
 
-		nonterminal(const string& name, production_group productions, size_t size) :
-			name(name), productions(productions), first(size) {}
+		nonterminal(const string& name, production_group productions) :
+			name(name), productions(productions), first{} {}
 	};
 
 	class SyntacticAnalyzer {

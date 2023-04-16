@@ -164,7 +164,7 @@ namespace qy {
 				std::stack<id_t> stack1, stack2;
 				id_t dfs_clock{0}, scc_cnt{0};
 
-				garbow_closure(const basic_graph& g) : g(g), low(g.size()), scc_no(g.size()) {
+				garbow_closure(const basic_graph& g) : g(g), low(g.size()), scc_no(g.size(), -1) {
 					for (size_t i = 0; i < g.size(); i++)
 						if (!low[i])
 							garbow(static_cast<id_t>(i));
@@ -178,7 +178,7 @@ namespace qy {
 						id_t v = edge_dir(e);
 						if (!low[v])
 							garbow(v);
-						else if (!scc_no[v])
+						else if (scc_no[v] == -1)
 							while (low[stack2.top()] > low[v])
 								stack2.pop();
 					}
