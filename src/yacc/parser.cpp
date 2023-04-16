@@ -91,7 +91,8 @@ namespace comp {
 						}
 						sv.push_back(parser.get_symbol_id(s));
 					}
-					ana.rules.emplace_back(static_cast<sid_t>(i), sv, "");
+					ana.rules.emplace_back(static_cast<sid_t>(ana.rules.size()),
+										   static_cast<sid_t>(i), sv, "");
 					// TODO action也是与rule对应的
 				}
 			}
@@ -99,8 +100,8 @@ namespace comp {
 			// 必须要在最后，这样才能保证rules是固定的，span有效
 			for (size_t i = 0, s = 0; i < parser.rules.size(); i++) {
 				size_t sz = parser.rules[i].rhs.size();
-				ana.nonterminals.emplace_back(
-					parser.rules[i].lhs, std::span{ana.rules.begin() + s, sz}, ana.tokens.size());
+				ana.nonterminals.emplace_back(parser.rules[i].lhs,
+											  std::span{ana.rules.begin() + s, sz});
 				s += sz;
 			}
 			parser.analyzer.process();
