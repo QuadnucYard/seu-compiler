@@ -3,9 +3,12 @@
 #include "utils/myalgo.hpp"
 #include <algorithm>
 #include <fmt/core.h>
+#include <fstream>
+#include <iterator>
 #include <map>
 #include <queue>
 #include <ranges>
+#include <set>
 #include <tl/enumerate.hpp>
 
 namespace comp {
@@ -47,11 +50,13 @@ namespace comp {
 		fmt::print("\n");
 
 		// Generate closures
+		// The first closure
 		auto initial = initial_closure();
 		std::vector<item_set> states{initial};
 		// std::map<item_set, size_t> states_map{{initial, 0}};
 		std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> atn; // A state graph for test
 		for (size_t i = 0; i < states.size(); i++) {
+			// Connections between closures
 			std::unordered_map<sid_t, item_set> nexts;
 			states[i] = closure(states[i]);
 			// 需要group by next symbol
@@ -68,23 +73,9 @@ namespace comp {
 				} else {
 					to = static_cast<sid_t>(idx);
 				}
-				/* if (auto idx = states_map.find(v); idx == states_map.end()) {
-					to = static_cast<sid_t>(states.size());
-					states_map.emplace(v, states.size());
-					states.emplace_back(v);
-				} else {
-					to = static_cast<sid_t>(idx->second);
-				} */
 				atn.emplace(static_cast<sid_t>(i), std::pair{to, k});
 			}
 		}
-
-		/* for (size_t i = 0; auto& s : states) {
-			fmt::print("I{}:\n{}\n", i++, to_string(s));
-		}
-		for (auto& [u, e] : atn) {
-			fmt::print("({}, {}, {})\n", u, e.first, get_symbol_name(e.second));
-		} */
 
 		std::vector<std::vector<size_t>> kernel;
 		for (size_t i = 0; auto& is : states) {
@@ -109,6 +100,210 @@ namespace comp {
 		 * 2. 构造LALR(1)分析表
 		 * 3. 输出action,goto邻接矩阵到文件
 		 */
+
+		/* 		std::vector<std::vector<size_t>> LR1(
+					states.size(), std::vector<size_t>(nonterminals.size() + tokens.size(), -1));
+				std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> atn_co = atn;
+				for (sid_t i = 0; i < states.size(); i++) {
+					auto pair_i = atn_co.find(i);
+					while (pair_i != atn_co.end()) {
+						auto nt = find(nonterminals.begin(), nonterminals.end(), pair_i->first);
+						auto tk = find(tokens.begin(), tokens.end(), pair_i->second.second);
+						if (nt != nonterminals.end())
+							LR1[i][nt - nonterminals.begin()] == (size_t)pair_i->second.second;
+						//
+		   LR1[i][find(nonterminals.begin(),nonterminals.end(),pair_i->first)-nonterminals.begin()]=(size_t)pair_i->second.second;
+						else if (tk != tokens.end())
+							LR1[i][tk - tokens.begin() + nonterminals.size()] ==
+								(size_t)pair_i->second.second;
+						atn_co.erase(pair_i);
+						pair_i = atn_co.find(i);
+					}
+				}
+		 */
+		std::vector<std::vector<sid_t>> LR1_action(states.size(),
+												   std::vector<sid_t>(tokens.size(), -1));
+
+		std::vector<std::vector<sid_t>> LR1_goto(states.size(),
+												 std::vector<sid_t>(nonterminals.size(), -1));
+
+		std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> atn_co = atn;
+		for (sid_t i = 0; i < states.size(); i++) {
+			auto pair_i = atn_co.find(i);
+			while (pair_i != atn_co.end()) {
+				// nonterminal
+				if (pair_i->second.second < 0)
+					LR1_goto[i][-pair_i->second.second] = pair_i->second.first;
+
+				else
+					LR1_action[i][pair_i->second.second] = pair_i->second.first;
+				atn_co.erase(pair_i);
+				pair_i = atn_co.find(i);
+			}
+			for (item it : states[i].items) {
+				if (it.dot == it.size()) {
+					for (sid_t j = 0; j < tokens.size(); j++) {
+						if (it.follow.test(j))
+							LR1_action[i][j] = -it.prod->lhs;
+					}
+				}
+			}
+		}
+
+		// LALR1
+		std::vector<std::vector<sid_t>> LALR1_action = LR1_action;
+		std::vector<std::vector<sid_t>> LALR1_goto = LR1_goto;
+
+		/* sid_t flag=0;
+		for (sid_t i = 0; i<kernel.size();i++) {
+			for (sid_t j=0;j<kernel[i].size();j++) {
+				flag=0;
+				for (SyntacticAnalyzer::item item : states[kernel[i][j]].items){
+					if (!item.has_next()){
+						kernel[i].erase(j + kernel[i].begin());
+						flag=1;
+					}
+					if(flag){
+						j--;
+						break;
+					}
+				}
+			}
+			if (kernel[i].size() <= 1){
+				kernel.erase(kernel.begin() + i);
+				i--;
+			}
+		} */
+		std::bitset<128> ff;
+		std::set<sid_t>erase_set;
+		std::map<sid_t,sid_t>hash;
+		for (sid_t i = 0; i < kernel.size(); i++) {
+			if (kernel[i].size() < 2) {
+				kernel.erase(kernel.begin() + i);
+				i--;
+			} else {
+				item_set new_set;
+				new_set.kernel_size = states[kernel[i][0]].kernel_size;
+				new_set.items = states[kernel[i][0]].items;
+				for (sid_t k = 0; SyntacticAnalyzer::item item : new_set.items) {
+						if(!item.has_next())
+							ff=ff&item.follow;
+						k++;
+				}
+				for (sid_t j = 1; j < kernel[i].size(); j++) {
+					for (sid_t k = 0; SyntacticAnalyzer::item item : states[kernel[i][j]].items) {
+						new_set.items[k].follow = item.follow | new_set.items[k].follow;
+						if (!new_set.items[k].has_next()) 
+							ff=ff&new_set.items[k].follow;
+						k++;
+					}
+				}
+				if(ff!=0){
+					kernel.erase(kernel.begin()+i);
+					i--;
+				}
+				else{
+					states[kernel[i][0]]=new_set;
+					for (sid_t j = 1; j < kernel[i].size(); j++){
+						erase_set.insert(kernel[i][j]);
+						hash.insert({kernel[i][j],kernel[i][0]});
+					}
+				}	
+			}
+		}
+		sid_t count=0;
+		sid_t len =states.size();
+		for(sid_t i=0;i<len;i++){
+			if(erase_set.contains(i)){
+				states.erase(states.begin()+i-count);
+				LALR1_action.erase(LALR1_action.begin()+i-count);
+				LALR1_goto.erase(LALR1_goto.begin()+i-count);
+				count++;
+			}
+		}
+
+		std::vector<sid_t>effect;
+		auto it=erase_set.begin();
+		sid_t po=*it;
+		sid_t offset=0;
+		for(sid_t i=0;i<states.size();i++){
+			while(i+offset>=po){
+				it++;
+				po=*it;
+				offset++;
+			}
+			hash.insert({i+offset,i});
+		}
+		
+
+
+		for (size_t i = 0; i < LALR1_action.size(); i++) {
+				for (size_t j = 0; j < LALR1_action[0].size(); j++) {
+					if (LALR1_action[i][j] == -1)
+						continue;
+					else {
+						LALR1_action[i][j]=hash[LALR1_action[i][j]];
+					}
+				}
+		}
+
+
+		for (size_t i = 0; i < LALR1_goto.size(); i++) {
+				for (size_t j = 0; j < LALR1_goto[0].size(); j++) {
+					if (LALR1_goto[i][j] <0)
+						continue;
+					else {
+						LALR1_goto[i][j]=hash[LALR1_goto[i][j]];
+					}
+				}
+		}
+
+		/* for (std::vector<size_t> con : kernel) {
+			size_t col = con[0];
+			for (size_t i = 1; i < con.size(); i++) {
+				for (size_t j = 0; j < LALR1_action[col].size(); j++) {
+					if (LALR1_action[i][j] != -1)
+						LALR1_action[i][j] = LALR1_action[col][j];
+				}
+				for (size_t j = 0; j < LALR1_goto[col].size(); j++) {
+					if (LALR1_goto[i][j] != -1)
+						LALR1_goto[i][j] = LALR1_goto[col][j];
+				}
+			}
+			for (size_t i = 0; i < LALR1_action.size(); i++) {
+				for (size_t j = 0; j < LALR1_action[i].size(); j++) {
+					if (find(con.begin(), con.end(), LALR1_action[i][j]) != con.end())
+						LALR1_action[i][j] = col;
+				}
+			}
+			for (size_t i = 0; i < LALR1_goto.size(); i++) {
+				for (size_t j = 0; j < LALR1_goto[i].size(); j++) {
+					if (find(con.begin(), con.end(), LALR1_goto[i][j]) != con.end())
+						LALR1_goto[i][j] = col;
+				}
+			}
+		} */
+		
+		
+
+
+
+
+		// os
+		std::ofstream outFile("G:\\vscode\\seu-compiler\\LALR1_action.bin",
+							  std::ios::binary);
+
+		sid_t row = LALR1_action.size();
+		sid_t col = LALR1_action[0].size();
+		outFile.write((char*)&row, sizeof(sid_t));
+		outFile.write((char*)&col, sizeof(sid_t));
+
+		for (sid_t i = 0; i < row; i++) {
+			for (sid_t j = 0; j < col; j++) {
+				outFile.write((char*)&LALR1_action[i][j], sizeof(sid_t));
+			}
+		}
+		outFile.close();
 	}
 
 	const string& SyntacticAnalyzer::get_symbol_name(sid_t sym) const {
@@ -166,8 +361,8 @@ namespace comp {
 
 		// 1. Init graph and firsts
 
-		for (auto& nt : nonterminals) 
-			for (auto& p : nt.productions) 
+		for (auto& nt : nonterminals)
+			for (auto& p : nt.productions)
 				for (sid_t s : p.rhs) {
 					if (s >= 0) {
 						nt.first.set(s);
@@ -249,6 +444,17 @@ namespace comp {
 			}
 		}
 		return result;
+	}
+
+	std::vector<size_t> SyntacticAnalyzer::get_index(std::vector<std::vector<size_t>> kerner,
+													 size_t target) {
+		for (std::vector<size_t> it1 : kerner) {
+			for (size_t it2 : it1) {
+				if (it2 == target)
+					return it1;
+			}
+		}
+		return std::vector<size_t>{};
 	}
 
 } // namespace comp
