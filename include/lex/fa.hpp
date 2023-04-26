@@ -6,6 +6,7 @@
 namespace comp {
 
 	using std::string;
+	using sid_t = int;
 
 	/// @brief Used for RE to NFA. It describes the start and end node in the NFA graph.
 	struct SubNFA {
@@ -14,21 +15,22 @@ namespace comp {
 	};
 
 	struct NFA {
-		SubNFA top; // 顶层start/end。默认它的end为全局唯一的accept。仅在构造初始NFA时使用。
 		qy::weighted_graph graph;
-		std::vector<int> accept_states; // 用于做Scanner时存所有结点的accept情况
+		int start;	// start结点序号
+		int accept; // 唯一的accept情况
+		std::vector<int> accept_states; // 每个点的accept情况
 	};
 
 	struct DFA {
 		qy::weighted_graph graph;		// 存结点的图，可以默认start为0
-		std::vector<int> accept_states; // 每个点的accept情况
 		int start;						// 初始状态
+		std::vector<int> accept_states; // 每个点的accept情况
 	};
 
 	/// @brief Construct DFA from a regular expression.
 	class DFABuilder {
 		constexpr static int EPSILON = 0;
-		constexpr static int NON_ACCEPT = 0;
+		constexpr static int NON_ACCEPT = -1;
 
 	public:
 		/// @brief Convert input RE to stored NFA.
@@ -48,8 +50,13 @@ namespace comp {
 		/// @brief Minimize stored DFA. It won't be called if we use Brzozowski's Algorithm.
 		// void minimize_dfa();
 
+		NFA reverse(const DFA& dfa) const;
+		NFA reverse(const NFA& nfa) const;
+
 		/// @brief Used for constructing DFA.
-		void /*Return type to add*/ subset_construction(/*Arguments to add*/) const;
+		DFA subset(const NFA& nfa) const;
+
+		DFA reachable(const DFA& dfa) const;
 
 	private:
 		std::vector<DFA> all_dfa;

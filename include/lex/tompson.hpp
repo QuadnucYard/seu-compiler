@@ -183,7 +183,8 @@ namespace comp {
 			Connection_id_re(nfaStack, opstack, nfa);
 		while (opstack.size() && opstack.top() == '|')
 			or_re(nfaStack, opstack, nfa);
-		nfa.top = nfaStack.top();
+		nfa.start = nfaStack.top().start;
+		nfa.accept = nfaStack.top().end;
 		return nfa;
 	}
 } // namespace comp

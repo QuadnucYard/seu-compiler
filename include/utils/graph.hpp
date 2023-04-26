@@ -47,7 +47,10 @@ namespace qy {
 			size_type u;
 			size_type i;
 
-			edge_view_iterator(const basic_graph* g) : g(g), u(0), i(0) {}
+			edge_view_iterator(const basic_graph* g) : g(g), u(0), i(0) {
+				while (u < g->size() && g->at(u).empty())
+					++u;
+			}
 
 			value_type operator*() const { return std::tuple_cat(std::make_tuple(u), g->at(u)[i]); }
 
@@ -102,7 +105,7 @@ namespace qy {
 
 		/// @brief Add an edge to the graph.
 		/// @param u The start vertex. Should grantee valid index.
-		/// @param ...args Arguments to construct the edge.
+		/// @param args Arguments to construct the edge.
 		/// @return This.
 		basic_graph& add_edge(id_t u, auto&&... args) {
 			at(u).emplace_back(std::forward<decltype(args)>(args)...);
