@@ -3,17 +3,15 @@
 #include "utils/myalgo.hpp"
 #include <bitset>
 #include <queue>
+#include <tl/enumerate.hpp>
+#include <unordered_set>
 
 namespace comp {
 	/// @brief Get a readable structure of graph
 	/// @param g
 	/// @return vector of edges (u, v, w)
 	std::vector<std::tuple<sid_t, sid_t, sid_t>> easy(const qy::weighted_graph& g) {
-		std::vector<std::tuple<sid_t, sid_t, sid_t>> res;
-		for (auto&& [u, v, w] : g.edges()) {
-			res.emplace_back(u, v, w);
-		}
-		return res;
+		return g.to_edge_vector();
 	}
 
 	void DFABuilder::add_re(const string& re, int index) {
@@ -36,7 +34,74 @@ namespace comp {
 		// 5. subset: NFA->DFA, n accepts
 		// 6. reachable: DFA->DFA, n accepts
 		// 倒腾的NFA都只有1个accept, join前的accept states无意义，都是统一的
-		return reachable(subset(reverse(reachable(subset(reverse(nfa))))));
+		// 这个 Brzozowski's Algorithm 有问题，不能最小化，不知道是不是实现的锅
+		// return reachable(subset(reverse(reachable(subset(reverse(nfa))))));
+		return hopcroft(subset(nfa));
+	}
+
+	DFA DFABuilder::hopcroft(const DFA& dfa) const {
+		using vertex_set = std::bitset<MAXV>;
+
+		std::unordered_set<vertex_set> partition = [&dfa, this] {
+			vertex_set s1, s2;
+			for (size_t i = 0; i < dfa.size(); i++) {
+				(dfa.accept_states[i] == NON_ACCEPT ? s1 : s2).set(i);
+			}
+			return std::unordered_set{s1, s2};
+		}();
+		std::unordered_set<vertex_set> worklist = partition;
+
+		while (!worklist.empty()) {
+			auto S = *worklist.begin();
+			worklist.erase(worklist.begin());
+			for (sid_t c = 0; c < MAXS; c++) {
+				vertex_set image;
+				for (auto&& [u, v, w] : dfa.graph.edges()) {
+					if (w == c && S.test(v))
+						image.set(u);
+				}
+				if (image.none())
+					continue;
+				for (auto& q : partition) {
+					auto q1 = q & image;
+					if (q1.none())
+						continue;
+					auto q2 = q ^ q1;
+					if (q2.none())
+						continue;
+					partition.erase(q);
+					partition.insert(q1);
+					partition.insert(q2);
+					if (worklist.contains(q)) {
+						worklist.erase(q);
+						worklist.insert(q1);
+						worklist.insert(q2);
+					} else if (q1.count() < q2.count()) {
+						worklist.insert(q1);
+					} else {
+						worklist.insert(q2);
+					}
+					if (S == q)
+						break;
+				}
+			}
+		}
+
+		std::vector<vid_t> mapped(dfa.size()); // 原DFA的点映射到哪个点
+		for (auto&& [i, s] : tl::views::enumerate(partition)) {
+			for (size_t j = 0; j < s.size(); j++) {
+				if (s.test(j))
+					mapped[j] = i;
+			}
+		}
+		std::set<std::tuple<vid_t, vid_t, sid_t>> atn;
+		for (auto&& [u, v, w] : dfa.graph.edges())
+			atn.emplace(mapped[u], mapped[v], w);
+		DFA res(partition.size());
+		for (auto&& [u, v, w] : atn) {
+			res.graph.add_edge(u, v, w);
+		}
+		return res;
 	}
 
 	NFA DFABuilder::reverse(const NFA& fa) const {
@@ -67,7 +132,6 @@ namespace comp {
 	}
 
 	DFA DFABuilder::subset(const NFA& nfa) const {
-		constexpr size_t MAXV = 128; // 最大符号数
 		using vertex_set = std::bitset<MAXV>;
 
 		int n = nfa.graph.size();
@@ -107,7 +171,7 @@ namespace comp {
 		for (size_t i = 0; i < states.size(); i++) {
 			// 下面要找当前状态接收每个符号到什么状态
 			// 先枚举接收的符号
-			for (size_t j = 0; j < MAXV; j++) {
+			for (size_t j = 0; j < MAXS; j++) {
 				vertex_set next;
 				// 然后找当前状态中的对这个符号的follow
 				for (sid_t k = 0; k < n; k++) {
@@ -126,8 +190,8 @@ namespace comp {
 				}
 				dfa.graph.add_edge(static_cast<int>(i), static_cast<int>(idx), static_cast<int>(j));
 			}
-			dfa.accept_states.push_back(
-				states[i].test(nfa.accept) ? 1 : NON_ACCEPT); // 用1代替虚假的accept状态？
+			dfa.accept_states.push_back(states[i].test(nfa.accept) ? NON_ACCEPT + 1 : NON_ACCEPT);
+			// 这里用 NON_ACCEPT+1 当作 dummy ACCEPT
 		}
 		dfa.start = 0;
 		/**

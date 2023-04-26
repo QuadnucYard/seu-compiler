@@ -24,7 +24,9 @@ namespace qy {
 		constexpr static bool has_vertex_weight = !std::is_void_v<vertex_weight_type>;
 		using safe_vertex_weight_type =
 			std::conditional_t<has_vertex_weight, vertex_weight_type, void_type>;
+
 		using edge_weight_type = EdgeWeight;
+		constexpr static bool has_edge_weight = !std::is_void_v<edge_weight_type>;
 		using edge_type = std::conditional_t<std::is_void_v<edge_weight_type>, std::tuple<id_t>,
 											 std::tuple<id_t, edge_weight_type>>;
 
@@ -93,15 +95,15 @@ namespace qy {
 
 		basic_graph(size_type n) : g(n) {}
 
-		size_type size() const { return g.size(); }
+		constexpr size_type size() const { return g.size(); }
 
-		void reserve(size_type n) { g.reserve(n); }
+		constexpr void reserve(size_type n) { g.reserve(n); }
 
-		void resize(size_type n) { g.resize(n); }
+		constexpr void resize(size_type n) { g.resize(n); }
 
-		const edge_vec& at(size_type u) const { return std::get<0>(g[u]); }
+		constexpr const edge_vec& at(size_type u) const { return std::get<0>(g[u]); }
 
-		edge_vec& at(size_type u) { return std::get<0>(g[u]); }
+		constexpr edge_vec& at(size_type u) { return std::get<0>(g[u]); }
 
 		/// @brief Add an edge to the graph.
 		/// @param u The start vertex. Should grantee valid index.
@@ -233,6 +235,21 @@ namespace qy {
 				}
 			}
 			return queue;
+		}
+
+		// std::conditional_t<has_edge_weight, std::tuple<id_t, id_t, edge_weight_type>,   std::tuple<id_t, id_t>>
+		auto to_edge_vector() const {
+			if constexpr (has_edge_weight) {
+				std::vector<std::tuple<id_t, id_t, id_t>> res;
+				for (auto&& [u, v, w] : edges())
+					res.emplace_back(u, v, w);
+				return res;
+			} else {
+				std::vector<std::tuple<id_t, id_t>> res;
+				for (auto&& [u, v] : edges())
+					res.emplace_back(u, v);
+				return res;
+			}
 		}
 
 	private:
