@@ -3,6 +3,7 @@
 #include "utils/myalgo.hpp"
 #include <bitset>
 #include <queue>
+#include <set>
 #include <tl/enumerate.hpp>
 #include <unordered_set>
 
@@ -20,7 +21,7 @@ namespace comp {
 	}
 
 	NFA DFABuilder::re2nfa(const string& re, int index) const {
-		NFA nfa = regexToNFA(re);
+		NFA nfa = tompson(re);
 		auto _g = easy(nfa.graph);
 		return nfa;
 	}
@@ -91,7 +92,7 @@ namespace comp {
 		for (auto&& [i, s] : tl::views::enumerate(partition)) {
 			for (size_t j = 0; j < s.size(); j++) {
 				if (s.test(j))
-					mapped[j] = i;
+					mapped[j] = static_cast<vid_t>(i);
 			}
 		}
 		std::set<std::tuple<vid_t, vid_t, sid_t>> atn;
@@ -134,16 +135,16 @@ namespace comp {
 	DFA DFABuilder::subset(const NFA& nfa) const {
 		using vertex_set = std::bitset<MAXV>;
 
-		int n = nfa.graph.size();
+		vid_t n = static_cast<int>(nfa.graph.size());
 
 		// 求 epsilon closure
 		std::vector<vertex_set> epsilon_closure(n);
-		for (int i = 0; i < n; i++) {
-			std::queue<int> q{{i}};
+		for (vid_t i = 0; i < n; i++) {
+			std::queue<vid_t> q{{i}};
 			std::vector<int8_t> vis(n);
 			vis[i] = true;
 			while (!q.empty()) {
-				int u = q.front();
+				vid_t u = q.front();
 				q.pop();
 				epsilon_closure[i].set(u);
 				for (auto&& [v, w] : nfa.graph.iter_edges(u)) {
@@ -157,7 +158,7 @@ namespace comp {
 
 		// 求 follow epsilon
 		std::vector<std::unordered_map<int, vertex_set>> follow_epsilon(n);
-		for (int u = 0; u < n; u++) {
+		for (vid_t u = 0; u < n; u++) {
 			for (auto&& [v, w] : nfa.graph.iter_edges(u)) {
 				if (w != EPSILON)
 					follow_epsilon[u][w] |= epsilon_closure[v];
@@ -171,10 +172,10 @@ namespace comp {
 		for (size_t i = 0; i < states.size(); i++) {
 			// 下面要找当前状态接收每个符号到什么状态
 			// 先枚举接收的符号
-			for (size_t j = 0; j < MAXS; j++) {
+			for (sid_t j = 0; j < MAXS; j++) {
 				vertex_set next;
 				// 然后找当前状态中的对这个符号的follow
-				for (sid_t k = 0; k < n; k++) {
+				for (vid_t k = 0; k < n; k++) {
 					if (!states[i].test(k))
 						continue;
 					if (follow_epsilon[k].contains(j))
@@ -188,10 +189,9 @@ namespace comp {
 					states.push_back(next);
 					dfa.graph.resize(states.size());
 				}
-				dfa.graph.add_edge(static_cast<int>(i), static_cast<int>(idx), static_cast<int>(j));
+				dfa.graph.add_edge(static_cast<vid_t>(i), static_cast<vid_t>(idx), j);
 			}
-			dfa.accept_states.push_back(states[i].test(nfa.accept) ? NON_ACCEPT + 1 : NON_ACCEPT);
-			// 这里用 NON_ACCEPT+1 当作 dummy ACCEPT
+			dfa.accept_states.push_back(states[i].test(nfa.accept) ? DUMMY_ACCEPT : NON_ACCEPT);
 		}
 		dfa.start = 0;
 		/**
@@ -240,11 +240,13 @@ namespace comp {
 		DFA dfa;
 		dfa.accept_states.push_back(NON_ACCEPT);
 		dfa.graph.resize(1);
-		dfa.accept_states.resize(1);
-		for (auto&& x : all_dfa) {
+		dfa.accept_states.push_back(NON_ACCEPT);
+		for (auto&& [i, x] : tl::views::enumerate(all_dfa)) {
 			dfa.accept_states.insert(dfa.accept_states.end(), x.accept_states.begin(),
 									 x.accept_states.end());
-			int s = static_cast<int>(dfa.graph.size()) + x.start; // start在新图中的位置
+			std::replace(dfa.accept_states.begin() + dfa.size(), dfa.accept_states.end(),
+						 DUMMY_ACCEPT, static_cast<sid_t>(DUMMY_ACCEPT + i));
+			int s = static_cast<int>(dfa.size()) + x.start; // start在新图中的位置
 			dfa.graph.join(x.graph);
 			dfa.graph.add_edge(0, s, EPSILON);
 		}

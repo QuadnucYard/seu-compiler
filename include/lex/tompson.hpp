@@ -1,190 +1,33 @@
 #pragma once
 #include "fa.hpp"
-#include <iostream>
-#include <map>
-#include <set>
 #include <stack>
-#include <vector>
-
-// 连接符号：1
-// acceptstate:非
-// epsilon边： 0
 
 namespace comp {
-	// 规约连接符号
-	void Connection_id_re(std::stack<SubNFA>& nfastack, std::stack<int>& opstack, NFA& nfa) {
-		opstack.pop();
-		SubNFA nfa2 = nfastack.top();
-		nfastack.pop();
-		SubNFA nfa1 = nfastack.top();
-		nfastack.pop();
-		// SubNFA newsub;
-		// newsub.start = nfa1.start;
-		// newsub.end = nfa2.end;
-		// nfa.top = newsub;
-		nfa.graph.add_edge(nfa1.end, nfa2.start, 0);
-		nfastack.push({nfa1.start, nfa2.end});
-	}
 
-	void substring_re(std::string substring, std::stack<SubNFA>& nfastack, std::stack<int>& opstack,
-					  NFA& nfa) {
-		std::vector<int> idset;
-		while (substring.find('-') != std::string::npos) {
-			int pos = substring.find('-');
-			if (substring[pos - 1] == '[' || substring[pos + 1] == ']')
-				break;
-			for (int j = substring[pos - 1]; j <= substring[pos + 1]; j++) {
-				idset.push_back(j);
-			}
-			string::iterator itr = substring.begin();
-			itr += pos;
-			substring.erase(itr - 1);
-			substring.erase(itr - 1);
-			substring.erase(itr - 1);
-		}
+	class TompsonAlgo {
+		static constexpr int CON = 1;
+		static constexpr int EPSILON = 0;
 
-		for (int j = 1; j < substring.size() - 1; j++) {
-			idset.push_back(substring[j]);
-		}
+	public:
+		NFA operator()(std::string_view regex);
 
-		nfa.graph.resize(nfa.graph.size() + 2);
-		SubNFA newsub = {nfa.graph.size() - 2, nfa.graph.size() - 1};
-		nfastack.push(newsub);
-		for (int j = 0; j < idset.size(); j++) {
-			nfa.graph.add_edge(newsub.start, newsub.end, idset[j]);
-		}
-	}
+	private:
+	public:
+		void match_range(std::string_view str);
+		void match_concat();
+		void match_alt();
+		void match_que();
+		void match_star();
+		void match_plus();
 
-	void or_re(std::stack<SubNFA>& nfastack, std::stack<int>& opstack, NFA& nfa) {
-		opstack.pop();
-		SubNFA nfa2 = nfastack.top();
-		nfastack.pop();
-		SubNFA nfa1 = nfastack.top();
-		nfastack.pop();
-		nfa.graph.resize(nfa.graph.size() + 2);
-		nfa.graph.add_edge(nfa.graph.size() - 2, nfa1.start, 0);
-		nfa.graph.add_edge(nfa.graph.size() - 2, nfa2.start, 0);
-		nfa.graph.add_edge(nfa1.end, nfa.graph.size() - 1, 0);
-		nfa.graph.add_edge(nfa2.end, nfa.graph.size() - 1, 0);
-		nfastack.push({(int)nfa.graph.size() - 2, (int)nfa.graph.size() - 1});
-	}
-
-	void close_re(std::stack<SubNFA>& nfastack, std::stack<int>& opstack, NFA& nfa) {
-		SubNFA nfa1 = nfastack.top();
-		nfa.graph.resize(nfa.graph.size() + 2);
-		nfa.graph.add_edge(nfa.graph.size() - 2, nfa1.start, 0);
-		nfa.graph.add_edge(nfa1.end, nfa.graph.size() - 1, 0);
-		nfa.graph.add_edge(nfa.graph.size() - 2, nfa.graph.size() - 1, 0);
-		nfa1.start = nfa.graph.size() - 2;
-		nfa1.end = nfa.graph.size() - 1;
-		nfastack.pop();
-		nfastack.push(nfa1);
-	}
-
-	void star_re(std::stack<SubNFA>& nfastack, std::stack<int>& opstack, NFA& nfa) {
-		SubNFA nfa1 = nfastack.top();
-		nfa.graph.resize(nfa.graph.size() + 2);
-		nfa.graph.add_edge(nfa.graph.size() - 2, nfa1.start, 0);
-		nfa.graph.add_edge(nfa1.end, nfa.graph.size() - 1, 0);
-		nfa.graph.add_edge(nfa1.end, nfa1.start, 0);
-		nfa.graph.add_edge(nfa.graph.size() - 2, nfa.graph.size() - 1, 0);
-		nfa1.start = nfa.graph.size() - 2;
-		nfa1.end = nfa.graph.size() - 1;
-		nfastack.pop();
-		nfastack.push(nfa1);
-	}
-
-	void plus_re(std::stack<SubNFA>& nfastack, std::stack<int>& opstack, NFA& nfa) {
-		SubNFA nfa1 = nfastack.top();
-		nfa.graph.resize(nfa.graph.size() + 2);
-		nfa.graph.add_edge(nfa.graph.size() - 2, nfa1.start, 0);
-		nfa.graph.add_edge(nfa1.end, nfa.graph.size() - 1, 0);
-		nfa.graph.add_edge(nfa1.end, nfa1.start, 0);
-		nfa1.start = nfa.graph.size() - 2;
-		nfa1.end = nfa.graph.size() - 1;
-		nfastack.pop();
-		nfastack.push(nfa1);
-	}
-
-	NFA regexToNFA(string regex) {
+	private:
+		std::stack<SubNFA> nfa_stack;
+		std::stack<int> op_stack;
 		NFA nfa;
-		std::stack<SubNFA> nfaStack;
-		std::stack<int> opstack;
-		int stateCounter = 0;
-		for (int i = 0; i < regex.size(); i++) {
-			if (nfa.graph.size() == 16)
-				int aaaaa = 10;
-			if (regex[i] == '[') {
-				if (i > 0 && regex[i - 1] != '*' && regex[i - 1] != '?' && regex[i - 1] != '+' &&
-					regex[i - 1] != '(' && regex[i - 1] != '|') {
-					// 连接符号
-					if (opstack.top() == 1) {
-						Connection_id_re(nfaStack, opstack, nfa);
-					}
-					opstack.push(1);
-				}
-				std::string substring;
-				while (regex[i] != ']')
-					substring += regex[i++];
-				substring += regex[i];
-				substring_re(substring, nfaStack, opstack, nfa);
-			} else if (regex[i] == '(') {
-				if (i > 0 && regex[i - 1] != '*' && regex[i - 1] != '?' && regex[i - 1] != '+' &&
-					regex[i - 1] != '(' && regex[i - 1] != '|') {
-					// 连接符号
-					if (opstack.top() == 1) {
-						Connection_id_re(nfaStack, opstack, nfa);
-					}
-					opstack.push(1);
-					opstack.push(regex[i]);
-				} else
-					opstack.push(regex[i]);
-			} else if (regex[i] == ')') {
-				while (opstack.size() && opstack.top() == 1) {
-					Connection_id_re(nfaStack, opstack, nfa);
-				}
-				if (opstack.top() == '|') {
-					or_re(nfaStack, opstack, nfa);
-				}
-				if (opstack.top() == '(') {
-					opstack.pop();
-				}
+	};
 
-			} else if (regex[i] == '|') {
-				if (opstack.top() == 1) {
-					Connection_id_re(nfaStack, opstack, nfa);
-				}
-				if (opstack.top() == '|') {
-					or_re(nfaStack, opstack, nfa);
-				}
-				opstack.push(regex[i]);
-			} else if (regex[i] == '*') {
-				star_re(nfaStack, opstack, nfa);
-				if (regex[i + 1])
-					opstack.push(1);
-			} else if (regex[i] == '+') {
-				plus_re(nfaStack, opstack, nfa);
-				if (regex[i + 1])
-					opstack.push(1);
-			} else if (regex[i] == '?') {
-				close_re(nfaStack, opstack, nfa);
-				if (regex[i + 1])
-					opstack.push(1);
-			} else {
-				int n = nfa.graph.size();
-				nfa.graph.resize(n + 2);
-				nfa.graph.add_edge(n, n + 1, regex[i]);
-				nfaStack.push({n, n + 1});
-				if (isalpha(regex[i - 1]))
-					opstack.push(1);
-			}
-		}
-		while (opstack.size() && opstack.top() == 1)
-			Connection_id_re(nfaStack, opstack, nfa);
-		while (opstack.size() && opstack.top() == '|')
-			or_re(nfaStack, opstack, nfa);
-		nfa.start = nfaStack.top().start;
-		nfa.accept = nfaStack.top().end;
-		return nfa;
+	inline NFA tompson(std::string_view regex) {
+		return TompsonAlgo()(regex);
 	}
+
 } // namespace comp
