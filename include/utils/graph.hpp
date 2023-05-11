@@ -54,7 +54,9 @@ namespace qy {
 					++u;
 			}
 
-			value_type operator*() const { return std::tuple_cat(std::make_tuple(u), g->at(u)[i]); }
+			value_type operator*() const {
+				return std::tuple_cat(std::make_tuple(static_cast<id_t>(u)), g->at(u)[i]);
+			}
 
 			edge_view_iterator& operator++() {
 				if (++i >= g->at(u).size()) {

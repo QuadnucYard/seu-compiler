@@ -1,10 +1,12 @@
 #include "utils/graph.hpp"
 #include <fmt/core.h>
 #include <fmt/ranges.h>
+#include <tl/repeat.hpp>
 
 int main(int argc, char const* argv[]) {
 	using namespace qy;
 
+	// Graph with vertex weight.
 	{
 		qy::basic_graph<int, int, void> g(8); // A graph with vertex weight
 		fmt::print("{}\n", g[3]);
@@ -29,15 +31,28 @@ int main(int argc, char const* argv[]) {
 	// Print edges.
 	print_graph(g0);
 
+	// Iterate all edges in the graph.
 	for (auto [u, v, w] : g0.edges())
 		fmt::print("[{}->{}: {}]\n", u, v, w);
 
+	// Iterate edges from vertex 1.
+	for (auto [v, w] : g0.iter_edges(1))
+		fmt::print("  ->{}:{}\n", v, w);
+
+	// Iterate edges from vertex 1, but no weight.
+	for (auto v : g0.iter_nexts(1))
+		fmt::print("  ->{}\n", v);
+
+	// Reverse the graph and print it.
 	auto g2 = g0.reversed();
 	print_graph(g2);
 
+	// Also support unweighted graphs.
 	qy::unweighted_graph g1(5);
+	// Chain-style adding edges.
 	g1.add_edge(0, 3).add_edge(1, 2);
 
+	// Strongly connected components and topological sort
 	{
 		fmt::print("Test scc and topo\n");
 		auto [g, s] = g0.induce_scc();
