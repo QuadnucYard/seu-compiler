@@ -15,12 +15,12 @@ namespace comp {
 		return g.to_edge_vector();
 	}
 
-	void DFABuilder::add_re(const string& re, int index) {
-		all_dfa.push_back(nfa2dfa(re2nfa(re, index)));
+	void DFABuilder::add_re(const string& re) {
+		all_dfa.push_back(nfa2dfa(re2nfa(re)));
 		auto _g = easy(all_dfa.back().graph);
 	}
 
-	NFA DFABuilder::re2nfa(const string& re, int index) const {
+	NFA DFABuilder::re2nfa(const string& re) const {
 		NFA nfa = tompson(re);
 		auto _g = easy(nfa.graph);
 		return nfa;
