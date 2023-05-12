@@ -42,7 +42,7 @@ namespace comp {
 				// fmt::print("=={}==\n||{}||\n", re, qy::trim(action.str()));
 				all_re.push_back(re);
 				lexer.actions.push_back(string{qy::trim(action.str())});
-				// lexer.dfa_builder.add_re(re);
+				lexer.dfa_builder.add_re(re);
 				action.str("");
 			}
 			// Now find the RE

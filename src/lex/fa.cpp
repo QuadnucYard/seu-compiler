@@ -63,7 +63,7 @@ namespace comp {
 				}
 				if (image.none())
 					continue;
-				for (auto& q : partition) {
+				for (auto& q : decltype(partition){partition}) {
 					auto q1 = q & image;
 					if (q1.none())
 						continue;
