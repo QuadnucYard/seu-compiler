@@ -19,6 +19,7 @@ namespace comp {
 		std::pair<size_t, std::string> get_re(const std::string& s) const;
 		// void parse_source();
 		dict<> definitions;
+		std::vector<string> actions;
 		DFABuilder dfa_builder;
 
 		struct DefHandler;

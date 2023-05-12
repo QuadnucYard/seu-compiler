@@ -26,21 +26,21 @@ namespace comp {
 		Lexer& lexer;
 		std::ostringstream action; // Action string
 		std::string re;			   // The leading expression
-		int count = 1;
 
 		RuleHandler(Lexer& lexer) : lexer(lexer) {}
 
 		void operator()(string&& s) {
 			if (s.length() == 0 || isblank(s[0])) {
+				// Still previous rule.
 				action << s << '\n';
 				return;
 			}
 			// Now s[0] is not blank
-			// New rule
+			// New rule, and process previous rule
 			if (!re.empty()) {
 				fmt::print("=={}==\n||{}||\n", re, qy::trim(action.str()));
-				lexer.dfa_builder.add_re(re, count);
-				count++;
+				lexer.actions.push_back(action.str());
+				lexer.dfa_builder.add_re(re);
 				action.str("");
 			}
 			// Now find the RE
