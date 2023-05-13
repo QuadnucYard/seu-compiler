@@ -8,6 +8,28 @@
 #include <unordered_set>
 
 namespace comp {
+
+#ifdef GRAPH_FMT
+	void DFA::to_dot(const fs::path& path) const {
+		auto out = fmt::output_file(path.string());
+		out.print("digraph G {{\n");
+		out.print("    rankdir = LR;\n");
+		out.print("    node [shape = none];\n");
+		out.print("    \"\";\n");
+		out.print("    node [shape = doublecircle];\n");
+		for (auto&& [i, a] : tl::views::enumerate(accept_states))
+			if (a != DFABuilder::NON_ACCEPT)
+				out.print("    {};\n", i);
+		out.print("    node [shape = circle];\n");
+		out.print("    \"\"  -> {};\n", start);
+		for (auto&& [u, v, w] : graph.edges())
+			out.print("    {} -> {} [label=\"{}\"];\n", u, v,
+					  isprint(w) ? (w == '"' ? fmt::format("'\\\"'") : fmt::format("'{}'", char(w)))
+								 : fmt::format("{}", w));
+		out.print("}}\n");
+	}
+#endif
+
 	/// @brief Get a readable structure of graph
 	/// @param g
 	/// @return vector of edges (u, v, w)
@@ -99,9 +121,11 @@ namespace comp {
 		for (auto&& [u, v, w] : dfa.graph.edges())
 			atn.emplace(mapped[u], mapped[v], w);
 		DFA res(partition.size());
-		for (auto&& [u, v, w] : atn) {
+		res.start = mapped[dfa.start];
+		for (auto&& [u, v, w] : atn)
 			res.graph.add_edge(u, v, w);
-		}
+		for (size_t i = 0; i < dfa.size(); i++)
+			res.accept_states[mapped[i]] = dfa.accept_states[i];
 		return res;
 	}
 
@@ -191,7 +215,21 @@ namespace comp {
 				}
 				dfa.graph.add_edge(static_cast<vid_t>(i), static_cast<vid_t>(idx), j);
 			}
-			dfa.accept_states.push_back(states[i].test(nfa.accept) ? DUMMY_ACCEPT : NON_ACCEPT);
+			// 用nfa.accept==-1表示存在accepts
+			// 如果有多个acc，这个结点应该accept到哪？
+			// 是一样的 acc
+			vid_t acc = NON_ACCEPT;
+			if (nfa.accept == -1) {
+				// accept_states is enabled
+				for (auto a : nfa.accept_states)
+					if (a != NON_ACCEPT) {
+						acc = a;
+						break;
+					}
+			} else {
+				acc = states[i].test(nfa.accept) ? DUMMY_ACCEPT : NON_ACCEPT;
+			}
+			dfa.accept_states.push_back(acc);
 		}
 		dfa.start = 0;
 		/**
@@ -237,19 +275,21 @@ namespace comp {
 
 	DFA DFABuilder::join_nfa() const {
 		// 图要join在一起，states也一样
-		DFA dfa;
-		dfa.accept_states.push_back(NON_ACCEPT);
-		dfa.graph.resize(1);
-		dfa.accept_states.push_back(NON_ACCEPT);
+		NFA nfa;
+		nfa.start = 0;
+		nfa.graph.resize(1);
+		nfa.accept = -1;
+		nfa.accept_states.push_back(NON_ACCEPT);
 		for (auto&& [i, x] : tl::views::enumerate(all_dfa)) {
-			dfa.accept_states.insert(dfa.accept_states.end(), x.accept_states.begin(),
+			nfa.accept_states.insert(nfa.accept_states.end(), x.accept_states.begin(),
 									 x.accept_states.end());
-			std::replace(dfa.accept_states.begin() + dfa.size(), dfa.accept_states.end(),
+			std::replace(nfa.accept_states.begin() + nfa.size(), nfa.accept_states.end(),
 						 DUMMY_ACCEPT, static_cast<sid_t>(DUMMY_ACCEPT + i));
-			int s = static_cast<int>(dfa.size()) + x.start; // start在新图中的位置
-			dfa.graph.join(x.graph);
-			dfa.graph.add_edge(0, s, EPSILON);
+			int s = static_cast<int>(nfa.size()) + x.start; // start在新图中的位置
+			nfa.graph.join(x.graph);
+			nfa.graph.add_edge(0, s, EPSILON);
+			// nfa.to_dot("lex_nfa.dot");
 		}
-		return dfa;
+		return subset(nfa);
 	}
 } // namespace comp

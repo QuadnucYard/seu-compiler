@@ -6,6 +6,15 @@
 #include <unordered_map>
 #include <vector>
 
+#if __has_include(<fmt/core.h>)
+	#define GRAPH_FMT
+#endif
+#ifdef GRAPH_FMT
+	#include <fmt/core.h>
+	#include <fmt/os.h>
+	#include <filesystem>
+namespace fs = std::filesystem;
+#endif
 
 namespace qy {
 
@@ -254,6 +263,23 @@ namespace qy {
 			}
 		}
 
+#ifdef GRAPH_FMT
+		void to_dot(const fs::path& path) const {
+			auto out = fmt::output_file(path.string());
+			out.print("digraph G {{\n");
+			out.print("    rankdir = LR;\n");
+			out.print("    node [shape = circle];\n");
+			if constexpr (has_edge_weight) {
+				for (auto&& [u, v, w] : edges())
+					out.print("    {} -> {} [label=\"{}\"];\n", u, v, w);
+			} else {
+				for (auto&& [u, v] : edges())
+					out.print("    {} -> {};\n", u, v);
+			}
+			out.print("}}\n");
+		}
+#endif
+
 	private:
 		storage_type g;
 	};
@@ -265,8 +291,6 @@ namespace qy {
 } // namespace qy
 
 #if __has_include(<fmt/core.h>)
-
-	#include <fmt/core.h>
 
 namespace qy {
 	template <typename I, typename V, typename E>

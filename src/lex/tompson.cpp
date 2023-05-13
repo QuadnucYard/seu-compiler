@@ -27,8 +27,8 @@ namespace comp {
 					op_stack.push(CON); */
 				break;
 			case '[':
-				if (i > 0 &&  cc != -'(' && cc != -'|') {
-					if (op_stack.top() == CON)
+				if (i > 0 && cc != -'(' && cc != -'|') {
+					if (!op_stack.empty() && op_stack.top() == CON)
 						match_concat(); // 连接符号
 					op_stack.push(CON);
 				}
@@ -81,49 +81,39 @@ namespace comp {
 		return nfa;
 	}
 
-	void TompsonAlgo::match_range(std::string_view str) {
-		std::unordered_set<char> idset;
+	std::bitset<128> get_range(std::string_view str) {
+		std::bitset<128> id_bitset;
 		size_t m = str.length();
-		size_t prev = std::string::npos;
-		if (str[0] == '^') {
-			std::bitset<128> id_bitset;
-			id_bitset.set();
-			for (size_t i = 1; i < str.size(); i++) {
-				id_bitset.set(str[i], 0);
+		for (auto prev = std::string::npos;;) {
+			size_t p = str.find('-', prev + 1);
+			if (p == std::string::npos) { // 找完了
+				for (size_t i = prev + 1; i < m; i++)
+					id_bitset.set(str[i]);
+				break;
+			} else if (p == 0 || p == m - 1) { // 开头结尾的
+				id_bitset.set('-');
+				prev = p;
+			} else {
+				for (size_t i = prev + 1; i < p - 1; i++)
+					id_bitset.set(str[i]);
+				for (char c = str[p - 1]; c <= str[p + 1]; c++)
+					id_bitset.set(c);
+				prev = p + 1;
 			}
-			int n = static_cast<int>(nfa.graph.size());
-			nfa.graph.resize(n + 2);
-			SubNFA new_sub{n, n + 1};
-			nfa_stack.push(new_sub);
-			for (size_t i = 0; i < 128; i++) {
-				if (id_bitset[i])
-					nfa.graph.add_edge(new_sub.start, new_sub.end, i);
-			}
-		} else {
-			while (true) {
-				size_t p = str.find('-', prev + 1);
-				if (p == std::string::npos) { // 找完了
-					for (size_t i = prev + 1; i < m; i++)
-						idset.insert(str[i]);
-					break;
-				} else if (p == 0 || p == m - 1) { // 开头结尾的
-					idset.insert('-');
-					prev = p;
-				} else {
-					for (size_t i = prev + 1; i < p - 1; i++)
-						idset.insert(str[i]);
-					for (char c = str[p - 1]; c <= str[p + 1]; c++)
-						idset.insert(c);
-					prev = p + 1;
-				}
-			}
-			int n = static_cast<int>(nfa.graph.size());
-			nfa.graph.resize(n + 2);
-			SubNFA new_sub{n, n + 1};
-			nfa_stack.push(new_sub);
-			for (char c : idset)
-				nfa.graph.add_edge(new_sub.start, new_sub.end, c);
 		}
+		return id_bitset;
+	}
+
+	void TompsonAlgo::match_range(std::string_view str) {
+		std::bitset<128> id_bitset = !str.empty() && str[0] == -'^' ? get_range(str.substr(1)).flip()
+																   : get_range(str);
+		int n = static_cast<int>(nfa.graph.size());
+		nfa.graph.resize(n + 2);
+		SubNFA new_sub{n, n + 1};
+		nfa_stack.push(new_sub);
+		for (int c = 0; c < 128; c++)
+			if (id_bitset.test(c))
+				nfa.graph.add_edge(new_sub.start, new_sub.end, c);
 	}
 
 	void TompsonAlgo::match_concat() {
