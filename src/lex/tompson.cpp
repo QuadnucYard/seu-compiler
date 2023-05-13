@@ -4,10 +4,13 @@
 
 namespace comp {
 	NFA TompsonAlgo::operator()(std::string_view regex) {
-		int stateCounter = 0;
+		string _regex;
+		for (char c : regex)
+			_regex.push_back(abs(c));
+
 		char cc = -1;
 		for (size_t i = 0; i < regex.size(); i++) {
-			switch (regex[i]) {
+			switch (-regex[i]) {
 			case '*':
 				match_star();
 				if (regex[i + 1])
@@ -24,25 +27,24 @@ namespace comp {
 					op_stack.push(CON);
 				break;
 			case '[':
-				if (i > 0 && cc != '*' && cc != '?' && cc != '+' && cc != '(' && cc != '|') {
+				if (i > 0 && cc != -'*' && cc != -'?' && cc != -'+' && cc != -'(' && cc != -'|') {
 					if (op_stack.top() == CON)
 						match_concat(); // 连接符号
 					op_stack.push(CON);
 				}
 				{
 					size_t j = i;
-					i = regex.find(']', i);
+					i = regex.find(-']', i);
 					match_range(regex.substr(j + 1, i - j - 1));
 				}
 				break;
 			case '(':
-				if (i > 0 && cc != '*' && cc != '?' && cc != '+' && cc != '(' && cc != '|') {
+				if (i > 0 && cc != -'*' && cc != -'?' && cc != -'+' && cc != -'(' && cc != -'|') {
 					if (op_stack.top() == CON)
 						match_concat(); // 连接符号
 					op_stack.push(CON);
-					op_stack.push(regex[i]);
-				} else
-					op_stack.push(regex[i]);
+				}
+				op_stack.push('(');
 				break;
 			case ')':
 				while (op_stack.size() && op_stack.top() == CON)
@@ -57,14 +59,14 @@ namespace comp {
 					match_concat();
 				if (op_stack.top() == '|')
 					match_alt();
-				op_stack.push(regex[i]);
+				op_stack.push('|');
 				break;
 			default:
 				int n = static_cast<int>(nfa.graph.size());
 				nfa.graph.resize(n + 2);
 				nfa.graph.add_edge(n, n + 1, regex[i]);
 				nfa_stack.push({n, n + 1});
-				if (isalpha(cc)) // TODO why alpha?
+				if (cc > 0)
 					op_stack.push(CON);
 				break;
 			}

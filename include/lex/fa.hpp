@@ -42,14 +42,14 @@ namespace comp {
 	public:
 		/// @brief Convert input RE to stored NFA.
 		/// @param re Regular expression.
-		void add_re(const string& re, int index);
+		void add_re(const string& re);
 
 		DFA join_nfa() const;
 
 	private:
 		/// @brief Convert RE to NFA.
 		/// @param re Regular expression.
-		NFA re2nfa(const string& re, int index) const;
+		NFA re2nfa(const string& re) const;
 
 		/// @brief Convert stored NFA to DFA.
 		DFA nfa2dfa(const NFA& nfa) const;

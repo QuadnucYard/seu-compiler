@@ -6,11 +6,4 @@ build/
 .DS_Store
 
 # Include project files only
-/*
-!/include
-!/src
-!/test
-!.clang-format
-!./*.*
-!.gitmodules
-!ext
+.vscode

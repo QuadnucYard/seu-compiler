@@ -43,6 +43,8 @@ namespace comp {
 		std::istringstream iss;
 		RawRule rule;
 		string prev;
+		string action;
+		bool action_started;
 		string t;
 		bool ended;
 
@@ -50,24 +52,40 @@ namespace comp {
 			// BUG: Here aug_start is empty!
 			parser.rules.push_back({aug_start, {}});
 			parser.symbol_map.emplace(aug_start, 0);
+			parser.actions.push_back("");
+			action_started = false;
+		}
+
+		static string unescape(std::string_view s) {
+			s = s.substr(1, s.length() - 2);
+			return string{s};
 		}
 
 		void operator()(string&& s) {
 			iss.str(s);
 			iss.clear(); // Must use this to clear state!
 			while (iss >> t) {
-				// BUG 需要分词，用空格分隔不靠谱
+				// BUG 需要分词，用空格分隔不靠谱  但目前就假设必须要空格分隔
 				if (t == ":") {
 					rule.lhs = std::move(prev);
 					parser.symbol_map.emplace(rule.lhs, -static_cast<sid_t>(parser.rules.size()));
 					rule.rhs.push_back({});
 				} else if (t == "|") {
 					rule.rhs.push_back({});
+					parser.actions.push_back(std::move(action));
 				} else if (t == ";") {
 					parser.rules.push_back(std::move(rule));
 					rule.rhs.clear();
+					parser.actions.push_back(std::move(action));
+				} else if (action_started && t == "}") {
+					action += t;
+					action_started = false;
+				} else if (action_started || t == "{") {
+					action_started = true;
+					action += t;
+					action += ' ';
 				} else if (!rule.rhs.empty()) {
-					rule.rhs.back().push_back(t);
+					rule.rhs.back().push_back(unescape(t));
 				}
 				prev = std::move(t);
 			}
