@@ -13,21 +13,21 @@ namespace comp {
 			switch (-regex[i]) {
 			case '*':
 				match_star();
-				if (regex[i + 1])
-					op_stack.push(CON);
+				/* if (i<regex.size()-1)
+					op_stack.push(CON); */
 				break;
 			case '+':
 				match_plus();
-				if (regex[i + 1])
-					op_stack.push(CON);
+				/* if (i<regex.size()-1)
+					op_stack.push(CON); */
 				break;
 			case '?':
 				match_star();
-				if (regex[i + 1])
-					op_stack.push(CON);
+				/* if (i<regex.size()-1)
+					op_stack.push(CON); */
 				break;
 			case '[':
-				if (i > 0 && cc != -'*' && cc != -'?' && cc != -'+' && cc != -'(' && cc != -'|') {
+				if (i > 0 &&  cc != -'(' && cc != -'|') {
 					if (op_stack.top() == CON)
 						match_concat(); // 连接符号
 					op_stack.push(CON);
@@ -39,7 +39,7 @@ namespace comp {
 				}
 				break;
 			case '(':
-				if (i > 0 && cc != -'*' && cc != -'?' && cc != -'+' && cc != -'(' && cc != -'|') {
+				if (i > 0 && cc != -'(' && cc != -'|') {
 					if (!op_stack.empty() && op_stack.top() == CON)
 						match_concat(); // 连接符号
 					op_stack.push(CON);
