@@ -1,4 +1,5 @@
 #include "lex/tompson.hpp"
+#include <bitset>
 #include <unordered_set>
 
 namespace comp {
@@ -82,29 +83,45 @@ namespace comp {
 		std::unordered_set<char> idset;
 		size_t m = str.length();
 		size_t prev = std::string::npos;
-		while (true) {
-			size_t p = str.find('-', prev + 1);
-			if (p == std::string::npos) { // 找完了
-				for (size_t i = prev + 1; i < m; i++)
-					idset.insert(str[i]);
-				break;
-			} else if (p == 0 || p == m - 1) { // 开头结尾的
-				idset.insert('-');
-				prev = p;
-			} else {
-				for (size_t i = prev + 1; i < p - 1; i++)
-					idset.insert(str[i]);
-				for (char c = str[p - 1]; c <= str[p + 1]; c++)
-					idset.insert(c);
-				prev = p + 1;
+		if (str[0] == '^') {
+			std::bitset<128> id_bitset;
+			id_bitset.set();
+			for (size_t i = 1; i < str.size(); i++) {
+				id_bitset.set(str[i], 0);
 			}
+			int n = static_cast<int>(nfa.graph.size());
+			nfa.graph.resize(n + 2);
+			SubNFA new_sub{n, n + 1};
+			nfa_stack.push(new_sub);
+			for (size_t i = 0; i < 128; i++) {
+				if(id_bitset[i])
+					nfa.graph.add_edge(new_sub.start, new_sub.end, i);
+			}
+		} else {
+			while (true) {
+				size_t p = str.find('-', prev + 1);
+				if (p == std::string::npos) { // 找完了
+					for (size_t i = prev + 1; i < m; i++)
+						idset.insert(str[i]);
+					break;
+				} else if (p == 0 || p == m - 1) { // 开头结尾的
+					idset.insert('-');
+					prev = p;
+				} else {
+					for (size_t i = prev + 1; i < p - 1; i++)
+						idset.insert(str[i]);
+					for (char c = str[p - 1]; c <= str[p + 1]; c++)
+						idset.insert(c);
+					prev = p + 1;
+				}
+			}
+			int n = static_cast<int>(nfa.graph.size());
+			nfa.graph.resize(n + 2);
+			SubNFA new_sub{n, n + 1};
+			nfa_stack.push(new_sub);
+			for (char c : idset)
+				nfa.graph.add_edge(new_sub.start, new_sub.end, c);
 		}
-		int n = static_cast<int>(nfa.graph.size());
-		nfa.graph.resize(n + 2);
-		SubNFA new_sub{n, n + 1};
-		nfa_stack.push(new_sub);
-		for (char c : idset)
-			nfa.graph.add_edge(new_sub.start, new_sub.end, c);
 	}
 
 	void TompsonAlgo::match_concat() {
