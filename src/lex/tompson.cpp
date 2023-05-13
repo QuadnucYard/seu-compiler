@@ -40,7 +40,7 @@ namespace comp {
 				break;
 			case '(':
 				if (i > 0 && cc != -'*' && cc != -'?' && cc != -'+' && cc != -'(' && cc != -'|') {
-					if (op_stack.top() == CON)
+					if (!op_stack.empty() && op_stack.top() == CON)
 						match_concat(); // 连接符号
 					op_stack.push(CON);
 				}
@@ -96,7 +96,7 @@ namespace comp {
 			SubNFA new_sub{n, n + 1};
 			nfa_stack.push(new_sub);
 			for (size_t i = 0; i < 128; i++) {
-				if(id_bitset[i])
+				if (id_bitset[i])
 					nfa.graph.add_edge(new_sub.start, new_sub.end, i);
 			}
 		} else {
