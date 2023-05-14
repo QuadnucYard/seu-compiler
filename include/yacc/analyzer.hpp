@@ -98,6 +98,11 @@ namespace comp {
 			// }
 		};
 
+		struct state_graph {
+			std::vector<item_set> states;
+			std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> atn;
+		};
+
 	public:
 		void process();
 
@@ -109,6 +114,7 @@ namespace comp {
 		string to_string(const symbol_set& set) const;
 		string to_string(const item& it) const;
 		string to_string(const item_set& is) const;
+		void to_dot(const state_graph& sg, const fs::path& path) const;
 
 	private:
 		symbol_set single_set(sid_t s) const;

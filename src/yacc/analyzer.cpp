@@ -1,5 +1,6 @@
 #include "yacc/analyzer.hpp"
 #include "utils/graph.hpp"
+#include "utils/graphviz.hpp"
 #include "utils/myalgo.hpp"
 #include <algorithm>
 #include <fmt/core.h>
@@ -76,6 +77,7 @@ namespace comp {
 				atn.emplace(static_cast<sid_t>(i), std::pair{to, k});
 			}
 		}
+		to_dot({states, atn}, "test_lr1.dot");
 
 		std::vector<std::vector<size_t>> kernel;
 		for (size_t i = 0; auto& is : states) {
@@ -175,8 +177,8 @@ namespace comp {
 			}
 		} */
 		std::bitset<128> ff;
-		std::set<sid_t>erase_set;
-		std::map<sid_t,sid_t>hash;
+		std::set<sid_t> erase_set;
+		std::map<sid_t, sid_t> hash;
 		for (sid_t i = 0; i < kernel.size(); i++) {
 			if (kernel[i].size() < 2) {
 				kernel.erase(kernel.begin() + i);
@@ -186,76 +188,72 @@ namespace comp {
 				new_set.kernel_size = states[kernel[i][0]].kernel_size;
 				new_set.items = states[kernel[i][0]].items;
 				for (sid_t k = 0; SyntacticAnalyzer::item item : new_set.items) {
-						if(!item.has_next())
-							ff=ff&item.follow;
-						k++;
+					if (!item.has_next())
+						ff = ff & item.follow;
+					k++;
 				}
 				for (sid_t j = 1; j < kernel[i].size(); j++) {
 					for (sid_t k = 0; SyntacticAnalyzer::item item : states[kernel[i][j]].items) {
 						new_set.items[k].follow = item.follow | new_set.items[k].follow;
-						if (!new_set.items[k].has_next()) 
-							ff=ff&new_set.items[k].follow;
+						if (!new_set.items[k].has_next())
+							ff = ff & new_set.items[k].follow;
 						k++;
 					}
 				}
-				if(ff!=0){
-					kernel.erase(kernel.begin()+i);
+				if (ff != 0) {
+					kernel.erase(kernel.begin() + i);
 					i--;
-				}
-				else{
-					states[kernel[i][0]]=new_set;
-					for (sid_t j = 1; j < kernel[i].size(); j++){
+				} else {
+					states[kernel[i][0]] = new_set;
+					for (sid_t j = 1; j < kernel[i].size(); j++) {
 						erase_set.insert(kernel[i][j]);
-						hash.insert({kernel[i][j],kernel[i][0]});
+						hash.insert({kernel[i][j], kernel[i][0]});
 					}
-				}	
+				}
 			}
 		}
-		sid_t count=0;
-		sid_t len =states.size();
-		for(sid_t i=0;i<len;i++){
-			if(erase_set.contains(i)){
-				states.erase(states.begin()+i-count);
-				LALR1_action.erase(LALR1_action.begin()+i-count);
-				LALR1_goto.erase(LALR1_goto.begin()+i-count);
+		sid_t count = 0;
+		sid_t len = states.size();
+		for (sid_t i = 0; i < len; i++) {
+			if (erase_set.contains(i)) {
+				states.erase(states.begin() + i - count);
+				LALR1_action.erase(LALR1_action.begin() + i - count);
+				LALR1_goto.erase(LALR1_goto.begin() + i - count);
 				count++;
 			}
 		}
 
-		std::vector<sid_t>effect;
-		auto it=erase_set.begin();
-		sid_t po=*it;
-		sid_t offset=0;
-		for(sid_t i=0;i<states.size();i++){
-			while(i+offset>=po){
+		std::vector<sid_t> effect;
+		auto it = erase_set.begin();
+		sid_t po = *it;
+		sid_t offset = 0;
+		for (sid_t i = 0; i < states.size(); i++) {
+			while (i + offset >= po) {
 				it++;
-				po=*it;
+				po = *it;
 				offset++;
 			}
-			hash.insert({i+offset,i});
+			hash.insert({i + offset, i});
 		}
-		
-
 
 		for (size_t i = 0; i < LALR1_action.size(); i++) {
-				for (size_t j = 0; j < LALR1_action[0].size(); j++) {
-					if (LALR1_action[i][j] == -1)
-						continue;
-					else {
-						LALR1_action[i][j]=hash[LALR1_action[i][j]];
-					}
+			for (size_t j = 0; j < LALR1_action[0].size(); j++) {
+				if (LALR1_action[i][j] == -1)
+					continue;
+				else {
+					LALR1_action[i][j] = hash[LALR1_action[i][j]];
 				}
+			}
 		}
 
-
 		for (size_t i = 0; i < LALR1_goto.size(); i++) {
-				for (size_t j = 0; j < LALR1_goto[0].size(); j++) {
-					if (LALR1_goto[i][j] <0)
-						continue;
-					else {
-						LALR1_goto[i][j]=hash[LALR1_goto[i][j]];
-					}
+			for (size_t j = 0; j < LALR1_goto[0].size(); j++) {
+				if (LALR1_goto[i][j] < 0)
+					continue;
+				else {
+					LALR1_goto[i][j] = hash[LALR1_goto[i][j]];
 				}
+			}
 		}
 
 		/* for (std::vector<size_t> con : kernel) {
@@ -283,15 +281,9 @@ namespace comp {
 				}
 			}
 		} */
-		
-		
-
-
-
 
 		// os
-		std::ofstream outFile("G:\\vscode\\seu-compiler\\LALR1_action.bin",
-							  std::ios::binary);
+		std::ofstream outFile("G:\\vscode\\seu-compiler\\LALR1_action.bin", std::ios::binary);
 
 		sid_t row = LALR1_action.size();
 		sid_t col = LALR1_action[0].size();
@@ -340,6 +332,41 @@ namespace comp {
 		for (auto& it : is.items)
 			s.append(to_string(it)).append("\n");
 		return s;
+	}
+
+	void SyntacticAnalyzer::to_dot(const state_graph& sg, const fs::path& path) const {
+		const auto _to_string_p = [this](const item& it) {
+			string s{nonterminals[it.prod->lhs].name};
+			s.append(R"( \-\>)");
+			for (size_t i = 0; i < it.prod->rhs.size(); i++) {
+				auto sym = it.prod->rhs[i];
+				s.append(std::cmp_equal(i, it.dot) ? "·" : " ");
+				s.append(qy::graphviz::label_escape(get_symbol_name(sym)));
+			}
+			if (!it.has_next())
+				s.append("·");
+			s.append("\\l");
+			return s;
+		};
+		const auto _to_string_f = [this](const item& it) {
+			string s2{};
+			for (size_t i = 0; i < tokens.size(); i++)
+				if (it.follow.test(i))
+					s2.append(qy::graphviz::label_escape(tokens[i]));
+			s2.append("\\n");
+			return s2;
+		};
+		qy::graphviz::digraph dot{path.string(), "LR(1)"};
+		dot.rankdir("LR").node_option("shape", "record").node_option("fontname", "Consolas");
+		for (auto&& [i, s] : tl::views::enumerate(sg.states)) {
+			dot.node(i, fmt::format("I{} | {{ {} | {} }}", i,
+									fmt::join(std::views::transform(s.items, _to_string_p), " "),
+									fmt::join(std::views::transform(s.items, _to_string_f), " ")));
+		}
+		for (auto&& [u, e] : sg.atn) {
+			auto&& [v, w] = e;
+			dot.edge(u, v, get_symbol_name(w));
+		}
 	}
 
 	symbol_set SyntacticAnalyzer::single_set(sid_t s) const {
@@ -446,7 +473,7 @@ namespace comp {
 		return result;
 	}
 
-	std::vector<size_t> SyntacticAnalyzer::get_index(std::vector<std::vector<size_t>> kerner,
+	/* std::vector<size_t> SyntacticAnalyzer::get_index(std::vector<std::vector<size_t>> kerner,
 													 size_t target) {
 		for (std::vector<size_t> it1 : kerner) {
 			for (size_t it2 : it1) {
@@ -455,6 +482,6 @@ namespace comp {
 			}
 		}
 		return std::vector<size_t>{};
-	}
+	} */
 
 } // namespace comp

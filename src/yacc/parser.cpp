@@ -57,7 +57,7 @@ namespace comp {
 		}
 
 		static string unescape(std::string_view s) {
-			s = s.substr(1, s.length() - 2);
+			// s = s.substr(1, s.length() - 2);
 			return string{s};
 		}
 
