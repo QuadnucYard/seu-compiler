@@ -10,6 +10,10 @@
 
 namespace comp {
 
+	const SyntacticAnalyzer& Parser::get_parser() const {
+		return analyzer;
+	};
+
 	struct Parser::DeclHandler {
 		Parser& parser;
 		std::ostream& tab_inc_file;
@@ -57,7 +61,7 @@ namespace comp {
 		}
 
 		static string unescape(std::string_view s) {
-			s = s.substr(1, s.length() - 2);
+			// s = s.substr(1, s.length() - 2);
 			return string{s};
 		}
 
