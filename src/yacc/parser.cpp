@@ -10,6 +10,10 @@
 
 namespace comp {
 
+	const SyntacticAnalyzer& Parser::get_parser() const {
+		return analyzer;
+	};
+
 	struct Parser::DeclHandler {
 		Parser& parser;
 		std::ostream& tab_inc_file;

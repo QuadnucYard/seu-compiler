@@ -25,7 +25,12 @@ namespace comp {
 		dict<sid_t> symbol_map; // Token id to index, token为正数，nonterminal为负数
 		SyntacticAnalyzer analyzer;
 
+
 		struct DeclHandler;
 		struct RulesHandler;
+
+	public:
+		const SyntacticAnalyzer&  get_parser() const;
+			
 	};
 } // namespace comp
