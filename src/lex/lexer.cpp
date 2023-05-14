@@ -59,7 +59,10 @@ namespace comp {
 			if (!re.empty()) {
 				all_re.push_back(re);
 				lexer.actions.push_back(string{qy::trim(action.str())});
+				lexer.dfa_builder.add_re(re);
 			}
+			auto dfa = lexer.dfa_builder.join_nfa();
+			dfa.to_dot("lex_dfa.dot");
 			// TODO Generate and output FA
 		}
 	};
@@ -89,8 +92,6 @@ namespace comp {
 				hRule(std::move(s));
 		}
 		hRule.finalize();
-		// 这里好像没处理最后一个rule
-		// 需要加个判断，is_valid 表示有读rule
 	}
 
 	std::pair<size_t, std::string> Lexer::get_re(const std::string& s) const {

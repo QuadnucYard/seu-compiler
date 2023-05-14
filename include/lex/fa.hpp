@@ -25,6 +25,10 @@ namespace comp {
 		inline DFA(size_t size) : graph(size), accept_states(size), start{} {}
 
 		inline constexpr size_t size() const { return graph.size(); }
+
+#ifdef GRAPH_FMT
+		void to_dot(const fs::path& path) const;
+#endif
 	};
 
 	struct NFA : public DFA {
@@ -33,13 +37,13 @@ namespace comp {
 
 	/// @brief Construct DFA from a regular expression.
 	class DFABuilder {
+	public:
 		constexpr static int EPSILON = 0;
 		constexpr static int NON_ACCEPT = -1;
 		constexpr static int DUMMY_ACCEPT = NON_ACCEPT + 1;
-		constexpr static size_t MAXV = 128; // 最大顶点数
+		constexpr static size_t MAXV = 512; // 最大顶点数
 		constexpr static sid_t MAXS = 128;	// 字符集大小 TODO 用一个vector表示字符集
 
-	public:
 		/// @brief Convert input RE to stored NFA.
 		/// @param re Regular expression.
 		void add_re(const string& re);
