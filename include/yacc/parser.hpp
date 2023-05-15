@@ -1,5 +1,6 @@
 #pragma once
 #include "analyzer.hpp"
+#include "yacc_gen.hpp"
 
 namespace comp {
 
@@ -24,13 +25,9 @@ namespace comp {
 		std::vector<string> actions;
 		dict<sid_t> symbol_map; // Token id to index, token为正数，nonterminal为负数
 		SyntacticAnalyzer analyzer;
-
+		yacc_code code_gen{"E:/Project/seu-compiler/templates/y.tab.cpp"};
 
 		struct DeclHandler;
 		struct RulesHandler;
-
-	public:
-		const SyntacticAnalyzer&  get_parser() const;
-			
 	};
 } // namespace comp

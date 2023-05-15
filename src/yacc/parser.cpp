@@ -10,10 +10,6 @@
 
 namespace comp {
 
-	const SyntacticAnalyzer& Parser::get_parser() const {
-		return analyzer;
-	};
-
 	struct Parser::DeclHandler {
 		Parser& parser;
 		std::ostream& tab_inc_file;
@@ -127,6 +123,7 @@ namespace comp {
 				s += sz;
 			}
 			parser.analyzer.process();
+			parser.code_gen.gen(parser.analyzer);
 		}
 	};
 
@@ -180,13 +177,7 @@ extern YYSTYPE yylval;)";
 		if (!hRule.ended) {
 			hRule.finalize();
 		}
-		/**
-		 * 终结符和非终结符
-		 * 全部离散化。终结符的id在之前已经有了，但还需要进一步离散化
-		 * 终结符的数量多少？对应token数量，256起步
-		 * 这个级别，bitset为64B，umap每个元素12B起步……集合操作也不如bitset
-		 * 直接上mini_set吧
-		 */
+		code_gen.dump("y.tab.cpp");
 	}
 
 	sid_t comp::Parser::get_symbol_id(const string& name) const {
