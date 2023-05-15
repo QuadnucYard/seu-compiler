@@ -33,7 +33,7 @@ namespace comp {
         result += "    } ;\n";
     } ;
 
-    void gen_accept_table (DFA dfa){
+    void gen_accept_table (DFA dfa, Lexer lexer){
         std::string result = {};
         /*
         #define YY_NUM_RULES 101
@@ -43,7 +43,7 @@ namespace comp {
             R"(#define YY_NUM_RULES %d
 #define YY_END_OF_BUFFER %d
             )" ,
-            actions.size(), actions.size()+1);
+            lexer.actions.size(), lexer.actions.size()+1);
         //yy_accept   
         result += fmt::sprint(
             R"(static yyconst short int yy_accept[%d] =
@@ -87,7 +87,7 @@ char *yytext;)");
     void multiLineComment(void);
     */
 
-    void gen_case(){
+    void gen_case(Lexer lexer){
         //对应yy.c：line 6210起
         std::string result = {};
         //第一个case定义为-1了,为了协调在这里先加1和flex写法一致
@@ -100,12 +100,12 @@ char *yytext;)");
 			yy_current_state = yy_last_accepting_state;
 			goto yy_find_action;)";
         int i =0;
-        for(i; i < actions.size(); i++){
+        for(i; i < lexer.actions.size(); i++){
             result += fmt::sprint(
                 R"(case %d:
 YY_RULE_SETUP
 %s
-    YY_BREAK)", i+1, actions[i]);
+    YY_BREAK)", i+1, lexer.actions[i]);
         }
         //接下来除了case YY_STATE_EOF(INITIAL)外有三个case
         result += fmt::sprint(
@@ -1495,7 +1495,7 @@ int main()
 #endif
 )||");
     };
-	
+
 	/*
 	下面是yywrap等部分
 	*/
