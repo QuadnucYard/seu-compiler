@@ -1,5 +1,6 @@
 #pragma once
 #include "common/recognizer.hpp"
+#include "utils/matrix.hpp"
 #include <bitset>
 #include <span>
 #include <vector>
@@ -103,6 +104,11 @@ namespace comp {
 			std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> atn;
 		};
 
+		struct parsing_table {
+			qy::matrix<sid_t> action;
+			qy::matrix<sid_t> goto_;
+		};
+
 	public:
 		void process();
 
@@ -120,8 +126,12 @@ namespace comp {
 		symbol_set single_set(sid_t s) const;
 		void get_nullables();
 		void get_firsts();
+		state_graph get_LR1_states() const;
 		item_set initial_closure() const;
 		item_set closure(const item_set& is) const;
+		parsing_table get_LR1_table(const state_graph& LR1_states) const;
+		parsing_table get_LALR1_table(const state_graph& LR1_states,
+									  const parsing_table& LR1_table) const;
 
 	public:
 		std::vector<string> tokens;			   // All tokens involved. Index == sid
