@@ -31,9 +31,9 @@ namespace comp {
             result += "    } ;\n";
         }
         result += "    } ;\n";
-    } 
+    } ;
 
-    void gen_accept_table(DFA dfa){
+    void gen_accept_table (DFA dfa){
         std::string result = {};
         /*
         #define YY_NUM_RULES 101
@@ -78,7 +78,7 @@ static char *yy_last_accepting_cpos;)");
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;)");
-    } 
+    } ;
 
     /*
     #include <stdio.h>
@@ -90,7 +90,7 @@ char *yytext;)");
     void gen_case(){
         //对应yy.c：line 6210起
         std::string result = {};
-        //第一个case定义为-1了,为了协调在这里先加1
+        //第一个case定义为-1了,为了协调在这里先加1和flex写法一致
         result += R"(		switch ( yy_act )
 	{ /* beginning of action switch */
 			case 0: /* must back up */
@@ -120,7 +120,7 @@ case %d:
 YY_RULE_SETUP
 ECHO;
     YY_BREAK)", i+1, i+2, i+3);       
-    }
+    };
 
     void gen_code_1(){
         std::string result = {};
@@ -381,7 +381,7 @@ FILE *yyin = (FILE *) 0, *yyout = (FILE *) 0;
 typedef int yy_state_type;
 extern char *yytext;
 #define yytext_ptr yytext)");
-    }
+    };
 
     void gen_after_yy_nxt(){
         std::string result = {};
@@ -401,7 +401,7 @@ static void yy_fatal_error YY_PROTO(( yyconst char msg[] ));
 	*yy_cp = '\0'; \
 	yy_c_buf_p = yy_cp;
         )");
-    }
+    };
 
     void gen_after_yynultrans(){
         std::string result ={};
@@ -544,7 +544,7 @@ YY_MALLOC_DECL
 #define YY_RULE_SETUP \
 	YY_USER_ACTION
 )");
-    }
+    };
     
     void yy_gen_yylex(){
         std::string result = {};
@@ -612,7 +612,7 @@ yy_find_action:
 
 do_action:	/* This label is used only to access EOF actions. */
 )");
-    }
+    };
 
     void yy_gen_yylex_after_case(){
         std::string result ={};
@@ -1494,6 +1494,10 @@ int main()
 	}
 #endif
 )||");
-    }
+    };
+	
+	/*
+	下面是yywrap等部分
+	*/
 
 } // namespace comp
