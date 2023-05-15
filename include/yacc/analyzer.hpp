@@ -1,5 +1,6 @@
 #pragma once
 #include "common/recognizer.hpp"
+#include "utils/matrix.hpp"
 #include <bitset>
 #include <span>
 #include <vector>
@@ -36,8 +37,13 @@ namespace comp {
 
 		nonterminal() = default;
 
-		nonterminal(const string& name, production_group productions, size_t size) :
-			name(name), productions(productions), first(size) {}
+		nonterminal(const string& name, production_group productions) :
+			name(name), productions(productions), first{} {}
+	};
+
+	struct parsing_table {
+		qy::matrix<sid_t> action;
+		qy::matrix<sid_t> goto_;
 	};
 
 	class SyntacticAnalyzer {
@@ -98,8 +104,13 @@ namespace comp {
 			// }
 		};
 
+		struct state_graph {
+			std::vector<item_set> states;
+			std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> atn;
+		};
+
 	public:
-		void process();
+		parsing_table process();
 
 		/// @brief Get symbol name by symbol id.
 		/// @param sym Symbol id. May be positive or negative.
@@ -109,13 +120,18 @@ namespace comp {
 		string to_string(const symbol_set& set) const;
 		string to_string(const item& it) const;
 		string to_string(const item_set& is) const;
+		void to_dot(const state_graph& sg, const fs::path& path) const;
 
 	private:
 		symbol_set single_set(sid_t s) const;
 		void get_nullables();
 		void get_firsts();
+		state_graph get_LR1_states() const;
 		item_set initial_closure() const;
 		item_set closure(const item_set& is) const;
+		parsing_table get_LR1_table(const state_graph& LR1_states) const;
+		parsing_table get_LALR1_table(const state_graph& LR1_states,
+									  const parsing_table& LR1_table) const;
 
 	public:
 		std::vector<string> tokens;			   // All tokens involved. Index == sid

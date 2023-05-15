@@ -1,18 +1,21 @@
 #include "yacc/analyzer.hpp"
 #include "utils/graph.hpp"
+#include "utils/graphviz.hpp"
 #include "utils/myalgo.hpp"
 #include <algorithm>
 #include <fmt/core.h>
+#include <fstream>
+#include <iterator>
 #include <map>
+#include <numeric>
 #include <queue>
 #include <ranges>
+#include <set>
 #include <tl/enumerate.hpp>
 
-namespace comp {
+using tl::views::enumerate;
 
-	// bool SyntacticAnalyzer::item_set::contains(const item& i) const {
-	// 	return std::ranges::contains(items, i);
-	// }
+namespace comp {
 
 	SyntacticAnalyzer::item_set SyntacticAnalyzer::item_set::get_goto(sid_t symbol) const {
 		item_set result;
@@ -36,79 +39,21 @@ namespace comp {
 						  o.items.begin() + o.kernel_size);
 	}
 
-	void SyntacticAnalyzer::process() {
+	parsing_table SyntacticAnalyzer::process() {
 		get_nullables();
 		get_firsts();
 
 		// Print firsts
-		for (auto& t : nonterminals) {
-			fmt::print("First({})={}\n", t.name, to_string(t.first));
-		}
-		fmt::print("\n");
+		// for (auto& t : nonterminals)
+		// 	fmt::print("First({})={}\n", t.name, to_string(t.first));
+		// fmt::print("\n");
 
-		// Generate closures
-		auto initial = initial_closure();
-		std::vector<item_set> states{initial};
-		// std::map<item_set, size_t> states_map{{initial, 0}};
-		std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> atn; // A state graph for test
-		for (size_t i = 0; i < states.size(); i++) {
-			std::unordered_map<sid_t, item_set> nexts;
-			states[i] = closure(states[i]);
-			// 需要group by next symbol
-			for (auto& p : states[i].items)
-				if (p.has_next())
-					nexts[p.next()].items.emplace_back(p.next_item());
-
-			for (auto& [k, v] : nexts) {
-				v.kernel_size = v.items.size();
-				sid_t to;
-				if (auto idx = qy::ranges::index_of(states, v); idx == -1) {
-					to = static_cast<sid_t>(states.size());
-					states.emplace_back(v);
-				} else {
-					to = static_cast<sid_t>(idx);
-				}
-				/* if (auto idx = states_map.find(v); idx == states_map.end()) {
-					to = static_cast<sid_t>(states.size());
-					states_map.emplace(v, states.size());
-					states.emplace_back(v);
-				} else {
-					to = static_cast<sid_t>(idx->second);
-				} */
-				atn.emplace(static_cast<sid_t>(i), std::pair{to, k});
-			}
-		}
-
-		/* for (size_t i = 0; auto& s : states) {
-			fmt::print("I{}:\n{}\n", i++, to_string(s));
-		}
-		for (auto& [u, e] : atn) {
-			fmt::print("({}, {}, {})\n", u, e.first, get_symbol_name(e.second));
-		} */
-
-		std::vector<std::vector<size_t>> kernel;
-		for (size_t i = 0; auto& is : states) {
-			if (auto it = std::ranges::find_if(
-					kernel, [&](auto& t) { return states[t.at(0)].kernel_equals(is); });
-				it != kernel.end()) {
-				it->emplace_back(i);
-			} else {
-				kernel.emplace_back(std::vector{i});
-			}
-			i++;
-		}
-		// 状态数：1960。有417个同心状态。
-
-		// 状态转换图存在上面的atn里了，可以转邻接矩阵。
-		// 下面是生成表了，分action和goto
-		// 表其实就对应邻接矩阵
-
-		/**
-		 * TODO:
-		 * 1. 构造LR(1)分析表（表的存储方式怎么方便怎么来）
-		 * 2. 构造LALR(1)分析表
-		 * 3. 输出action,goto邻接矩阵到文件
-		 */
+		auto sg = get_LR1_states();
+		if (sg.states.size() <= 100)
+			to_dot(sg, "test_lr1.dot");
+		auto pt = get_LR1_table(sg);
+		auto pt2 = get_LALR1_table(sg, pt);
+		return pt2;
 	}
 
 	const string& SyntacticAnalyzer::get_symbol_name(sid_t sym) const {
@@ -147,6 +92,41 @@ namespace comp {
 		return s;
 	}
 
+	void SyntacticAnalyzer::to_dot(const state_graph& sg, const fs::path& path) const {
+		const auto _to_string_p = [this](const item& it) {
+			string s{nonterminals[it.prod->lhs].name};
+			s.append(R"( \-\>)");
+			for (size_t i = 0; i < it.prod->rhs.size(); i++) {
+				auto sym = it.prod->rhs[i];
+				s.append(std::cmp_equal(i, it.dot) ? "·" : " ");
+				s.append(qy::graphviz::label_escape(get_symbol_name(sym)));
+			}
+			if (!it.has_next())
+				s.append("·");
+			s.append("\\l");
+			return s;
+		};
+		const auto _to_string_f = [this](const item& it) {
+			string s2{};
+			for (size_t i = 0; i < tokens.size(); i++)
+				if (it.follow.test(i))
+					s2.append(qy::graphviz::label_escape(tokens[i]));
+			s2.append("\\n");
+			return s2;
+		};
+		qy::graphviz::digraph dot{path.string(), "LR(1)"};
+		dot.rankdir("LR").node_option("shape", "record").node_option("fontname", "Consolas");
+		for (auto&& [i, s] : enumerate(sg.states)) {
+			dot.node(i, fmt::format("I{} | {{ {} | {} }}", i,
+									fmt::join(std::views::transform(s.items, _to_string_p), " "),
+									fmt::join(std::views::transform(s.items, _to_string_f), " ")));
+		}
+		for (auto&& [u, e] : sg.atn) {
+			auto&& [v, w] = e;
+			dot.edge(u, v, get_symbol_name(w));
+		}
+	}
+
 	symbol_set SyntacticAnalyzer::single_set(sid_t s) const {
 		symbol_set set;
 		set.set(s);
@@ -166,8 +146,8 @@ namespace comp {
 
 		// 1. Init graph and firsts
 
-		for (auto& nt : nonterminals) 
-			for (auto& p : nt.productions) 
+		for (auto& nt : nonterminals)
+			for (auto& p : nt.productions)
 				for (sid_t s : p.rhs) {
 					if (s >= 0) {
 						nt.first.set(s);
@@ -185,8 +165,8 @@ namespace comp {
 		auto [g, scc] = g0.induce_scc();
 		auto seq = g.topological_sort();
 
-		std::vector<symbol_set> firsts(g.size(), symbol_set(tokens.size()));
-		for (auto [i, s] : tl::views::enumerate(scc))
+		std::vector<symbol_set> firsts(g.size());
+		for (auto [i, s] : enumerate(scc))
 			firsts[s] |= nonterminals[i].first;
 
 		// 3. 在新图上合并first
@@ -197,8 +177,39 @@ namespace comp {
 
 		// 4. 再转回来
 
-		for (auto [i, s] : tl::views::enumerate(scc))
+		for (auto [i, s] : enumerate(scc))
 			nonterminals[i].first = firsts[s];
+	}
+
+	SyntacticAnalyzer::state_graph SyntacticAnalyzer::get_LR1_states() const {
+		// Generate closures
+		// The first closure
+		auto initial = initial_closure();
+		std::vector<item_set> states{initial};
+		// std::map<item_set, size_t> states_map{{initial, 0}};
+		std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> atn; // A state graph for test
+		for (size_t i = 0; i < states.size(); i++) {
+			// Connections between closures
+			std::unordered_map<sid_t, item_set> nexts;
+			states[i] = closure(states[i]);
+			// 需要group by next symbol
+			for (auto& p : states[i].items)
+				if (p.has_next())
+					nexts[p.next()].items.emplace_back(p.next_item());
+
+			for (auto& [k, v] : nexts) {
+				v.kernel_size = v.items.size();
+				sid_t to;
+				if (auto idx = qy::ranges::index_of(states, v); idx == -1) {
+					to = static_cast<sid_t>(states.size());
+					states.emplace_back(v);
+				} else {
+					to = static_cast<sid_t>(idx);
+				}
+				atn.emplace(static_cast<sid_t>(i), std::pair{to, k});
+			}
+		}
+		return {std::move(states), std::move(atn)};
 	}
 
 	SyntacticAnalyzer::item_set SyntacticAnalyzer::initial_closure() const {
@@ -249,6 +260,111 @@ namespace comp {
 			}
 		}
 		return result;
+	}
+
+	parsing_table SyntacticAnalyzer::get_LR1_table(
+		const state_graph& LR1_states) const {
+		const auto& [states, atn] = LR1_states;
+
+		size_t n_states = states.size(), n_tokens = tokens.size(),
+			   n_nonterminals = nonterminals.size();
+
+		parsing_table LR1_table{{n_states, n_tokens, -1}, {n_states, n_nonterminals, -1}};
+		auto& [LR1_action, LR1_goto] = LR1_table;
+
+		for (size_t i = 0; i < n_states; i++) {
+			auto r = atn.equal_range(i);
+			for (auto&& pair : std::ranges::subrange(r.first, r.second)) {
+				auto&& e = pair.second;
+				// nonterminal
+				if (e.second < 0)
+					LR1_goto[i][-e.second] = e.first;
+				else
+					LR1_action[i][e.second] = e.first;
+			}
+			for (auto& it : states[i].items) {
+				if (!it.has_next()) {
+					for (size_t j = 0; j < n_tokens; j++) {
+						if (it.follow.test(j))
+							LR1_action[i][j] = -it.prod->id;
+					}
+				}
+			}
+		}
+		return LR1_table;
+	}
+
+	parsing_table SyntacticAnalyzer::get_LALR1_table(
+		const state_graph& LR1_states, const parsing_table& LR1_table) const {
+		auto states = LR1_states.states;
+		size_t n_states = states.size(), n_tokens = tokens.size(),
+			   n_nonterminals = nonterminals.size();
+
+		std::vector<std::vector<size_t>> kernel_grouped; // 同心状态分组
+		for (auto&& [i, is] : enumerate(LR1_states.states)) {
+			if (auto it = std::ranges::find_if(
+					kernel_grouped, [&](auto& t) { return states[t.at(0)].kernel_equals(is); });
+				it != kernel_grouped.end()) {
+				it->emplace_back(i);
+			} else {
+				kernel_grouped.emplace_back(std::vector{i});
+			}
+		}
+		// 状态数：1960。有417个同心状态。
+
+		auto [LALR1_action, LALR1_goto] = LR1_table;
+
+		std::vector<size_t> state_map(n_states); // 删除状态后，标号重映射
+		std::iota(state_map.begin(), state_map.end(), 0);
+
+		for (auto&& kern : kernel_grouped) {
+			if (kern.size() < 2)
+				continue;
+			item_set new_set{states[kern[0]]};
+			symbol_set ff;
+			for (auto& item : new_set.items) {
+				if (!item.has_next())
+					ff &= item.follow;
+			}
+			for (size_t j = 1; j < kern.size(); j++) {
+				for (auto&& [k, item] : enumerate(states[kern[j]].items)) {
+					new_set.items[k].follow &= item.follow;
+					if (!new_set.items[k].has_next())
+						ff &= new_set.items[k].follow;
+				}
+			}
+			// TODO fix ff
+			states[kern[0]] = new_set;
+			for (auto k : kern)
+				state_map[k] = kern[0];
+		}
+		// 现在 state_map[i] != i 的都是要删除的。可以保证都是大号映射到小号
+		for (ptrdiff_t i = n_states - 1; i >= 0; i--) {
+			if (state_map[i] != i) {
+				LALR1_action.remove_row(i);
+				LALR1_goto.remove_row(i);
+				states.erase(states.begin() + i);
+			}
+		}
+		// 然后删掉中间空的
+		for (size_t i = 0, cnt = 0; i < n_states; i++) {
+			if (auto& x = state_map[i]; x == i) {
+				x = cnt++;
+			} else {
+				x = state_map[x];
+			}
+		}
+		// 对 action/goto 重映射
+		for (size_t i = 0; i < n_states; i++) {
+			for (size_t j = 0; j < n_tokens; j++)
+				if (auto& x = LALR1_action[i][j]; x >= 0)
+					x = state_map[x];
+			for (size_t j = 0; j < n_nonterminals; j++)
+				if (auto& x = LALR1_goto[i][j]; x != -1)
+					x = state_map[x];
+		}
+
+		return {std::move(LALR1_action), std::move(LALR1_goto)};
 	}
 
 } // namespace comp

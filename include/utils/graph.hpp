@@ -6,6 +6,15 @@
 #include <unordered_map>
 #include <vector>
 
+#if __has_include(<fmt/core.h>)
+	#define GRAPH_FMT
+#endif
+#ifdef GRAPH_FMT
+	#include <fmt/core.h>
+	#include <fmt/os.h>
+	#include <filesystem>
+namespace fs = std::filesystem;
+#endif
 
 namespace qy {
 
@@ -24,7 +33,9 @@ namespace qy {
 		constexpr static bool has_vertex_weight = !std::is_void_v<vertex_weight_type>;
 		using safe_vertex_weight_type =
 			std::conditional_t<has_vertex_weight, vertex_weight_type, void_type>;
+
 		using edge_weight_type = EdgeWeight;
+		constexpr static bool has_edge_weight = !std::is_void_v<edge_weight_type>;
 		using edge_type = std::conditional_t<std::is_void_v<edge_weight_type>, std::tuple<id_t>,
 											 std::tuple<id_t, edge_weight_type>>;
 
@@ -47,9 +58,14 @@ namespace qy {
 			size_type u;
 			size_type i;
 
-			edge_view_iterator(const basic_graph* g) : g(g), u(0), i(0) {}
+			edge_view_iterator(const basic_graph* g) : g(g), u(0), i(0) {
+				while (u < g->size() && g->at(u).empty())
+					++u;
+			}
 
-			value_type operator*() const { return std::tuple_cat(std::make_tuple(u), g->at(u)[i]); }
+			value_type operator*() const {
+				return std::tuple_cat(std::make_tuple(static_cast<id_t>(u)), g->at(u)[i]);
+			}
 
 			edge_view_iterator& operator++() {
 				if (++i >= g->at(u).size()) {
@@ -90,19 +106,19 @@ namespace qy {
 
 		basic_graph(size_type n) : g(n) {}
 
-		size_type size() const { return g.size(); }
+		constexpr size_type size() const { return g.size(); }
 
-		void reserve(size_type n) { g.reserve(n); }
+		constexpr void reserve(size_type n) { g.reserve(n); }
 
-		void resize(size_type n) { g.resize(n); }
+		constexpr void resize(size_type n) { g.resize(n); }
 
-		const edge_vec& at(size_type u) const { return std::get<0>(g[u]); }
+		constexpr const edge_vec& at(size_type u) const { return std::get<0>(g[u]); }
 
-		edge_vec& at(size_type u) { return std::get<0>(g[u]); }
+		constexpr edge_vec& at(size_type u) { return std::get<0>(g[u]); }
 
 		/// @brief Add an edge to the graph.
 		/// @param u The start vertex. Should grantee valid index.
-		/// @param ...args Arguments to construct the edge.
+		/// @param args Arguments to construct the edge.
 		/// @return This.
 		basic_graph& add_edge(id_t u, auto&&... args) {
 			at(u).emplace_back(std::forward<decltype(args)>(args)...);
@@ -164,7 +180,7 @@ namespace qy {
 				std::stack<id_t> stack1, stack2;
 				id_t dfs_clock{0}, scc_cnt{0};
 
-				garbow_closure(const basic_graph& g) : g(g), low(g.size()), scc_no(g.size()) {
+				garbow_closure(const basic_graph& g) : g(g), low(g.size()), scc_no(g.size(), -1) {
 					for (size_t i = 0; i < g.size(); i++)
 						if (!low[i])
 							garbow(static_cast<id_t>(i));
@@ -178,7 +194,7 @@ namespace qy {
 						id_t v = edge_dir(e);
 						if (!low[v])
 							garbow(v);
-						else if (!scc_no[v])
+						else if (scc_no[v] == -1)
 							while (low[stack2.top()] > low[v])
 								stack2.pop();
 					}
@@ -232,6 +248,38 @@ namespace qy {
 			return queue;
 		}
 
+		// std::conditional_t<has_edge_weight, std::tuple<id_t, id_t, edge_weight_type>,   std::tuple<id_t, id_t>>
+		auto to_edge_vector() const {
+			if constexpr (has_edge_weight) {
+				std::vector<std::tuple<id_t, id_t, id_t>> res;
+				for (auto&& [u, v, w] : edges())
+					res.emplace_back(u, v, w);
+				return res;
+			} else {
+				std::vector<std::tuple<id_t, id_t>> res;
+				for (auto&& [u, v] : edges())
+					res.emplace_back(u, v);
+				return res;
+			}
+		}
+
+#ifdef GRAPH_FMT
+		void to_dot(const fs::path& path) const {
+			auto out = fmt::output_file(path.string());
+			out.print("digraph G {{\n");
+			out.print("    rankdir = LR;\n");
+			out.print("    node [shape = circle];\n");
+			if constexpr (has_edge_weight) {
+				for (auto&& [u, v, w] : edges())
+					out.print("    {} -> {} [label=\"{}\"];\n", u, v, w);
+			} else {
+				for (auto&& [u, v] : edges())
+					out.print("    {} -> {};\n", u, v);
+			}
+			out.print("}}\n");
+		}
+#endif
+
 	private:
 		storage_type g;
 	};
@@ -243,8 +291,6 @@ namespace qy {
 } // namespace qy
 
 #if __has_include(<fmt/core.h>)
-
-	#include <fmt/core.h>
 
 namespace qy {
 	template <typename I, typename V, typename E>

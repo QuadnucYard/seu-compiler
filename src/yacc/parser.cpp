@@ -43,6 +43,8 @@ namespace comp {
 		std::istringstream iss;
 		RawRule rule;
 		string prev;
+		string action;
+		bool action_started;
 		string t;
 		bool ended;
 
@@ -50,24 +52,40 @@ namespace comp {
 			// BUG: Here aug_start is empty!
 			parser.rules.push_back({aug_start, {}});
 			parser.symbol_map.emplace(aug_start, 0);
+			parser.actions.push_back("");
+			action_started = false;
+		}
+
+		static string unescape(std::string_view s) {
+			// s = s.substr(1, s.length() - 2);
+			return string{s};
 		}
 
 		void operator()(string&& s) {
 			iss.str(s);
 			iss.clear(); // Must use this to clear state!
 			while (iss >> t) {
-				// BUG 需要分词，用空格分隔不靠谱
+				// BUG 需要分词，用空格分隔不靠谱  但目前就假设必须要空格分隔
 				if (t == ":") {
 					rule.lhs = std::move(prev);
 					parser.symbol_map.emplace(rule.lhs, -static_cast<sid_t>(parser.rules.size()));
 					rule.rhs.push_back({});
 				} else if (t == "|") {
 					rule.rhs.push_back({});
+					parser.actions.push_back(string{qy::trim(action)});
 				} else if (t == ";") {
 					parser.rules.push_back(std::move(rule));
 					rule.rhs.clear();
+					parser.actions.push_back(string{qy::trim(action)});
+				} else if (action_started && t == "}") {
+					action += t;
+					action_started = false;
+				} else if (action_started || t == "{") {
+					action_started = true;
+					action += t;
+					action += ' ';
 				} else if (!rule.rhs.empty()) {
-					rule.rhs.back().push_back(t);
+					rule.rhs.back().push_back(unescape(t));
 				}
 				prev = std::move(t);
 			}
@@ -100,11 +118,12 @@ namespace comp {
 			// 必须要在最后，这样才能保证rules是固定的，span有效
 			for (size_t i = 0, s = 0; i < parser.rules.size(); i++) {
 				size_t sz = parser.rules[i].rhs.size();
-				ana.nonterminals.emplace_back(
-					parser.rules[i].lhs, std::span{ana.rules.begin() + s, sz}, ana.tokens.size());
+				ana.nonterminals.emplace_back(parser.rules[i].lhs,
+											  std::span{ana.rules.begin() + s, sz});
 				s += sz;
 			}
-			parser.analyzer.process();
+			auto pt = parser.analyzer.process();
+			parser.code_gen.gen(pt, parser.analyzer);
 		}
 	};
 
@@ -158,13 +177,7 @@ extern YYSTYPE yylval;)";
 		if (!hRule.ended) {
 			hRule.finalize();
 		}
-		/**
-		 * 终结符和非终结符
-		 * 全部离散化。终结符的id在之前已经有了，但还需要进一步离散化
-		 * 终结符的数量多少？对应token数量，256起步
-		 * 这个级别，bitset为64B，umap每个元素12B起步……集合操作也不如bitset
-		 * 直接上mini_set吧
-		 */
+		code_gen.dump("y.tab.cpp");
 	}
 
 	sid_t comp::Parser::get_symbol_id(const string& name) const {

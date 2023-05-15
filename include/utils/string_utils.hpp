@@ -52,4 +52,20 @@ namespace qy {
 		return join(std::begin(c), std::end(c), sep);
 	}
 
+	std::string& replace_all_inplace(std::string& src, std::string_view old_value,
+									 std::string_view new_value) {
+		for (std::string::size_type pos{0}; pos != std::string::npos; pos += new_value.length()) {
+			if ((pos = src.find(old_value, pos)) != std::string::npos)
+				src.replace(pos, old_value.length(), new_value);
+			else
+				break;
+		}
+		return src;
+	}
+
+	std::string replace_all(std::string src, std::string_view old_value,
+							std::string_view new_value) {
+		return replace_all_inplace(src, old_value, new_value);
+	}
+
 } // namespace qy

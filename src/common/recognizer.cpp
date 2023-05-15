@@ -1,5 +1,4 @@
 #include "common/recognizer.hpp"
-#include <fstream>
 
 namespace comp {
 
