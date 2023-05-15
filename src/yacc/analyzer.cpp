@@ -53,6 +53,7 @@ namespace comp {
 			to_dot(sg, "test_lr1.dot");
 		auto pt = get_LR1_table(sg);
 		auto pt2 = get_LALR1_table(sg, pt);
+		compress_table(pt2);
 		return pt2;
 	}
 
@@ -262,14 +263,13 @@ namespace comp {
 		return result;
 	}
 
-	parsing_table SyntacticAnalyzer::get_LR1_table(
-		const state_graph& LR1_states) const {
+	parsing_table SyntacticAnalyzer::get_LR1_table(const state_graph& LR1_states) const {
 		const auto& [states, atn] = LR1_states;
 
 		size_t n_states = states.size(), n_tokens = tokens.size(),
 			   n_nonterminals = nonterminals.size();
 
-		parsing_table LR1_table{{n_states, n_tokens, -1}, {n_states, n_nonterminals, -1}};
+		parsing_table LR1_table{{n_states, n_tokens, ERR}, {n_states, n_nonterminals, ERR}};
 		auto& [LR1_action, LR1_goto] = LR1_table;
 
 		for (size_t i = 0; i < n_states; i++) {
@@ -294,8 +294,8 @@ namespace comp {
 		return LR1_table;
 	}
 
-	parsing_table SyntacticAnalyzer::get_LALR1_table(
-		const state_graph& LR1_states, const parsing_table& LR1_table) const {
+	parsing_table SyntacticAnalyzer::get_LALR1_table(const state_graph& LR1_states,
+													 const parsing_table& LR1_table) const {
 		auto states = LR1_states.states;
 		size_t n_states = states.size(), n_tokens = tokens.size(),
 			   n_nonterminals = nonterminals.size();
@@ -357,14 +357,76 @@ namespace comp {
 		// 对 action/goto 重映射
 		for (size_t i = 0; i < n_states; i++) {
 			for (size_t j = 0; j < n_tokens; j++)
-				if (auto& x = LALR1_action[i][j]; x >= 0)
+				if (auto& x = LALR1_action[i][j]; x > 0)
 					x = state_map[x];
 			for (size_t j = 0; j < n_nonterminals; j++)
-				if (auto& x = LALR1_goto[i][j]; x != -1)
+				if (auto& x = LALR1_goto[i][j]; x != ERR)
 					x = state_map[x];
 		}
 
 		return {std::move(LALR1_action), std::move(LALR1_goto)};
 	}
 
+	parsing_table_compressed SyntacticAnalyzer::compress_table(const parsing_table& table) const {
+		struct table_row {
+			size_t r, c, l;
+		};
+
+		size_t n_col = table.action.cols();
+		std::vector<table_row> rows;
+		for (size_t i = 0; i < table.action.rows(); i++) {
+			table_row row{i, 0, 0};
+			size_t j = 0;
+			while (j < n_col && table.action[i][j] == ERR)
+				j++;
+			if (j == n_col)
+				continue;
+			row.c = j;
+			for (; j < n_col; j++)
+				if (table.action[i][j] != ERR)
+					row.l = j - row.c + 1;
+			rows.push_back(row);
+		}
+		std::sort(rows.begin(), rows.end(), [](const table_row& r1, const table_row& r2) {
+			return r1.l > r2.l || r1.l == r2.l && r1.r < r2.r;
+		});
+
+		// 下面考虑一种简单的压缩，不涉及行的交错
+
+		std::vector<sid_t> tab;
+		// std::priority_queue<std::pair<size_t, size_t>> gaps; // len, offset
+		std::multimap<size_t, size_t> gaps;
+		for (auto& row : rows) {
+			size_t ins = tab.size();
+			if (auto it = gaps.lower_bound(row.l); it != gaps.end()) { // 有空位放
+				ptrdiff_t l = it->first - row.l;
+				ins = it->second;
+				gaps.erase(it);
+				// 如果有多余空间就把多出的 gap 插回去
+				if (l > 0)
+					gaps.emplace(l, ins + row.l);
+			}
+			if (ins == tab.size()) {
+				tab.insert(tab.end(), table.action.iter_row(row.r).begin() + row.c,
+						   table.action.iter_row(row.r).begin() + row.c + row.l);
+			} else {
+				std::copy_n(table.action.iter_row(row.r).begin() + row.c, row.l, tab.begin() + ins);
+			}
+			for (size_t j = row.c; j < row.c + row.l;) {
+				size_t k = j;
+				while (k < n_col && table.action[row.r][k] != ERR)
+					k++;
+				if (k == n_col)
+					break;
+				// 现在k指向的是ERR
+				j = k;
+				while (j < n_col && table.action[row.r][j] == ERR)
+					j++;
+				// 现在j指向的是非ERR
+				gaps.emplace(j - k, ins + k);
+			}
+		}
+
+		return {};
+	}
 } // namespace comp

@@ -46,9 +46,12 @@ namespace comp {
 		qy::matrix<sid_t> goto_;
 	};
 
+	struct parsing_table_compressed {};
+
 	class SyntacticAnalyzer {
 	public:
-		static const sid_t END_MARKER = 0;
+		constexpr static sid_t END_MARKER = 0;
+		constexpr static sid_t ERR = 0;
 
 	private:
 		struct item {
@@ -132,6 +135,7 @@ namespace comp {
 		parsing_table get_LR1_table(const state_graph& LR1_states) const;
 		parsing_table get_LALR1_table(const state_graph& LR1_states,
 									  const parsing_table& LR1_table) const;
+		parsing_table_compressed compress_table(const parsing_table& table) const;
 
 	public:
 		std::vector<string> tokens;			   // All tokens involved. Index == sid
