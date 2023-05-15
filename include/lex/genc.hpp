@@ -91,8 +91,8 @@ char *yytext;)");
         //对应yy.c：line 6210起
         std::string result = {};
         //第一个case定义为-1了,为了协调在这里先加1
-        result += R"(switch ( yy_act )
-	        { /* beginning of action switch */
+        result += R"(		switch ( yy_act )
+	{ /* beginning of action switch */
 			case 0: /* must back up */
 			/* undo the effects of YY_DO_BEFORE_ACTION */
 			*yy_cp = yy_hold_char;
