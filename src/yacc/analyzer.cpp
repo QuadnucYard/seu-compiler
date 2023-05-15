@@ -39,7 +39,7 @@ namespace comp {
 						  o.items.begin() + o.kernel_size);
 	}
 
-	void SyntacticAnalyzer::process() {
+	parsing_table SyntacticAnalyzer::process() {
 		get_nullables();
 		get_firsts();
 
@@ -49,9 +49,11 @@ namespace comp {
 		// fmt::print("\n");
 
 		auto sg = get_LR1_states();
-		to_dot(sg, "test_lr1.dot");
+		if (sg.states.size() <= 100)
+			to_dot(sg, "test_lr1.dot");
 		auto pt = get_LR1_table(sg);
 		auto pt2 = get_LALR1_table(sg, pt);
+		return pt2;
 	}
 
 	const string& SyntacticAnalyzer::get_symbol_name(sid_t sym) const {
@@ -260,7 +262,7 @@ namespace comp {
 		return result;
 	}
 
-	SyntacticAnalyzer::parsing_table SyntacticAnalyzer::get_LR1_table(
+	parsing_table SyntacticAnalyzer::get_LR1_table(
 		const state_graph& LR1_states) const {
 		const auto& [states, atn] = LR1_states;
 
@@ -292,7 +294,7 @@ namespace comp {
 		return LR1_table;
 	}
 
-	SyntacticAnalyzer::parsing_table SyntacticAnalyzer::get_LALR1_table(
+	parsing_table SyntacticAnalyzer::get_LALR1_table(
 		const state_graph& LR1_states, const parsing_table& LR1_table) const {
 		auto states = LR1_states.states;
 		size_t n_states = states.size(), n_tokens = tokens.size(),

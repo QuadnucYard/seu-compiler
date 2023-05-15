@@ -4,6 +4,7 @@
 
 namespace comp {
 
+	struct parsing_table;
 	class SyntacticAnalyzer;
 
 	class yacc_code {
@@ -14,10 +15,8 @@ namespace comp {
 	public:
 		yacc_code() = default;
 		yacc_code(const fs::path& path);
-		void gen(const SyntacticAnalyzer& analyzer);
-		void gen_table();
-		void set_action(std::vector<std::vector<int>> t_action);
-		void set_goto(std::vector<std::vector<int>> t_goto);
+		void gen(const parsing_table& pt, const SyntacticAnalyzer& analyzer);
+		void gen_table(const parsing_table& pt);
 		void gen_case(const SyntacticAnalyzer& analyzer);
 
 		inline void dump(const fs::path& path) { temp.dump(path); }

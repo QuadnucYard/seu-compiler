@@ -72,11 +72,11 @@ namespace comp {
 					rule.rhs.push_back({});
 				} else if (t == "|") {
 					rule.rhs.push_back({});
-					parser.actions.push_back(std::move(action));
+					parser.actions.push_back(string{qy::trim(action)});
 				} else if (t == ";") {
 					parser.rules.push_back(std::move(rule));
 					rule.rhs.clear();
-					parser.actions.push_back(std::move(action));
+					parser.actions.push_back(string{qy::trim(action)});
 				} else if (action_started && t == "}") {
 					action += t;
 					action_started = false;
@@ -122,8 +122,8 @@ namespace comp {
 											  std::span{ana.rules.begin() + s, sz});
 				s += sz;
 			}
-			parser.analyzer.process();
-			parser.code_gen.gen(parser.analyzer);
+			auto pt = parser.analyzer.process();
+			parser.code_gen.gen(pt, parser.analyzer);
 		}
 	};
 

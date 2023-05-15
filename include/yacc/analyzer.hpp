@@ -41,6 +41,11 @@ namespace comp {
 			name(name), productions(productions), first{} {}
 	};
 
+	struct parsing_table {
+		qy::matrix<sid_t> action;
+		qy::matrix<sid_t> goto_;
+	};
+
 	class SyntacticAnalyzer {
 	public:
 		static const sid_t END_MARKER = 0;
@@ -104,13 +109,8 @@ namespace comp {
 			std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> atn;
 		};
 
-		struct parsing_table {
-			qy::matrix<sid_t> action;
-			qy::matrix<sid_t> goto_;
-		};
-
 	public:
-		void process();
+		parsing_table process();
 
 		/// @brief Get symbol name by symbol id.
 		/// @param sym Symbol id. May be positive or negative.

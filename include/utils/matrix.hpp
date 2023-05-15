@@ -1,3 +1,4 @@
+#include <ranges>
 #include <vector>
 
 namespace qy {
@@ -13,6 +14,10 @@ namespace qy {
 		matrix(size_type rows, size_type cols, const value_type& value) :
 			m_rows{rows}, m_cols{cols}, m_data(rows * cols, value) {}
 
+		size_type rows() const { return m_rows; }
+
+		size_type cols() const { return m_cols; }
+
 		const value_type* data() const { return m_data.data(); }
 
 		value_type* data() { return m_data.data(); }
@@ -24,6 +29,16 @@ namespace qy {
 		void remove_row(size_type r) {
 			m_data.erase(m_data.begin() + r * m_cols, m_data.begin() + (r + 1) * m_cols);
 			m_rows--;
+		}
+
+		auto iter_row(size_type r) const {
+			return std::ranges::subrange(m_data.begin() + r * m_cols,
+										 m_data.begin() + (r + 1) * m_cols);
+		}
+
+		auto iter_row(size_type r) {
+			return std::ranges::subrange(m_data.begin() + r * m_cols,
+										 m_data.begin() + (r + 1) * m_cols);
 		}
 
 	private:
