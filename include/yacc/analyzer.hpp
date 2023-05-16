@@ -46,7 +46,14 @@ namespace comp {
 		qy::matrix<sid_t> goto_;
 	};
 
-	struct parsing_table_compressed {};
+	struct parsing_table_compressed {
+		symbol_vec defact;
+		symbol_vec pact;
+		symbol_vec defgoto;
+		symbol_vec pgoto;
+		symbol_vec table;
+		symbol_vec check;
+	};
 
 	class SyntacticAnalyzer {
 	public:

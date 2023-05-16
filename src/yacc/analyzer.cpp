@@ -12,6 +12,7 @@
 #include <ranges>
 #include <set>
 #include <tl/enumerate.hpp>
+#include <unordered_set>
 
 using tl::views::enumerate;
 
@@ -53,6 +54,7 @@ namespace comp {
 			to_dot(sg, "test_lr1.dot");
 		auto pt = get_LR1_table(sg);
 		auto pt2 = get_LALR1_table(sg, pt);
+		compress_table(pt2);
 		compress_table_more(pt2);
 		return pt2;
 	}
@@ -382,14 +384,18 @@ namespace comp {
 			if (j == n_col)
 				continue;
 			row.c = j;
+			std::unordered_set<sid_t> cnt;
 			for (; j < n_col; j++)
-				if (table.action[i][j] != ERR)
+				if (table.action[i][j] != ERR) {
 					row.l = j - row.c + 1;
-			rows.push_back(row);
+					cnt.insert(table.action[i][j]);
+				}
+			if (cnt.size() > 1)
+				rows.push_back(row);
 		}
 		std::sort(rows.begin(), rows.end(), [](const table_row& r1, const table_row& r2) {
 			return r1.l > r2.l || r1.l == r2.l && r1.r < r2.r;
-		});
+		}); // 排序稍微有点用
 
 		// 下面考虑一种简单的压缩，不涉及行的交错
 
@@ -435,8 +441,11 @@ namespace comp {
 		struct table_row {
 			size_t r, c, l;
 			const sid_t* a;
-			float d;
 		};
+
+		parsing_table_compressed pt;
+		pt.pact.resize(table.action.rows());
+		pt.defact.resize(table.action.rows());
 
 		size_t n_col = table.action.cols();
 		std::vector<table_row> rows;
@@ -449,21 +458,21 @@ namespace comp {
 			if (j == n_col)
 				continue;
 			row.c = j;
+			std::unordered_set<sid_t> cnt;
 			for (; j < n_col; j++)
-				if (table.action[i][j] != ERR)
+				if (table.action[i][j] != ERR) {
 					row.l = j - row.c + 1;
+					cnt.insert(table.action[i][j]);
+				}
 			row.a = &table.action[i][row.c];
-			row.d = -(float)std::count(row.a, row.a + row.l, ERR) / row.l;
-			rows.push_back(row);
+			if (cnt.size() > 1)
+				rows.push_back(row);
+			pt.defact[i] = cnt.size() > 1 ? 0 : *cnt.begin();
 		}
-		// std::ranges::sort(rows, {}, &table_row::d);
-		// std::sort(rows.begin(), rows.end(), [](const table_row& r1, const table_row& r2) {
-		// 	return r1.l > r2.l || r1.l == r2.l && r1.r < r2.r;
-		// });
 
 		// 下面考虑贪心嵌入
 
-		std::vector<sid_t> tab;
+		auto& tab = pt.table;
 
 		for (auto& row : rows) {
 			for (size_t i = 0; i <= tab.size(); i++) { // 开头
@@ -482,6 +491,7 @@ namespace comp {
 					} else {
 						std::copy_n(row.a, row.l, tab.begin() + i);
 					}
+					pt.pact[row.r] = i;
 					break;
 				}
 			}
@@ -489,6 +499,6 @@ namespace comp {
 
 		fmt::print("compressed: {}\n", tab.size());
 
-		return {};
+		return pt;
 	}
 } // namespace comp
