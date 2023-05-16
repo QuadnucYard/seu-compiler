@@ -25,7 +25,7 @@ namespace comp{
             if(it!=tokens.begin() && it==tokens.end())tokens.push_back(w);//把当前的字符都读进来
 
         std::queue<vector<int>> waitsets;
-        std::<int> subset0;
+        std::vector<int> subset0;
         sebset0.pushback(0);
         std::vector<vector<int>>subsets;
 
