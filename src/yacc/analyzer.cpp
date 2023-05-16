@@ -478,7 +478,8 @@ namespace comp {
 			for (size_t i = 0; i <= tab.size(); i++) { // 开头
 				bool flag = true;
 				for (size_t j = 0; j < row.l; j++) {
-					if (i + j < tab.size() && tab[i + j] != ERR && row.a[j] != ERR) {
+					if (i + j < tab.size() &&
+						(tab[i + j] != ERR && row.a[j] != ERR && tab[i + j] != row.a[j])) {
 						flag = false;
 						break;
 					}
@@ -488,10 +489,14 @@ namespace comp {
 					if (i + row.l > tab.size()) {
 						std::copy_n(row.a, tab.size() - i, tab.begin() + i);
 						tab.insert(tab.end(), row.a + tab.size() - i, row.a + row.l);
+						pt.check.resize(tab.size());
 					} else {
 						std::copy_n(row.a, row.l, tab.begin() + i);
 					}
-					pt.pact[row.r] = i;
+					for (size_t j = 0; j< row.l; j++) 
+						if (row.a[j] != ERR)
+							pt.check[i + j] = row.a[j];
+						pt.pact[row.r] = i;
 					break;
 				}
 			}
