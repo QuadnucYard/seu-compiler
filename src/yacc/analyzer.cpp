@@ -53,7 +53,7 @@ namespace comp {
 			to_dot(sg, "test_lr1.dot");
 		auto pt = get_LR1_table(sg);
 		auto pt2 = get_LALR1_table(sg, pt);
-		compress_table(pt2);
+		compress_table_more(pt2);
 		return pt2;
 	}
 
@@ -426,6 +426,68 @@ namespace comp {
 				gaps.emplace(j - k, ins + k);
 			}
 		}
+
+		return {};
+	}
+
+	parsing_table_compressed SyntacticAnalyzer::compress_table_more(
+		const parsing_table& table) const {
+		struct table_row {
+			size_t r, c, l;
+			const sid_t* a;
+			float d;
+		};
+
+		size_t n_col = table.action.cols();
+		std::vector<table_row> rows;
+		for (size_t i = 0; i < table.action.rows(); i++) {
+			table_row row;
+			row.r = i;
+			size_t j = 0;
+			while (j < n_col && table.action[i][j] == ERR)
+				j++;
+			if (j == n_col)
+				continue;
+			row.c = j;
+			for (; j < n_col; j++)
+				if (table.action[i][j] != ERR)
+					row.l = j - row.c + 1;
+			row.a = &table.action[i][row.c];
+			row.d = -(float)std::count(row.a, row.a + row.l, ERR) / row.l;
+			rows.push_back(row);
+		}
+		// std::ranges::sort(rows, {}, &table_row::d);
+		// std::sort(rows.begin(), rows.end(), [](const table_row& r1, const table_row& r2) {
+		// 	return r1.l > r2.l || r1.l == r2.l && r1.r < r2.r;
+		// });
+
+		// 下面考虑贪心嵌入
+
+		std::vector<sid_t> tab;
+
+		for (auto& row : rows) {
+			for (size_t i = 0; i <= tab.size(); i++) { // 开头
+				bool flag = true;
+				for (size_t j = 0; j < row.l; j++) {
+					if (i + j < tab.size() && tab[i + j] != ERR && row.a[j] != ERR) {
+						flag = false;
+						break;
+					}
+				}
+				if (flag) {
+					// [i, i + l]
+					if (i + row.l > tab.size()) {
+						std::copy_n(row.a, tab.size() - i, tab.begin() + i);
+						tab.insert(tab.end(), row.a + tab.size() - i, row.a + row.l);
+					} else {
+						std::copy_n(row.a, row.l, tab.begin() + i);
+					}
+					break;
+				}
+			}
+		}
+
+		fmt::print("compressed: {}\n", tab.size());
 
 		return {};
 	}
