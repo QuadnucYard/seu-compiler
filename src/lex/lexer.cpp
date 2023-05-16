@@ -1,4 +1,5 @@
 #include "lex/lexer.hpp"
+#include "lex/genc.hpp"
 #include "lex/regex.hpp"
 #include "utils/string_utils.hpp"
 #include <fmt/core.h>
@@ -64,6 +65,9 @@ namespace comp {
 			auto dfa = lexer.dfa_builder.join_nfa();
 			dfa.to_dot("lex_dfa.dot");
 			// TODO Generate and output FA
+			LexCodeGen codegen(lexer);
+			codegen(dfa);
+			codegen.dump("lex.yy.gen.c");
 		}
 	};
 
@@ -82,8 +86,7 @@ namespace comp {
 			if (h.code(s))
 				continue;
 			else if (s == "%%") {
-				if (++h.section == 2)
-					hRule.finalize();
+				++h.section;
 				continue;
 			}
 			if (h.section == 0)

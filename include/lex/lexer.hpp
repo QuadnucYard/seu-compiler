@@ -24,5 +24,7 @@ namespace comp {
 
 		struct DefHandler;
 		struct RuleHandler;
+
+		friend class LexCodeGen;
 	};
 } // namespace comp

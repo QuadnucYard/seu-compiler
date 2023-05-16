@@ -11,8 +11,8 @@ else
 end
 
 add_rules("mode.debug", "mode.release")
-add_rules("c.unity_build")
-add_rules("c++.unity_build")
+-- add_rules("c.unity_build")
+-- add_rules("c++.unity_build")
 
 function install_package(package_path)
     return function () 
@@ -36,6 +36,7 @@ add_requires("tl-ranges")
 add_includedirs("include")
 add_includedirs("ext/tl-ranges/include")
 
+-- add_includedirs("E:/Program Files/vcpkg/installed/x64-windows-static/include")
 -- add_linkdirs("E:/Program Files/vcpkg/installed/x64-windows-static/lib")
 
 -- add_defines("FMT_HEADER_ONLY")
@@ -50,21 +51,20 @@ function add_test_target(...)
 end
 
 function add_template(path, export_name)
-	before_build(function(target)
-        print("before_build")
+	on_load(function(target)
 		local fin = io.open(path, "r")
-		local fout = io.open("$(buildir)/@.cpp", "w")
-		assert(fin)
-		assert(fout)
+		local fout = io.open("$(buildir)/@"..export_name..".cpp", "w")
+		assert(fin, "Can't open input file!")
+		assert(fout, "Can't open output file!")
 		fout:write("const char* " .. export_name .. " = \n")
 		for line in fin:lines() do
-			fout:write("R\"||(" .. line .. ")||\"\"\\n\"\n")
+			fout:write("R\"%%(" .. line .. ")%%\"\"\\n\"\n")
 		end
 		fout:write(";")
 		fin:close()
         fout:close()
 	end)
-    add_files("$(buildir)/@.cpp")
+    add_files("$(buildir)/@"..export_name..".cpp")
 end
 
 add_test_target("utils", "graph")
@@ -73,6 +73,7 @@ target("lexer")
     set_kind("static")
     add_files("src/common/*.cpp", "src/lex/*.cpp|lex.cpp")
     add_packages("fmt")
+    add_template("templates/lex.yy.c", "lex_tmpl")
 
 target("lex")
     add_deps("lexer")
@@ -82,6 +83,7 @@ target("parser")
     set_kind("static")
     add_files("src/common/*.cpp", "src/yacc/*.cpp|yacc.cpp")
     add_packages("fmt", "tl-ranges")
+    add_template("templates/y.tab.cpp", "yacc_tmpl")
 
 target("yacc")
     add_deps("parser")
