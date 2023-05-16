@@ -5,7 +5,7 @@
 
 namespace comp {
     std::vector<int>nultrans;
-   
+     
     void gen_nxt_table(DFA dfa){
         std::string result = {};
         result += fmt::sprint(
