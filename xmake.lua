@@ -2,17 +2,19 @@ set_project("seu-compiler")
 
 set_languages("c++20")
 -- set_warnings("all", "error")
-add_cxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
-add_mxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
+
 if is_plat("windows") then
     add_cxflags("/wd4819") -- Add this if using msvc
+else
+    add_cxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
+    add_mxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
 end
 
 add_rules("mode.debug", "mode.release")
 add_rules("c.unity_build")
 add_rules("c++.unity_build")
 
-install_package = function (package_path)
+function install_package(package_path)
     return function () 
         add_deps("cmake")
         set_sourcedir(path.join(os.scriptdir(), package_path))
@@ -28,10 +30,15 @@ end
 -- package("dynamic_bitset", install_package("ext/dynamic_bitset"))
 package("tl-ranges", install_package("ext/tl-ranges"))
 
-add_requires("fmt", "tl-ranges")
+add_requires("vcpkg::fmt", {alias = "fmt"})
+add_requires("tl-ranges")
 
 add_includedirs("include")
 add_includedirs("ext/tl-ranges/include")
+
+-- add_linkdirs("E:/Program Files/vcpkg/installed/x64-windows-static/lib")
+
+-- add_defines("FMT_HEADER_ONLY")
 
 function add_test_target(...)
     for _, name in ipairs{...} do
@@ -42,21 +49,53 @@ function add_test_target(...)
     end
 end
 
+function add_template(path, export_name)
+	before_build(function(target)
+        print("before_build")
+		local fin = io.open(path, "r")
+		local fout = io.open("$(buildir)/@.cpp", "w")
+		assert(fin)
+		assert(fout)
+		fout:write("const char* " .. export_name .. " = \n")
+		for line in fin:lines() do
+			fout:write("R\"||(" .. line .. ")||\"\"\\n\"\n")
+		end
+		fout:write(";")
+		fin:close()
+        fout:close()
+	end)
+    add_files("$(buildir)/@.cpp")
+end
+
 add_test_target("utils", "graph")
 
-target("lex")
-    set_kind("binary")
-    add_files("src/common/*.cpp", "src/lex/*.cpp")
+target("lexer")
+    set_kind("static")
+    add_files("src/common/*.cpp", "src/lex/*.cpp|lex.cpp")
     add_packages("fmt")
 
-target("yacc")
-    set_kind("binary")
-    add_files("src/common/*.cpp", "src/yacc/*.cpp")
+target("lex")
+    add_deps("lexer")
+    add_files("src/lex/lex.cpp")
+
+target("parser")
+    set_kind("static")
+    add_files("src/common/*.cpp", "src/yacc/*.cpp|yacc.cpp")
     add_packages("fmt", "tl-ranges")
 
+target("yacc")
+    add_deps("parser")
+    add_files("src/yacc/yacc.cpp")
+
+
 target("test_fa")
-    add_files("test/test_fa.cpp", "src/lex/fa.cpp")
-    add_packages("fmt")
+    add_deps("lexer")
+    add_files("test/test_fa.cpp")
+
+target("example_templater")
+    add_template("templates/lex.yy.c", "TEMPLATE")
+    add_files("examples/templater.cpp")
+
 
 --
 -- If you want to known more usage about xmake, please see https://xmake.io
