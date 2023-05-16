@@ -8,13 +8,11 @@ namespace comp {
 	class SyntacticAnalyzer;
 
 	class yacc_code {
-		std::vector<std::vector<int>> LALR1_action;
-		std::vector<std::vector<int>> LALR1_goto;
 		qy::templater temp;
 
 	public:
 		yacc_code() = default;
-		yacc_code(const fs::path& path);
+		yacc_code(std::string_view tmpl);
 		void gen(const parsing_table& pt, const SyntacticAnalyzer& analyzer);
 		void gen_table(const parsing_table& pt);
 		void gen_case(const SyntacticAnalyzer& analyzer);

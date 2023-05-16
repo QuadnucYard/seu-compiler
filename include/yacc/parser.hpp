@@ -13,6 +13,8 @@ namespace comp {
 		};
 
 	public:
+		Parser();
+
 		void process(const fs::path& src_path);
 
 	private:
@@ -25,7 +27,7 @@ namespace comp {
 		std::vector<string> actions;
 		dict<sid_t> symbol_map; // Token id to index, token为正数，nonterminal为负数
 		SyntacticAnalyzer analyzer;
-		yacc_code code_gen{"E:/Project/seu-compiler/templates/y.tab.cpp"};
+		yacc_code code_gen;
 
 		struct DeclHandler;
 		struct RulesHandler;

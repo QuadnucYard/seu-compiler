@@ -6,7 +6,7 @@
 
 namespace comp {
 
-	yacc_code::yacc_code(const fs::path& path) : temp{path.string()} {}
+	yacc_code::yacc_code(std::string_view tmpl) : temp{tmpl} {}
 
 	void yacc_code::gen(const parsing_table& pt, const SyntacticAnalyzer& analyzer) {
 		gen_table(pt);

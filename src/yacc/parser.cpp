@@ -1,12 +1,13 @@
 #include "yacc/parser.hpp"
 #include "utils/exceptions.hpp"
 #include "utils/string_utils.hpp"
-#include <fmt/core.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
 #include <fstream>
 #include <sstream>
 #include <stack>
+
+extern const char* yacc_tmpl;
 
 namespace comp {
 
@@ -127,6 +128,8 @@ namespace comp {
 		}
 	};
 
+	Parser::Parser() : code_gen{yacc_tmpl} {}
+
 	void comp::Parser::process(const fs::path& src_path) {
 		std::ifstream source_file(src_path);
 		if (!source_file.is_open())
@@ -180,8 +183,6 @@ extern YYSTYPE yylval;)";
 		code_gen.dump("y.tab.cpp");
 	}
 
-	sid_t comp::Parser::get_symbol_id(const string& name) const {
-		return symbol_map.at(name);
-	}
+	sid_t comp::Parser::get_symbol_id(const string& name) const { return symbol_map.at(name); }
 
 } // namespace comp
