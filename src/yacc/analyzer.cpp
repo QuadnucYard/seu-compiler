@@ -323,19 +323,22 @@ namespace comp {
 			if (kern.size() < 2)
 				continue;
 			item_set new_set{states[kern[0]]};
-			symbol_set ff;
-			for (auto& item : new_set.items) {
-				if (!item.has_next())
-					ff &= item.follow;
-			}
-			for (size_t j = 1; j < kern.size(); j++) {
+			symbol_set follows;
+			bool can_merge = true;
+			for (size_t j = 0; j < kern.size() && can_merge; j++) {
 				for (auto&& [k, item] : enumerate(states[kern[j]].items)) {
-					new_set.items[k].follow &= item.follow;
-					if (!new_set.items[k].has_next())
-						ff &= new_set.items[k].follow;
+					new_set.items[k].follow |= item.follow;
+					if (!item.has_next()) {
+						if (j > 0 && (follows & item.follow).any()) {
+							can_merge = false;
+							break;
+						} else
+							follows |= item.follow;
+					}
 				}
 			}
-			// TODO fix ff
+			if (!can_merge)
+				continue;
 			states[kern[0]] = new_set;
 			for (auto k : kern)
 				state_map[k] = kern[0];
@@ -493,10 +496,10 @@ namespace comp {
 					} else {
 						std::copy_n(row.a, row.l, tab.begin() + i);
 					}
-					for (size_t j = 0; j< row.l; j++) 
+					for (size_t j = 0; j < row.l; j++)
 						if (row.a[j] != ERR)
 							pt.check[i + j] = row.a[j];
-						pt.pact[row.r] = i;
+					pt.pact[row.r] = i;
 					break;
 				}
 			}
