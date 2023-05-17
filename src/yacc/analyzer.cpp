@@ -297,7 +297,7 @@ namespace comp {
 	}
 
 	parsing_table SyntacticAnalyzer::get_LALR1_table(const state_graph& LR1_states,
-													 const parsing_table& LR1_table) const {
+													 parsing_table& LR1_table) const {
 		auto states = LR1_states.states;
 		size_t n_states = states.size(), n_tokens = tokens.size(),
 			   n_nonterminals = nonterminals.size();
@@ -316,12 +316,14 @@ namespace comp {
 
 		std::vector<size_t> state_map(n_states); // 删除状态后，标号重映射
 		std::iota(state_map.begin(), state_map.end(), 0);
+		int len=LR1_table.action.cols();
 
 		for (auto&& kern : kernel_grouped) {
 			if (kern.size() < 2)
 				continue;
 			item_set new_set{states[kern[0]]};
 			symbol_set follows;
+
 			bool can_merge = true;
 			for (size_t j = 0; j < kern.size() && can_merge; j++) {
 				for (auto&& [k, item] : enumerate(states[kern[j]].items)) {
@@ -330,13 +332,22 @@ namespace comp {
 						if (j > 0 && (follows & item.follow).any()) {
 							can_merge = false;
 							break;
-						} else
+						} else{
 							follows |= item.follow;
+						}
 					}
 				}
 			}
 			if (!can_merge)
 				continue;
+
+			for(int j=0;j<kern.size();j++){
+				for(int k=0;k<len;k++){
+					auto index=LR1_table.action[kern[j]][k];
+					if(index<-1)
+						LR1_table.action[kern[0]][k]=index;
+				}
+			}
 			states[kern[0]] = new_set;
 			for (auto k : kern)
 				state_map[k] = kern[0];
