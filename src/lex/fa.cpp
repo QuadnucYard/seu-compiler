@@ -1,5 +1,6 @@
 #include "lex/fa.hpp"
 #include "lex/tompson.hpp"
+#include "utils/graphviz.hpp"
 #include "utils/myalgo.hpp"
 #include <bitset>
 #include <queue>
@@ -11,22 +12,23 @@ namespace comp {
 
 #ifdef GRAPH_FMT
 	void DFA::to_dot(const fs::path& path) const {
-		auto out = fmt::output_file(path.string());
-		out.print("digraph G {{\n");
-		out.print("    rankdir = LR;\n");
-		out.print("    node [shape = none];\n");
-		out.print("    \"\";\n");
-		out.print("    node [shape = doublecircle];\n");
+		qy::graphviz::digraph dot(path.string(), "G");
+		dot.rankdir("LR")
+			.node_option("fontname", "Consolas")
+			.node_option("fixedsize", 1)
+			.edge_option("fontname", "Consolas");
+		dot.node_option("shape", "none").node("\"\"");
+		dot.node_option("shape", "doublecircle").node_option("fontname", "Consolas");
 		for (auto&& [i, a] : tl::views::enumerate(accept_states))
 			if (a != DFABuilder::NON_ACCEPT)
-				out.print("    {};\n", i);
-		out.print("    node [shape = circle];\n");
-		out.print("    \"\"  -> {};\n", start);
+				dot.node(i, {{"xlabel", fmt::format("#{}", a)}});
+		dot.node_option("shape", "circle");
+		dot.edge("\"\"", start);
 		for (auto&& [u, v, w] : graph.edges())
-			out.print("    {} -> {} [label=\"{}\"];\n", u, v,
-					  isprint(w) ? (w == '"' ? fmt::format("'\\\"'") : fmt::format("'{}'", char(w)))
-								 : fmt::format("{}", w));
-		out.print("}}\n");
+			dot.edge(u, v,
+					 isprint(w)
+						 ? (w == '"' ? fmt::to_string("'\\\"'") : fmt::format("'{}'", char(w)))
+						 : fmt::to_string(w));
 	}
 #endif
 
@@ -221,11 +223,11 @@ namespace comp {
 			vid_t acc = NON_ACCEPT;
 			if (nfa.accept == -1) {
 				// accept_states is enabled
-				for (auto a : nfa.accept_states)
-					if (a != NON_ACCEPT) {
-						acc = a;
-						break;
+				for (size_t j = 0; j < nfa.accept_states.size(); j++) {
+					if (auto a = nfa.accept_states[j]; a != NON_ACCEPT && states[i].test(j)) {
+						acc = acc == NON_ACCEPT ? a : std::min(acc, a);
 					}
+				}
 			} else {
 				acc = states[i].test(nfa.accept) ? DUMMY_ACCEPT : NON_ACCEPT;
 			}
