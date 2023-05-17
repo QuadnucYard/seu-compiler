@@ -8,7 +8,7 @@ int main(int argc, char const* argv[]) {
 	argparse::ArgumentParser prog("seu-lex");
 
 	prog.add_argument("input").help("Path of input .l file");
-	prog.add_argument("-oFILE", "--outfile").default_value("lex.yy.c");
+	prog.add_argument("-oFILE", "--outfile").default_value("lex.yy.c"s);
 	prog.add_argument("--scanner-nfa")
 		.default_value(""s)
 		.implicit_value("nfa.dot"s)

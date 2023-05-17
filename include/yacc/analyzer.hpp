@@ -1,6 +1,7 @@
 #pragma once
 #include "common/recognizer.hpp"
 #include "utils/matrix.hpp"
+#include "yacc/options.hpp"
 #include <bitset>
 #include <span>
 #include <vector>
@@ -120,7 +121,7 @@ namespace comp {
 		};
 
 	public:
-		parsing_table process();
+		parsing_table process(const ParserOptions& options);
 
 		/// @brief Get symbol name by symbol id.
 		/// @param sym Symbol id. May be positive or negative.
@@ -141,13 +142,12 @@ namespace comp {
 		item_set closure(const item_set& is) const;
 		parsing_table get_LR1_table(const state_graph& LR1_states) const;
 		parsing_table get_LALR1_table(const state_graph& LR1_states,
-									   parsing_table& LR1_table) const;
+									  parsing_table& LR1_table) const;
 
-	public:								  
+	public:
 		parsing_table_compressed compress_table(const parsing_table& table) const;
 		parsing_table_compressed compress_table_more(const parsing_table& table) const;
 
-	
 		std::vector<string> tokens;			   // All tokens involved. Index == sid
 		production_list rules;				   // All rules involved.
 		std::vector<nonterminal> nonterminals; // All nonterminals involved. Index == -sid

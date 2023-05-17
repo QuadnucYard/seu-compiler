@@ -47,7 +47,7 @@ namespace comp {
 		string action;
 		bool action_started;
 		string t;
-		bool ended;
+		bool ended{false};
 
 		RulesHandler(Parser& parser) : parser(parser) {
 			// BUG: Here aug_start is empty!
@@ -94,6 +94,8 @@ namespace comp {
 
 		/// @brief Convert raw rules into discretized rules, and generate FA.
 		void finalize() {
+			if (ended)
+				return;
 			ended = true;
 			auto& ana = parser.analyzer;
 
@@ -112,10 +114,8 @@ namespace comp {
 					}
 					ana.rules.emplace_back(static_cast<sid_t>(ana.rules.size()),
 										   static_cast<sid_t>(i), sv, "");
-					// TODO action也是与rule对应的
 				}
 			}
-			// ana.rules[0].rhs.push_back(SyntacticAnalyzer::END_MARKER); // Add end-marker
 			// 必须要在最后，这样才能保证rules是固定的，span有效
 			for (size_t i = 0, s = 0; i < parser.rules.size(); i++) {
 				size_t sz = parser.rules[i].rhs.size();
@@ -123,25 +123,24 @@ namespace comp {
 											  std::span{ana.rules.begin() + s, sz});
 				s += sz;
 			}
-			auto pt = parser.analyzer.process();
-			parser.code_gen.gen(pt, parser.analyzer);
 		}
 	};
 
-	Parser::Parser() : code_gen{yacc_tmpl} {}
+	Parser::Parser(const Options& options) : options{options} {}
 
 	void comp::Parser::process(const fs::path& src_path) {
 		std::ifstream source_file(src_path);
 		if (!source_file.is_open())
 			throw std::runtime_error("File not found");
 
-		std::ofstream tab_inc_file("y.tab.h");
-		std::ofstream tab_src_file("y.tab.c");
+		std::ofstream tab_inc_file(options.header_file);
 
-		SourceHandler h(tab_src_file);
+		SourceHandler h;
 
 		DeclHandler hDecl(*this, tab_inc_file);
 		RulesHandler hRule(*this);
+
+		yacc_code code_gen{yacc_tmpl};
 
 		tab_inc_file << "enum yytokentype {\n";
 
@@ -160,9 +159,8 @@ typedef int YYSTYPE;
 #endif
 
 extern YYSTYPE yylval;)";
-				} else if (h.section == 2) {
-					hRule.finalize();
-					// TODO Generate and output FA
+					code_gen.templater().set_string("[[USER_CODE_1]]",
+													h.code_content + "[[USER_CODE_1]]");
 				}
 				continue;
 			}
@@ -177,10 +175,16 @@ extern YYSTYPE yylval;)";
 			}
 		}
 		// End process
-		if (!hRule.ended) {
-			hRule.finalize();
-		}
-		code_gen.dump("y.tab.cpp");
+		hRule.finalize();
+
+		code_gen.templater().set_string("[[USER_CODE_1]]", "");
+		code_gen.templater().set_string("[[USER_CODE_2]]", "");
+		code_gen.templater().set_string("[[USER_CODE_3]]", h.code_content);
+
+		auto pt = analyzer.process(options);
+		code_gen.gen(pt, analyzer);
+
+		code_gen.dump(options.outfile);
 	}
 
 	sid_t comp::Parser::get_symbol_id(const string& name) const { return symbol_map.at(name); }

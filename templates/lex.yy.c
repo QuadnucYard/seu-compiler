@@ -292,6 +292,8 @@ static char *yy_last_accepting_cpos;
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
 
+[[USER_CODE_1]]
+
 #ifndef YY_SKIP_YYWRAP
 #ifdef __cplusplus
 extern "C" int yywrap YY_PROTO(( void ));
@@ -1383,4 +1385,4 @@ int main()
 	}
 #endif
 
-[[USER_SEC2]]
+[[USER_CODE_3]]

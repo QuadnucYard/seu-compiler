@@ -23,6 +23,8 @@ namespace comp {
 
 		void gen_defact(const SyntacticAnalyzer& analyzer,const parsing_table& pt);
 
+		inline qy::templater& templater() { return temp; }
+
 		inline void dump(const fs::path& path) { temp.dump(path); }
 	};
 } // namespace comp

@@ -40,7 +40,7 @@ namespace comp {
 						  o.items.begin() + o.kernel_size);
 	}
 
-	parsing_table SyntacticAnalyzer::process() {
+	parsing_table SyntacticAnalyzer::process(const ParserOptions& options) {
 		get_nullables();
 		get_firsts();
 
@@ -50,8 +50,8 @@ namespace comp {
 		// fmt::print("\n");
 
 		auto sg = get_LR1_states();
-		if (sg.states.size() <= 100)
-			to_dot(sg, "test_lr1.dot");
+		if (!options.lr1_pda_dot.empty())
+			to_dot(sg, options.lr1_pda_dot);
 		auto pt = get_LR1_table(sg);
 		auto pt2 = get_LALR1_table(sg, pt);
 		compress_table(pt2);

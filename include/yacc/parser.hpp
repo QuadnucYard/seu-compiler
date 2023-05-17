@@ -1,11 +1,13 @@
 #pragma once
 #include "analyzer.hpp"
+#include "options.hpp"
 #include "yacc_gen.hpp"
 
 namespace comp {
 
 	class Parser : public Recognizer {
-	private:
+		using Options = ParserOptions;
+
 		/// @brief Raw description of rules
 		struct RawRule {
 			string lhs;
@@ -13,7 +15,7 @@ namespace comp {
 		};
 
 	public:
-		Parser();
+		Parser(const Options& options);
 
 		void process(const fs::path& src_path);
 
@@ -22,12 +24,12 @@ namespace comp {
 
 	private:
 		inline static string aug_start{"$start"};
+		Options options;
 		string start_symbol;
 		std::vector<RawRule> rules;
 		std::vector<string> actions;
 		dict<sid_t> symbol_map; // Token id to index, token为正数，nonterminal为负数
 		SyntacticAnalyzer analyzer;
-		yacc_code code_gen;
 
 		struct DeclHandler;
 		struct RulesHandler;
