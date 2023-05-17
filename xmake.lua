@@ -14,30 +14,11 @@ add_rules("mode.debug", "mode.release")
 -- add_rules("c.unity_build")
 -- add_rules("c++.unity_build")
 
-function install_package(package_path)
-    return function () 
-        add_deps("cmake")
-        set_sourcedir(path.join(os.scriptdir(), package_path))
-        on_install(function (package)
-            local configs = {}
-            table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
-            table.insert(configs, "-DBUILD_SHARED_LIBS=" .. (package:config("shared") and "ON" or "OFF"))
-            import("package.tools.cmake").install(package, configs)
-        end)
-    end
-end
-
--- package("dynamic_bitset", install_package("ext/dynamic_bitset"))
-package("tl-ranges", install_package("ext/tl-ranges"))
-
 add_requires("vcpkg::fmt", {alias = "fmt"})
-add_requires("tl-ranges")
+add_requires("vcpkg::argparse", {alias = "argparse"})
+add_requires("vcpkg::tl-ranges", {alias = "tl-ranges"})
 
 add_includedirs("include")
-add_includedirs("ext/tl-ranges/include")
-
--- add_includedirs("E:/Program Files/vcpkg/installed/x64-windows-static/include")
--- add_linkdirs("E:/Program Files/vcpkg/installed/x64-windows-static/lib")
 
 -- add_defines("FMT_HEADER_ONLY")
 
@@ -78,6 +59,7 @@ target("lexer")
 target("lex")
     add_deps("lexer")
     add_files("src/lex/lex.cpp")
+    add_packages("argparse")
 
 target("parser")
     set_kind("static")
@@ -88,6 +70,7 @@ target("parser")
 target("yacc")
     add_deps("parser")
     add_files("src/yacc/yacc.cpp")
+    add_packages("argparse")
 
 
 target("test_fa")
@@ -98,7 +81,11 @@ target("example_templater")
     add_template("templates/lex.yy.c", "TEMPLATE")
     add_files("examples/templater.cpp")
 
+target("example_output")
+    add_files("examples/output.cpp")
+    add_packages("fmt", "tl-ranges")
 
+    
 --
 -- If you want to known more usage about xmake, please see https://xmake.io
 --
