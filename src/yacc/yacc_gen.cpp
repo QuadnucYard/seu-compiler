@@ -1,8 +1,10 @@
 #include "yacc/yacc_gen.hpp"
+#include "utils/outfmt.hpp"
 #include "yacc/parser.hpp"
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
 #include <ranges>
+
 
 namespace comp {
 
@@ -17,9 +19,9 @@ namespace comp {
 		string s_action;
 		string s_goto;
 		for (int i = 0; i < pt.action.rows(); i++)
-			s_action += fmt::format("{{{}}}, \n", fmt::join(pt.action.iter_row(i), ", "));
+			s_action += fmt::format("{},\n", qy::format_array(pt.action.iter_row(i)));
 		for (int i = 0; i < pt.goto_.rows(); i++)
-			s_goto += fmt::format("{{{}}}, \n", fmt::join(pt.goto_.iter_row(i), ", "));
+			s_goto += fmt::format("{},\n", qy::format_array(pt.goto_.iter_row(i)));
 		temp.set_string("[[action_table]]", s_action);
 		temp.set_string("[[goto_table]]", s_goto);
 	}
@@ -28,12 +30,12 @@ namespace comp {
 		std::string result = {};
 		result += "switch (base - info) {\n";
 		for (auto& prod : analyzer.rules) {
-			result += fmt::sprintf(
-				R"(case %d:
+			if (!prod.action.empty())
+				result += fmt::sprintf(
+					R"(case %d:
     %s
-    pop_stack(%d, %d);
 )",
-				prod.id, prod.action, prod.rhs.size(), prod.lhs);
+					prod.id, prod.action);
 		}
 		result += "        }\n";
 		temp.set_string("[[reduce]]", result);
