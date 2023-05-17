@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stack>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -9,6 +10,11 @@ const int base = -1;
 int LALR1_action[][128] = {[[action_table]]};
 int LALR1_goto[][128] = {[[goto_table]]};
 string yytex;
+stack<int> token_stack;
+stack<int> state_stack;
+
+std::vector<int> get_rhs={[[get_rhs]]};
+std::vector<int> get_newstate={[[get_newstate]]};
 
 void pop_stack(int cnt, int new_state) {
 	for (int i = 0; i < cnt; i++) {
@@ -19,15 +25,13 @@ void pop_stack(int cnt, int new_state) {
 }
 
 void parse() {
-	stack<int> token_stack;
-	stack<int> state_stack;
-
 	auto point = yylex();
 	//
 	token_stack.push(point);
 	state_stack.push(0);
 	while (point != '$') {
 		auto info = LALR1_action[state_stack.top()][-point];
+		
 		if (info >= 0)
 			state_stack.push(info);
 		else if (info < base) {
@@ -40,6 +44,7 @@ void parse() {
             */
 			[[reduce]]
 
+			pop_stack(get_rhs[base - info],get_newstate[base-info]);
 			auto next_info = LALR1_goto[state_stack.top()][token_stack.top()];
 			state_stack.push(next_info);
 		}
