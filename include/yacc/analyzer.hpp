@@ -141,7 +141,7 @@ namespace comp {
 		item_set closure(const item_set& is) const;
 		parsing_table get_LR1_table(const state_graph& LR1_states) const;
 		parsing_table get_LALR1_table(const state_graph& LR1_states,
-									  const parsing_table& LR1_table) const;
+									   parsing_table& LR1_table) const;
 
 	public:								  
 		parsing_table_compressed compress_table(const parsing_table& table) const;
