@@ -271,11 +271,26 @@ static void yy_fatal_error YY_PROTO(( yyconst char msg[] ));
 	*yy_cp = '\0'; \
 	yy_c_buf_p = yy_cp;
 
-[[yy_nxt]]
+#define YY_NUM_RULES [[YY_NUM_RULES]]
+#define YY_END_OF_BUFFER [[YY_END_OF_BUFFER]]
 
-[[yy_accept]]
+static yyconst short int yy_accept[] = {
+[[YY_ACCEPT]]};
 
-[[yy_NUL_trans]]
+static yyconst short yy_nxt[][128] = {
+[[YY_NXT]]};
+
+static yyconst yy_state_type yy_NUL_trans[] = {
+[[YY_NUL_TRANS]]};
+
+static yy_state_type yy_last_accepting_state;
+static char *yy_last_accepting_cpos;
+
+#define REJECT reject_used_but_not_detected
+#define yymore() yymore_used_but_not_detected
+#define YY_MORE_ADJ 0
+#define YY_RESTORE_YY_MORE_OFFSET
+char *yytext;
 
 #ifndef YY_SKIP_YYWRAP
 #ifdef __cplusplus
@@ -415,12 +430,8 @@ YY_MALLOC_DECL
 
 #define YY_RULE_SETUP \
 	YY_USER_ACTION
-)");
-	};
 
-	void LexCodeGen::yy_gen_yylex() {
-		std::string result = {};
-		result += fmt::sprintf(R"(YY_DECL
+YY_DECL
 	{
 	register yy_state_type yy_current_state;
 	register char *yy_cp, *yy_bp;
@@ -485,7 +496,13 @@ yy_find_action:
 do_action:	/* This label is used only to access EOF actions. */
 		switch ( yy_act )
 	{ /* beginning of action switch */
-	
+	case 0: /* must back up */
+			/* undo the effects of YY_DO_BEFORE_ACTION */
+		*yy_cp = yy_hold_char;
+		yy_cp = yy_last_accepting_cpos + 1;
+		yy_current_state = yy_last_accepting_state;
+		goto yy_find_action;	
+
 	[[ACTIONS]]
 
 	case YY_STATE_EOF(INITIAL):

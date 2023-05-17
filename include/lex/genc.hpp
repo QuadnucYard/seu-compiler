@@ -18,12 +18,11 @@ namespace comp {
 	private:
 		void gen_nxt_table(const DFA& dfa);
 		void gen_accept_table(const DFA& dfa);
-		void gen_nultrans();
 		void gen_case();
 
 	private:
 		const Lexer& lexer;
-		std::vector<int> nultrans;
+
 		qy::templater tmpl;
 	};
 } // namespace comp
