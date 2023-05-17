@@ -48,7 +48,7 @@ namespace comp {
 		/// @param re Regular expression.
 		void add_re(const string& re);
 
-		DFA join_nfa() const;
+		std::pair<NFA, DFA> join_nfa() const;
 
 	private:
 		/// @brief Convert RE to NFA.

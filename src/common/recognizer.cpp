@@ -2,7 +2,7 @@
 
 namespace comp {
 
-	bool Recognizer::SourceHandler::code(const std::string& s) {
+	bool Recognizer::SourceHandler::code(const string& s) {
 		if (coded && s == "%}") {
 			coded = false;
 			return true;
@@ -10,7 +10,7 @@ namespace comp {
 			coded = true;
 			return true;
 		} else if (coded || section == 2) {
-			output_file << s << '\n';
+			code_content.append(s).push_back('\n');
 			return true;
 		}
 		return false;

@@ -275,7 +275,7 @@ namespace comp {
 		return res;
 	}
 
-	DFA DFABuilder::join_nfa() const {
+	std::pair<NFA, DFA> DFABuilder::join_nfa() const {
 		// 图要join在一起，states也一样
 		NFA nfa;
 		nfa.start = 0;
@@ -290,8 +290,7 @@ namespace comp {
 			int s = static_cast<int>(nfa.size()) + x.start; // start在新图中的位置
 			nfa.graph.join(x.graph);
 			nfa.graph.add_edge(0, s, EPSILON);
-			// nfa.to_dot("lex_nfa.dot");
 		}
-		return subset(nfa);
+		return {std::move(nfa), std::move(subset(nfa))};
 	}
 } // namespace comp

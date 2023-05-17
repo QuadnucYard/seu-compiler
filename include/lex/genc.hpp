@@ -15,6 +15,8 @@ namespace comp {
 
 		inline void dump(const fs::path& path) { tmpl.dump(path); }
 
+		inline qy::templater& templater() { return tmpl; }
+
 	private:
 		void gen_nxt_table(const DFA& dfa);
 		void gen_accept_table(const DFA& dfa);

@@ -62,31 +62,32 @@ namespace comp {
 				lexer.actions.push_back(string{qy::trim(action.str())});
 				lexer.dfa_builder.add_re(re);
 			}
-			auto dfa = lexer.dfa_builder.join_nfa();
-			dfa.to_dot("lex_dfa.dot");
-			// TODO Generate and output FA
-			LexCodeGen codegen(lexer);
-			codegen(dfa);
-			codegen.dump("lex.yy.gen.c");
 		}
 	};
+
+	Lexer::Lexer(const Options& options) : options{options} {}
 
 	void Lexer::process(const fs::path& src_path) {
 		std::ifstream source_file(src_path);
 		if (!source_file.is_open())
 			throw std::runtime_error("File not found");
 
-		std::ofstream yylex_file("lex.yy.c");
-
-		SourceHandler h(yylex_file);
+		SourceHandler h;
 		DefHandler hDef(*this);
 		RuleHandler hRule(*this);
+
+		LexCodeGen codegen(*this);
 
 		for (std::string s; std::getline(source_file, s); h.lineno++) {
 			if (h.code(s))
 				continue;
 			else if (s == "%%") {
 				++h.section;
+				if (h.section == 1) {
+					codegen.templater().set_string("[[USER_CODE_1]]",
+												   h.code_content + "[[USER_CODE_1]]");
+					h.code_content.clear();
+				}
 				continue;
 			}
 			if (h.section == 0)
@@ -95,6 +96,19 @@ namespace comp {
 				hRule(std::move(s));
 		}
 		hRule.finalize();
+
+		auto&& [nfa, dfa] = dfa_builder.join_nfa();
+		if (!options.scanner_nfa_dot.empty())
+			nfa.to_dot(options.scanner_nfa_dot);
+		if (!options.scanner_dfa_dot.empty())
+			dfa.to_dot(options.scanner_dfa_dot);
+
+		codegen.templater().set_string("[[USER_CODE_1]]", "");
+		codegen.templater().set_string("[[USER_CODE_2]]", "");
+		codegen.templater().set_string("[[USER_CODE_3]]", h.code_content);
+
+		codegen(dfa);
+		codegen.dump(options.outfile);
 	}
 
 	std::pair<size_t, std::string> Lexer::get_re(const std::string& s) const {

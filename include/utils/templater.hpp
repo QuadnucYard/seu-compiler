@@ -15,7 +15,8 @@ namespace qy {
 
 		void set_string(std::string_view key, std::string_view value) {
 			auto p = temp.find(key);
-			temp.replace(p, key.length(), value);
+			if (p != std::string_view::npos)
+				temp.replace(p, key.length(), value);
 		}
 
 		const std::string& str() const {
