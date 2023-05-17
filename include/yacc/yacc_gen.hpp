@@ -21,7 +21,7 @@ namespace comp {
 
 		void gen_newstate(const SyntacticAnalyzer& analyzer);
 
-		void gen_defact();
+		void gen_defact(const SyntacticAnalyzer& analyzer,const parsing_table& pt);
 
 		inline void dump(const fs::path& path) { temp.dump(path); }
 	};

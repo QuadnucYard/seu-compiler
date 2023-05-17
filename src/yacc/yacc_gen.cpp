@@ -41,6 +41,28 @@ namespace comp {
 		temp.set_string("[[get_newstate]]", s_newstate);
 	}
 
+	void yacc_code::gen_defact(const SyntacticAnalyzer& analyzer,const parsing_table& pt){
+		parsing_table_compressed pt_compressed=analyzer.compress_table_more(pt);
+		string s_defact;
+		string s_table;
+		string s_pact;
+		s_defact=pt_compressed.defact[0];
+		s_table=pt_compressed.table[0];
+		s_pact=pt_compressed.pact[0];
+		int len_d=pt_compressed.defact.size();
+		int len_t=pt_compressed.table.size();
+		int len_p=pt_compressed.pact.size();
+		for(int i=1;i<len_d;i++)
+			s_defact+=fmt::format(", {}",pt_compressed.defact[i]);
+		for(int i=1;i<len_t;i++)
+			s_table+=fmt::format(", {}",pt_compressed.table[i]);	
+		for(int i=1;i<len_p;i++)
+			s_pact+=fmt::format(", {}",pt_compressed.pact[i]);
+		temp.set_string("[[get_defact]]", s_defact);
+		temp.set_string("[[get_table]]", s_table);
+		temp.set_string("[[get_pact]]", s_pact);
+	}
+
 	void yacc_code::gen_case(const SyntacticAnalyzer& analyzer) {
 		std::string result = {};
 		result += "switch (base - info) {\n";

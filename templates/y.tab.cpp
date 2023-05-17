@@ -13,8 +13,12 @@ string yytex;
 stack<int> token_stack;
 stack<int> state_stack;
 
-std::vector<int> get_rhs={[[get_rhs]]};
-std::vector<int> get_newstate={[[get_newstate]]};
+std::vector<int> get_rhs = {[[get_rhs]]};
+std::vector<int> get_newstate = {[[get_newstate]]};
+
+std::vector<int> defact = {[[get_defact]]};
+std::vector<int> table = {[[get_table]]};
+std::vector<int> pact = {[[get_pact]]};
 
 void pop_stack(int cnt, int new_state) {
 	for (int i = 0; i < cnt; i++) {
@@ -31,7 +35,7 @@ void parse() {
 	state_stack.push(0);
 	while (point != '$') {
 		auto info = LALR1_action[state_stack.top()][-point];
-		
+
 		if (info >= 0)
 			state_stack.push(info);
 		else if (info < base) {
@@ -44,7 +48,39 @@ void parse() {
             */
 			[[reduce]]
 
-			pop_stack(get_rhs[base - info],get_newstate[base-info]);
+			pop_stack(get_rhs[base - info], get_newstate[base - info]);
+			auto next_info = LALR1_goto[state_stack.top()][token_stack.top()];
+			state_stack.push(next_info);
+		}
+
+		//
+		point = yylex();
+		//
+		token_stack.push(point);
+	}
+}
+
+void parse_compressed() {
+	auto point = yylex();
+	//
+	token_stack.push(point);
+	state_stack.push(0);
+	while (point != '$') {
+		auto d_info = defact[state_stack.top()];
+		auto info = d_info == 0 ? table[pact[state_stack.top()] - point] : d_info;
+		if (info >= 0)
+			state_stack.push(info);
+		else if (info < base) {
+			//auto action = get_action_info(base - info);
+
+			/*
+                case 1:
+                    {action}
+                    ...            
+            */
+			[[reduce]]
+
+			pop_stack(get_rhs[base - info], get_newstate[base - info]);
 			auto next_info = LALR1_goto[state_stack.top()][token_stack.top()];
 			state_stack.push(next_info);
 		}
