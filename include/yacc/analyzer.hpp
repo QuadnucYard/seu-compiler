@@ -1,17 +1,12 @@
 #pragma once
 #include "common/recognizer.hpp"
-#include "utils/matrix.hpp"
+#include "def.hpp"
+#include "parsing_table.hpp"
 #include "yacc/options.hpp"
 #include <bitset>
 #include <span>
-#include <vector>
 
 namespace comp {
-
-	/// @brief Symbol id. 正数表示终结符，负数表示终结符，0 表示 `$` 或 `S'`
-	using sid_t = int;
-	/// @brief Vector of symbols.
-	using symbol_vec = std::vector<sid_t>;
 
 	/// @brief `bitset` 存储的符号集合
 	using symbol_set = std::bitset<128>;
@@ -42,24 +37,9 @@ namespace comp {
 			name(name), productions(productions), first{} {}
 	};
 
-	struct parsing_table {
-		qy::matrix<sid_t> action;
-		qy::matrix<sid_t> goto_;
-	};
-
-	struct parsing_table_compressed {
-		symbol_vec defact;
-		symbol_vec pact;
-		symbol_vec defgoto;
-		symbol_vec pgoto;
-		symbol_vec table;
-		symbol_vec check;
-	};
-
 	class SyntacticAnalyzer {
 	public:
 		constexpr static sid_t END_MARKER = 0;
-		constexpr static sid_t ERR = 0;
 
 	private:
 		struct item {
@@ -145,8 +125,6 @@ namespace comp {
 									  parsing_table& LR1_table) const;
 
 	public:
-		parsing_table_compressed compress_table(const parsing_table& table) const;
-		parsing_table_compressed compress_table_more(const parsing_table& table) const;
 
 		std::vector<string> tokens;			   // All tokens involved. Index == sid
 		production_list rules;				   // All rules involved.

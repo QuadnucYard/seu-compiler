@@ -21,7 +21,7 @@ namespace comp {
 
 		void gen_newstate(const SyntacticAnalyzer& analyzer);
 
-		void gen_defact(const SyntacticAnalyzer& analyzer,const parsing_table& pt);
+		void gen_compressed(const SyntacticAnalyzer& analyzer, const parsing_table& pt);
 
 		inline qy::templater& templater() { return temp; }
 

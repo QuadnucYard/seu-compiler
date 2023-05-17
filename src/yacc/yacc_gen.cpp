@@ -12,6 +12,9 @@ namespace comp {
 	void yacc_code::gen(const parsing_table& pt, const SyntacticAnalyzer& analyzer) {
 		gen_table(pt);
 		gen_case(analyzer);
+		gen_rhs(analyzer);
+		gen_newstate(analyzer);
+		gen_compressed(analyzer, pt);
 	}
 
 	void yacc_code::gen_table(const parsing_table& pt) {
@@ -26,41 +29,22 @@ namespace comp {
 	}
 
 	void yacc_code::gen_rhs(const SyntacticAnalyzer& analyzer) {
-		string s_rhs;
-		s_rhs = std::to_string(analyzer.rules[0].rhs.size());
-		for (int i = 1; i < analyzer.rules.size(); i++)
-			s_rhs += fmt::format(", {}", analyzer.rules[i].rhs.size());
-		temp.set_string("[[get_rhs]]", s_rhs);
+		temp.set_string("[[get_rhs]]",
+						qy::format_array(analyzer.rules | std::views::transform([](auto&& t) {
+											 return t.rhs.size();
+										 })));
 	}
 
 	void yacc_code::gen_newstate(const SyntacticAnalyzer& analyzer) {
-		string s_newstate;
-		s_newstate = std::to_string(analyzer.rules[0].lhs);
-		for (int i = 1; i < analyzer.rules.size(); i++)
-			s_newstate += fmt::format(", {}", analyzer.rules[i].lhs);
-		temp.set_string("[[get_newstate]]", s_newstate);
+		temp.set_string("[[get_newstate]]",
+						qy::format_array(analyzer.rules | std::views::transform(&production::lhs)));
 	}
 
-	void yacc_code::gen_defact(const SyntacticAnalyzer& analyzer,const parsing_table& pt){
-		parsing_table_compressed pt_compressed=analyzer.compress_table_more(pt);
-		string s_defact;
-		string s_table;
-		string s_pact;
-		s_defact=pt_compressed.defact[0];
-		s_table=pt_compressed.table[0];
-		s_pact=pt_compressed.pact[0];
-		int len_d=pt_compressed.defact.size();
-		int len_t=pt_compressed.table.size();
-		int len_p=pt_compressed.pact.size();
-		for(int i=1;i<len_d;i++)
-			s_defact+=fmt::format(", {}",pt_compressed.defact[i]);
-		for(int i=1;i<len_t;i++)
-			s_table+=fmt::format(", {}",pt_compressed.table[i]);	
-		for(int i=1;i<len_p;i++)
-			s_pact+=fmt::format(", {}",pt_compressed.pact[i]);
-		temp.set_string("[[get_defact]]", s_defact);
-		temp.set_string("[[get_table]]", s_table);
-		temp.set_string("[[get_pact]]", s_pact);
+	void yacc_code::gen_compressed(const SyntacticAnalyzer& analyzer, const parsing_table& pt) {
+		auto pt_c = pt.compress();
+		temp.set_string("[[get_defact]]", qy::format_array(pt_c.defact));
+		temp.set_string("[[get_table]]", qy::format_array(pt_c.table));
+		temp.set_string("[[get_pact]]", qy::format_array(pt_c.pact));
 	}
 
 	void yacc_code::gen_case(const SyntacticAnalyzer& analyzer) {

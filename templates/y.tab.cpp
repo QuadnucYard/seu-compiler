@@ -7,18 +7,18 @@ using namespace std;
 
 const int base = -1;
 
-int LALR1_action[][128] = {[[action_table]]};
-int LALR1_goto[][128] = {[[goto_table]]};
-string yytex;
+short LALR1_action[][128] = {[[action_table]]};
+short LALR1_goto[][128] = {[[goto_table]]};
+
 stack<int> token_stack;
 stack<int> state_stack;
 
-std::vector<int> get_rhs = {[[get_rhs]]};
-std::vector<int> get_newstate = {[[get_newstate]]};
+short get_rhs[] = [[get_rhs]];
+short get_newstate[] = [[get_newstate]];
 
-std::vector<int> defact = {[[get_defact]]};
-std::vector<int> table = {[[get_table]]};
-std::vector<int> pact = {[[get_pact]]};
+short defact[] = [[get_defact]];
+short table[] = [[get_table]];
+short pact[] = [[get_pact]];
 
 void pop_stack(int cnt, int new_state) {
 	for (int i = 0; i < cnt; i++) {
