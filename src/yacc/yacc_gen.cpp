@@ -5,7 +5,6 @@
 #include <fmt/ranges.h>
 #include <ranges>
 
-
 namespace comp {
 
 	yacc_code::yacc_code(std::string_view tmpl) : temp{tmpl} {}
@@ -26,6 +25,22 @@ namespace comp {
 		temp.set_string("[[goto_table]]", s_goto);
 	}
 
+	void yacc_code::gen_rhs(const SyntacticAnalyzer& analyzer) {
+		string s_rhs;
+		s_rhs = std::to_string(analyzer.rules[0].rhs.size());
+		for (int i = 1; i < analyzer.rules.size(); i++)
+			s_rhs += fmt::format(", {}", analyzer.rules[i].rhs.size());
+		temp.set_string("[[get_rhs]]", s_rhs);
+	}
+
+	void yacc_code::gen_newstate(const SyntacticAnalyzer& analyzer) {
+		string s_newstate;
+		s_newstate = std::to_string(analyzer.rules[0].lhs);
+		for (int i = 1; i < analyzer.rules.size(); i++)
+			s_newstate += fmt::format(", {}", analyzer.rules[i].lhs);
+		temp.set_string("[[get_newstate]]", s_newstate);
+	}
+
 	void yacc_code::gen_case(const SyntacticAnalyzer& analyzer) {
 		std::string result = {};
 		result += "switch (base - info) {\n";
@@ -34,6 +49,7 @@ namespace comp {
 				result += fmt::sprintf(
 					R"(case %d:
     %s
+    
 )",
 					prod.id, prod.action);
 		}

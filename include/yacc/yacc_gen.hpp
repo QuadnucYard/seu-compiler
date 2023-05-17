@@ -17,6 +17,12 @@ namespace comp {
 		void gen_table(const parsing_table& pt);
 		void gen_case(const SyntacticAnalyzer& analyzer);
 
+		void gen_rhs(const SyntacticAnalyzer& analyzer);
+
+		void gen_newstate(const SyntacticAnalyzer& analyzer);
+
+		void gen_defact();
+
 		inline void dump(const fs::path& path) { temp.dump(path); }
 	};
 } // namespace comp
