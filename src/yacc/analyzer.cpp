@@ -449,7 +449,10 @@ namespace comp {
 		parsing_table_compressed pt;
 		pt.pact.resize(table.action.rows());
 		pt.defact.resize(table.action.rows());
+		pt.pgoto.resize(table.goto_.cols(), 0);
+		pt.defgoto.resize(table.goto_.cols(), -1);
 
+		size_t n_row = table.action.rows();
 		size_t n_col = table.action.cols();
 		std::vector<table_row> rows;
 		for (size_t i = 0; i < table.action.rows(); i++) {
@@ -490,12 +493,10 @@ namespace comp {
 				if (flag) {
 					// [i, i + l]
 					if (i + row.l > tab.size()) {
-						std::copy_n(row.a, tab.size() - i, tab.begin() + i);
-						tab.insert(tab.end(), row.a + tab.size() - i, row.a + row.l);
-						pt.check.resize(tab.size());
-					} else {
-						std::copy_n(row.a, row.l, tab.begin() + i);
+						tab.resize(i + row.l, ERR);
+						pt.check.resize(tab.size(), ERR);
 					}
+					std::copy_n(row.a, row.l, tab.begin() + i);
 					for (size_t j = 0; j < row.l; j++)
 						if (row.a[j] != ERR)
 							pt.check[i + j] = row.a[j];
@@ -504,6 +505,70 @@ namespace comp {
 				}
 			}
 		}
+
+		// 然后压goto
+		// pgoto 存首地址，defgoto 存指针
+		for (size_t k = 0; k < table.goto_.cols(); k++) {
+			// 找边界
+			size_t u{0}, l{0};
+			while (u < n_row && table.goto_[u][k] == ERR)
+				u++;
+			if (u == n_row)
+				continue;
+			while (u + l < n_row && table.goto_[u + l][k] != ERR)
+				l++;
+			// [u, u + l] 嵌入
+			size_t best = tab.size(), least_conf = l, best_last_conf = -1;
+			for (size_t i = 0; i <= tab.size(); i++) {
+				size_t conf = 0, last_conf = -1;
+				for (size_t j = 0; j < l; j++) {
+					if (i + j >= tab.size() || tab[i + j] != ERR && table.goto_[i + j][k] != ERR &&
+												   tab[i + j] != table.goto_[i + j][k]) {
+						conf++;
+						last_conf = j;
+					}
+				}
+				if (conf < least_conf) {
+					best = i;
+					least_conf = conf;
+					best_last_conf = last_conf;
+				}
+			}
+			if (least_conf > 1) {
+				for (size_t i = tab.size() - l; i <= tab.size(); i++) {
+					size_t conf = 0, last_conf = -1;
+					for (size_t j = 0; j < l; j++) {
+						if (tab[i + j] != ERR && table.goto_[i + j][k] != ERR &&
+							tab[i + j] != table.goto_[i + j][k]) {
+							conf++;
+							last_conf = j;
+						}
+					}
+					if (conf <= 1) {
+						best = i;
+						least_conf = conf;
+						best_last_conf = last_conf;
+						break;
+					}
+				}
+			}
+			// 上面的计算有点问题
+			// 要检查冲突数
+			if (best + l > tab.size()) {
+				tab.resize(best + l, ERR);
+				pt.check.resize(tab.size(), ERR);
+			}
+			for (size_t j = 0; j < l; j++)
+				tab[best + j] = table.goto_[u + j][k];
+			for (size_t j = 0; j < l; j++)
+				if (pt.check[best + j] == ERR)
+					pt.check[best + j] = table.goto_[u + j][k];
+			// goto[j][k] = table[pgoto[k] + j], u + pgoto[k] = best
+			pt.pgoto[k] = best - u;
+			pt.defgoto[k] = u + best_last_conf;
+		}
+		// 如果这列只有一个，放在defgoto
+		// 否则把这列嵌入到table里，挑一个放到defgoto
 
 		fmt::print("compressed: {}\n", tab.size());
 
