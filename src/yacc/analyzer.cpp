@@ -314,8 +314,6 @@ namespace comp {
 		}
 		// 状态数：1960。有417个同心状态。
 
-		auto [LALR1_action, LALR1_goto] = LR1_table;
-
 		std::vector<size_t> state_map(n_states); // 删除状态后，标号重映射
 		std::iota(state_map.begin(), state_map.end(), 0);
 
@@ -343,6 +341,9 @@ namespace comp {
 			for (auto k : kern)
 				state_map[k] = kern[0];
 		}
+
+		auto [LALR1_action, LALR1_goto] = LR1_table;
+
 		// 现在 state_map[i] != i 的都是要删除的。可以保证都是大号映射到小号
 		for (ptrdiff_t i = n_states - 1; i >= 0; i--) {
 			if (state_map[i] != i) {
@@ -510,20 +511,23 @@ namespace comp {
 		// pgoto 存首地址，defgoto 存指针
 		for (size_t k = 0; k < table.goto_.cols(); k++) {
 			// 找边界
-			size_t u{0}, l{0};
+			size_t u{0}, d{n_row}, l{0};
 			while (u < n_row && table.goto_[u][k] == ERR)
 				u++;
 			if (u == n_row)
 				continue;
-			while (u + l < n_row && table.goto_[u + l][k] != ERR)
-				l++;
+			while (table.goto_[d - 1][k] == ERR)
+				d--;
+			l = d - u;
 			// [u, u + l] 嵌入
 			size_t best = tab.size(), least_conf = l, best_last_conf = -1;
+			// 先尝试不扩容的嵌入
 			for (size_t i = 0; i <= tab.size(); i++) {
 				size_t conf = 0, last_conf = -1;
+				// 其实可以考虑从负数开始循环
 				for (size_t j = 0; j < l; j++) {
-					if (i + j >= tab.size() || tab[i + j] != ERR && table.goto_[i + j][k] != ERR &&
-												   tab[i + j] != table.goto_[i + j][k]) {
+					if (i + j >= tab.size() || tab[i + j] != ERR && table.goto_[u + j][k] != ERR &&
+												   tab[i + j] != table.goto_[u + j][k]) {
 						conf++;
 						last_conf = j;
 					}
@@ -535,11 +539,12 @@ namespace comp {
 				}
 			}
 			if (least_conf > 1) {
+				// 如果不行，那么就扩容
 				for (size_t i = tab.size() - l; i <= tab.size(); i++) {
 					size_t conf = 0, last_conf = -1;
 					for (size_t j = 0; j < l; j++) {
-						if (tab[i + j] != ERR && table.goto_[i + j][k] != ERR &&
-							tab[i + j] != table.goto_[i + j][k]) {
+						if (tab[i + j] != ERR && table.goto_[u + j][k] != ERR &&
+							tab[i + j] != table.goto_[u + j][k]) {
 							conf++;
 							last_conf = j;
 						}
@@ -552,8 +557,6 @@ namespace comp {
 					}
 				}
 			}
-			// 上面的计算有点问题
-			// 要检查冲突数
 			if (best + l > tab.size()) {
 				tab.resize(best + l, ERR);
 				pt.check.resize(tab.size(), ERR);
@@ -565,7 +568,7 @@ namespace comp {
 					pt.check[best + j] = table.goto_[u + j][k];
 			// goto[j][k] = table[pgoto[k] + j], u + pgoto[k] = best
 			pt.pgoto[k] = best - u;
-			pt.defgoto[k] = u + best_last_conf;
+			pt.defgoto[k] = u + best_last_conf; // 留给table里冲突的那个
 		}
 		// 如果这列只有一个，放在defgoto
 		// 否则把这列嵌入到table里，挑一个放到defgoto
