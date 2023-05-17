@@ -14,6 +14,7 @@ namespace comp {
 	void LexCodeGen::operator()(const DFA& dfa) {
 		gen_accept_table(dfa);
 		gen_nxt_table(dfa);
+		gen_case();
 	}
 
 	void LexCodeGen::gen_nxt_table(const DFA& dfa) {
@@ -66,7 +67,8 @@ namespace comp {
 				R"(case %d:
 YY_RULE_SETUP
 %s
-    YY_BREAK)",
+    YY_BREAK
+)",
 				i + 1, lexer.actions[i]);
 		}
 		tmpl.set_string("[[ACTIONS]]", result);

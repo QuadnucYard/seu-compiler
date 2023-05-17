@@ -221,11 +221,11 @@ namespace comp {
 			vid_t acc = NON_ACCEPT;
 			if (nfa.accept == -1) {
 				// accept_states is enabled
-				for (auto a : nfa.accept_states)
-					if (a != NON_ACCEPT) {
-						acc = a;
-						break;
+				for (size_t j = 0; j < nfa.accept_states.size(); j++) {
+					if (auto a = nfa.accept_states[j]; a != NON_ACCEPT && states[i].test(j)) {
+						acc = acc == NON_ACCEPT ? a : std::min(acc, a);
 					}
+				}
 			} else {
 				acc = states[i].test(nfa.accept) ? DUMMY_ACCEPT : NON_ACCEPT;
 			}
