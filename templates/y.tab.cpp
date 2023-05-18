@@ -5,7 +5,7 @@
 
 using namespace std;
 
-const int base = -1;
+const int base = 0;
 
 short LALR1_action[][128] = {[[action_table]]};
 short LALR1_goto[][128] = {[[goto_table]]};
@@ -15,6 +15,7 @@ stack<int> state_stack;
 
 short get_rhs[] = [[get_rhs]];
 short get_newstate[] = [[get_newstate]];
+short get_lhs[]= [[get_lhs]];
 
 short defact[] = [[get_defact]];
 short table[] = [[get_table]];
@@ -25,7 +26,7 @@ void pop_stack(int cnt, int new_state) {
 		token_stack.pop();
 		state_stack.pop();
 	}
-	token_stack.push(new_state);
+	//state_stack.push(new_state);
 }
 
 void parse() {
@@ -34,29 +35,54 @@ void parse() {
 	token_stack.push(point);
 	state_stack.push(0);
 	while (point != '$') {
-		auto info = LALR1_action[state_stack.top()][-point];
+		auto info = LALR1_action[state_stack.top()][point];
 
-		if (info >= 0)
+		if (info >= 0){
 			state_stack.push(info);
+			//
+			point = yylex();
+		//
+			token_stack.push(point);
+		}
+			
 		else if (info < base) {
-			//auto action = get_action_info(base - info);
-
-			/*
-                case 1:
-                    {action}
-                    ...            
-            */
 			[[reduce]]
-
+			int temp=token_stack.top();
+            token_stack.pop();
 			pop_stack(get_rhs[base - info], get_newstate[base - info]);
-			auto next_info = LALR1_goto[state_stack.top()][token_stack.top()];
+			token_stack.push(get_lhs[base - info]);
+			auto next_info = LALR1_goto[state_stack.top()][abs(token_stack.top())];
+            //state_stack.pop();
 			state_stack.push(next_info);
+            token_stack.push(temp);
+            point=temp;
 		}
 
+		else{
+			//
+			point = yylex();
 		//
-		point = yylex();
-		//
-		token_stack.push(point);
+			token_stack.push(point);
+		}
+
+		
+	}
+
+	while(1){
+        auto info = LALR1_action[state_stack.top()][point];
+
+		[[reduce]]
+
+		int temp=token_stack.top();
+            token_stack.pop();
+			pop_stack(get_rhs[base - info], get_newstate[base - info]);
+			token_stack.push(get_lhs[base - info]);
+			auto next_info = LALR1_goto[state_stack.top()][abs(token_stack.top())];
+			state_stack.push(next_info);
+            if(token_stack.top()==0)
+                break;
+            token_stack.push(temp);
+            point=temp;
 	}
 }
 
@@ -67,7 +93,7 @@ void parse_compressed() {
 	state_stack.push(0);
 	while (point != '$') {
 		auto d_info = defact[state_stack.top()];
-		auto info = d_info == 0 ? table[pact[state_stack.top()] - point] : d_info;
+		auto info = d_info == 0 ? table[pact[state_stack.top()] + point] : d_info;
 		if (info >= 0)
 			state_stack.push(info);
 		else if (info < base) {
@@ -80,9 +106,12 @@ void parse_compressed() {
             */
 			[[reduce]]
 
+			int temp=token_stack.top();
+            token_stack.pop();
 			pop_stack(get_rhs[base - info], get_newstate[base - info]);
 			auto next_info = LALR1_goto[state_stack.top()][token_stack.top()];
 			state_stack.push(next_info);
+            token_stack.push(temp);
 		}
 
 		//

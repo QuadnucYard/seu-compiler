@@ -19,6 +19,8 @@ namespace comp {
 
 		void gen_rhs(const SyntacticAnalyzer& analyzer);
 
+		void gen_lhs(const SyntacticAnalyzer& analyzer);
+
 		void gen_newstate(const SyntacticAnalyzer& analyzer);
 
 		void gen_compressed(const SyntacticAnalyzer& analyzer, const parsing_table& pt);
