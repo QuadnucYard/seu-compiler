@@ -81,7 +81,7 @@ namespace comp {
 		return nfa;
 	}
 
-	std::bitset<128> get_range(std::string_view str) {
+	auto get_range(std::string_view str) {
 		std::bitset<128> id_bitset;
 		size_t m = str.length();
 		for (auto prev = std::string::npos;;) {
@@ -105,8 +105,8 @@ namespace comp {
 	}
 
 	void TompsonAlgo::match_range(std::string_view str) {
-		std::bitset<128> id_bitset = !str.empty() && str[0] == -'^' ? get_range(str.substr(1)).flip()
-																   : get_range(str);
+		auto id_bitset = !str.empty() && str[0] == -'^' ? get_range(str.substr(1)).flip()
+														: get_range(str);
 		int n = static_cast<int>(nfa.graph.size());
 		nfa.graph.resize(n + 2);
 		SubNFA new_sub{n, n + 1};
@@ -141,7 +141,7 @@ namespace comp {
 		nfa_stack.emplace(n, n + 1);
 	}
 
-	void TompsonAlgo::match_que() {
+	void TompsonAlgo::match_opt() {
 		SubNFA& nfa1 = nfa_stack.top();
 		int n = static_cast<int>(nfa.graph.size());
 		nfa.graph.resize(nfa.graph.size() + 2);

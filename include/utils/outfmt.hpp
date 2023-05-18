@@ -1,4 +1,4 @@
-
+#pragma once
 #include <algorithm>
 #include <fmt/core.h>
 #include <fmt/printf.h>

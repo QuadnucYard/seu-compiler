@@ -16,7 +16,7 @@ namespace comp {
 		void match_range(std::string_view str);
 		void match_concat();
 		void match_alt();
-		void match_que();
+		void match_opt();
 		void match_star();
 		void match_plus();
 
