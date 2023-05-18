@@ -76,8 +76,13 @@ namespace comp {
 			match_concat();
 		while (op_stack.size() && op_stack.top() == '|')
 			match_alt();
-		nfa.start = nfa_stack.top().start;
-		nfa.accept = nfa_stack.top().end;
+		if (nfa.graph.size() == 0) {
+			nfa.graph.resize(1);
+			nfa.start = nfa.accept = 0;
+		} else {
+			nfa.start = nfa_stack.top().start;
+			nfa.accept = nfa_stack.top().end;
+		}
 		return nfa;
 	}
 

@@ -62,6 +62,11 @@ namespace comp {
 				lexer.actions.push_back(string{qy::trim(action.str())});
 				lexer.dfa_builder.add_re(re);
 			}
+			// Catchall handler
+			lexer.dfa_builder.add_re(".+");
+			lexer.actions.push_back("ECHO;");
+			// lexer.dfa_builder.add_re("");
+			// lexer.actions.push_back({});
 		}
 	};
 

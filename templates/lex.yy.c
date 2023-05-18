@@ -275,13 +275,13 @@ static void yy_fatal_error YY_PROTO(( yyconst char msg[] ));
 #define YY_END_OF_BUFFER [[YY_END_OF_BUFFER]]
 
 static yyconst short int yy_accept[] = {
-[[YY_ACCEPT]]};
-
-static yyconst short yy_nxt[][128] = {
-[[YY_NXT]]};
+0, [[YY_ACCEPT]]};
 
 static yyconst yy_state_type yy_NUL_trans[] = {
 [[YY_NUL_TRANS]]};
+
+static yyconst short yy_nxt[][128] = {
+[[YY_NXT]]};
 
 static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
