@@ -14,10 +14,13 @@ namespace comp {
 	struct Parser::DeclHandler {
 		Parser& parser;
 		std::ostream& tab_inc_file;
+		sid_t token_index{258};
 
 		DeclHandler(Parser& parser, std::ostream& tab_inc_file) :
 			parser(parser), tab_inc_file(tab_inc_file) {
-			parser.analyzer.tokens.emplace_back("$");
+			parser.analyzer.tokens = {"$end"};
+			parser.translate.resize(token_index, -1);
+			parser.translate[0] = 0;
 		}
 
 		void operator()(string&& s) {
@@ -29,10 +32,11 @@ namespace comp {
 					iss >> parser.start_symbol;
 				else if (kw == "%token") {
 					while (iss >> kw) {
-						auto token_index = static_cast<sid_t>(parser.analyzer.tokens.size());
 						parser.symbol_map[kw] = token_index;
+						parser.translate.emplace_back(parser.analyzer.tokens.size());
 						parser.analyzer.tokens.emplace_back(kw);
 						fmt::print(tab_inc_file, "\t{} = {},\n", kw, token_index);
+						token_index++;
 					}
 				}
 			}
@@ -57,10 +61,7 @@ namespace comp {
 			action_started = false;
 		}
 
-		static string unescape(std::string_view s) {
-			// s = s.substr(1, s.length() - 2);
-			return string{s};
-		}
+		static char unescape(std::string_view s) { return s[1]; }
 
 		void operator()(string&& s) {
 			iss.str(s);
@@ -86,7 +87,7 @@ namespace comp {
 					action += t;
 					action += ' ';
 				} else if (!rule.rhs.empty()) {
-					rule.rhs.back().push_back(unescape(t));
+					rule.rhs.back().push_back(t);
 				}
 				prev = std::move(t);
 			}
@@ -107,7 +108,9 @@ namespace comp {
 					for (auto& s : r) {
 						// Register tokens
 						if (!parser.symbol_map.contains(s)) {
-							parser.symbol_map.emplace(s, static_cast<sid_t>(ana.tokens.size()));
+							auto tid = static_cast<sid_t>(ana.tokens.size());
+							parser.symbol_map.emplace(s, tid);
+							parser.translate[unescape(s)] = tid;
 							ana.tokens.emplace_back(s);
 						}
 						sv.push_back(parser.get_symbol_id(s));

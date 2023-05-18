@@ -26,6 +26,7 @@ namespace comp {
 		inline static string aug_start{"$start"};
 		Options options;
 		string start_symbol;
+		std::vector<sid_t> translate; // Map lex token id to yacc token id
 		std::vector<RawRule> rules;
 		std::vector<string> actions;
 		dict<sid_t> symbol_map; // Token id to index, token为正数，nonterminal为负数
