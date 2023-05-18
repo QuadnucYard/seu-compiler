@@ -292,6 +292,8 @@ static char *yy_last_accepting_cpos;
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
 
+#define INITIAL 0
+
 [[USER_CODE_1]]
 
 #ifndef YY_SKIP_YYWRAP
