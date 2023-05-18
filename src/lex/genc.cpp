@@ -24,14 +24,14 @@ namespace comp {
 		std::vector<int> nultrans(size, 0);
 
 		for (int i = 0; i < size; i++) {
-			std::memset(move, -1, sizeof(move));
+			std::ranges::fill(move, -i);
 			for (auto&& [v, w] : dfa.graph.iter_edges(i))
 				move[w] = v;
 
 			if (move[1] != -i)
 				nultrans[i] = move[1];
 
-			result += qy::format_array(move);
+			result += qy::format_array(move, {.field_width = 5});
 			result += ",";
 		}
 		tmpl.set_string("[[YY_NXT]]", result);
@@ -46,8 +46,12 @@ namespace comp {
 		tmpl.set_string("[[YY_NUM_RULES]]", fmt::to_string(lexer.actions.size()));
 		tmpl.set_string("[[YY_END_OF_BUFFER]]", fmt::to_string(lexer.actions.size() + 1));
 		//yy_accept
+		const auto plus1 = [](auto&& x) {
+			return x + 1;
+		};
 		tmpl.set_string("[[YY_ACCEPT]]",
-						qy::format_array(dfa.accept_states, {.with_brace = false}));
+						qy::format_array(dfa.accept_states | std::views::transform(plus1),
+										 {.with_brace = false}));
 	}
 
 	/*
