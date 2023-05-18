@@ -161,7 +161,7 @@ namespace comp {
 	DFA DFABuilder::subset(const NFA& nfa) const {
 		using vertex_set = std::bitset<MAXV>;
 
-		vid_t n = static_cast<int>(nfa.graph.size());
+		vid_t n = static_cast<vid_t>(nfa.graph.size());
 
 		// 求 epsilon closure
 		std::vector<vertex_set> epsilon_closure(n);
@@ -183,7 +183,7 @@ namespace comp {
 		}
 
 		// 求 follow epsilon
-		std::vector<std::unordered_map<int, vertex_set>> follow_epsilon(n);
+		std::vector<std::unordered_map<vid_t, vertex_set>> follow_epsilon(n);
 		for (vid_t u = 0; u < n; u++) {
 			for (auto&& [v, w] : nfa.graph.iter_edges(u)) {
 				if (w != EPSILON)
@@ -286,8 +286,8 @@ namespace comp {
 			nfa.accept_states.insert(nfa.accept_states.end(), x.accept_states.begin(),
 									 x.accept_states.end());
 			std::replace(nfa.accept_states.begin() + nfa.size(), nfa.accept_states.end(),
-						 DUMMY_ACCEPT, static_cast<sid_t>(DUMMY_ACCEPT + i));
-			int s = static_cast<int>(nfa.size()) + x.start; // start在新图中的位置
+						 DUMMY_ACCEPT, static_cast<vid_t>(DUMMY_ACCEPT + i));
+			vid_t s = static_cast<vid_t>(nfa.size()) + x.start; // start在新图中的位置
 			nfa.graph.join(x.graph);
 			nfa.graph.add_edge(0, s, EPSILON);
 		}

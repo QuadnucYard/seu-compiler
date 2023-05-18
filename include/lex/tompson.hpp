@@ -5,8 +5,8 @@
 namespace comp {
 
 	class TompsonAlgo {
-		static constexpr int CON = 1;
-		static constexpr int EPSILON = DFABuilder::EPSILON;
+		static constexpr int CAT = 1;
+		static constexpr sid_t EPSILON = DFABuilder::EPSILON;
 
 	public:
 		NFA operator()(std::string_view regex);

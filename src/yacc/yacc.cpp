@@ -31,7 +31,13 @@ int main(int argc, char const* argv[]) {
 		.outfile = prog.get("--outfile"),
 		.lr1_pda_dot = prog.get("--lr1-pda"),
 	});
-	lexer.process(input_file);
+
+	try {
+		lexer.process(input_file);
+	} catch (const std::exception& err) {
+		std::cerr << "fuck!" << err.what() << std::endl;
+		return 2;
+	}
 
 	return 0;
 }

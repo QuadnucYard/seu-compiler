@@ -22,9 +22,9 @@ namespace comp {
 				break;
 			case '[':
 				if (i > 0 && cc != -'(' && cc != -'|') {
-					if (!op_stack.empty() && op_stack.top() == CON)
+					if (!op_stack.empty() && op_stack.top() == CAT)
 						match_concat(); // 连接符号
-					op_stack.push(CON);
+					op_stack.push(CAT);
 				}
 				{
 					size_t j = i;
@@ -34,14 +34,14 @@ namespace comp {
 				break;
 			case '(':
 				if (i > 0 && cc != -'(' && cc != -'|') {
-					if (!op_stack.empty() && op_stack.top() == CON)
+					if (!op_stack.empty() && op_stack.top() == CAT)
 						match_concat(); // 连接符号
-					op_stack.push(CON);
+					op_stack.push(CAT);
 				}
 				op_stack.push('(');
 				break;
 			case ')':
-				while (op_stack.size() && op_stack.top() == CON)
+				while (op_stack.size() && op_stack.top() == CAT)
 					match_concat();
 				if (op_stack.top() == '|')
 					match_alt();
@@ -49,7 +49,7 @@ namespace comp {
 					op_stack.pop();
 				break;
 			case '|':
-				if (op_stack.top() == CON)
+				if (op_stack.top() == CAT)
 					match_concat();
 				if (op_stack.top() == '|')
 					match_alt();
@@ -99,13 +99,13 @@ namespace comp {
 					break;
 				}
 				nfa_stack.push({n, n + 1});
-				if (cc > 0)
-					op_stack.push(CON);
+				if (cc > 0 || cc == -'*' || cc == -'+' || cc == -'?')
+					op_stack.push(CAT);
 				break;
 			}
 			cc = regex[i];
 		}
-		while (op_stack.size() && op_stack.top() == CON)
+		while (op_stack.size() && op_stack.top() == CAT)
 			match_concat();
 		while (op_stack.size() && op_stack.top() == '|')
 			match_alt();

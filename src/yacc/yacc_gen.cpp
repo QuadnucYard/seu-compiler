@@ -20,9 +20,9 @@ namespace comp {
 	void yacc_code::gen_table(const parsing_table& pt) {
 		string s_action;
 		string s_goto;
-		for (int i = 0; i < pt.action.rows(); i++)
+		for (size_t i = 0; i < pt.action.rows(); i++)
 			s_action += fmt::format("{},\n", qy::format_array(pt.action.iter_row(i)));
-		for (int i = 0; i < pt.goto_.rows(); i++)
+		for (size_t i = 0; i < pt.goto_.rows(); i++)
 			s_goto += fmt::format("{},\n", qy::format_array(pt.goto_.iter_row(i)));
 		temp.set_string("[[action_table]]", s_action);
 		temp.set_string("[[goto_table]]", s_goto);

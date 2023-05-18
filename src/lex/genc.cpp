@@ -66,7 +66,7 @@ namespace comp {
 		tmpl.set_string("[[YY_END_OF_BUFFER]]", fmt::to_string(lexer.actions.size() + 1));
 		//yy_accept
 		auto accept_states = dfa.accept_states;
-		accept_states.push_back(lexer.actions.size());
+		accept_states.push_back(static_cast<vid_t>(lexer.actions.size()));
 		tmpl.set_string("[[YY_ACCEPT]]",
 						qy::format_array(accept_states | plus1, {.with_brace = false}));
 	}

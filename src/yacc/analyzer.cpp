@@ -313,7 +313,7 @@ namespace comp {
 
 		std::vector<size_t> state_map(n_states); // 删除状态后，标号重映射
 		std::iota(state_map.begin(), state_map.end(), 0);
-		int len = LR1_table.action.cols();
+		size_t len = LR1_table.action.cols();
 
 		for (auto&& kern : kernel_grouped) {
 			if (kern.size() < 2)
@@ -338,8 +338,8 @@ namespace comp {
 			if (!can_merge)
 				continue;
 
-			for (int j = 0; j < kern.size(); j++) {
-				for (int k = 0; k < len; k++) {
+			for (size_t j = 0; j < kern.size(); j++) {
+				for (size_t k = 0; k < len; k++) {
 					auto index = LR1_table.action[kern[j]][k];
 					if (index < -1)
 						LR1_table.action[kern[0]][k] = index;

@@ -11,14 +11,14 @@ namespace comp {
 
 	/// @brief Used for RE to NFA. It describes the start and end node in the NFA graph.
 	struct SubNFA {
-		int start;
-		int end;
+		vid_t start;
+		vid_t end;
 	};
 
 	struct DFA {
 		qy::weighted_graph graph;		// 存结点的图，可以默认start为0
-		int start;						// 初始状态
-		std::vector<int> accept_states; // 每个点的accept情况
+		vid_t start;						// 初始状态
+		std::vector<vid_t> accept_states; // 每个点的accept情况
 
 		inline DFA() = default;
 
@@ -32,15 +32,15 @@ namespace comp {
 	};
 
 	struct NFA : public DFA {
-		int accept; // 唯一的accept情况
+		vid_t accept; // 唯一的accept情况
 	};
 
 	/// @brief Construct DFA from a regular expression.
 	class DFABuilder {
 	public:
-		constexpr static int EPSILON = -1;
-		constexpr static int NON_ACCEPT = -1;
-		constexpr static int DUMMY_ACCEPT = NON_ACCEPT + 1;
+		constexpr static sid_t EPSILON = -1;
+		constexpr static vid_t NON_ACCEPT = -1;
+		constexpr static vid_t DUMMY_ACCEPT = NON_ACCEPT + 1;
 		constexpr static size_t MAXV = 512; // 最大顶点数
 		constexpr static sid_t MAXS = 128;	// 字符集大小 TODO 用一个vector表示字符集
 
