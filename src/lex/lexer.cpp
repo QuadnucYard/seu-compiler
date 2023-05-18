@@ -103,6 +103,9 @@ namespace comp {
 		hRule.finalize();
 
 		auto&& [nfa, dfa] = dfa_builder.join_nfa();
+		// 增加一个处理0转换的点
+		dfa.graph.resize(dfa.size() + 1);
+		dfa.accept_states.push_back(static_cast<vid_t>(actions.size()));
 		if (!options.scanner_nfa_dot.empty())
 			nfa.to_dot(options.scanner_nfa_dot);
 		if (!options.scanner_dfa_dot.empty())

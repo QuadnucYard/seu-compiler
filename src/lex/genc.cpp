@@ -22,17 +22,9 @@ namespace comp {
 	void LexCodeGen::gen_nxt_table(const DFA& dfa) {
 		std::string result;
 		int move[128]{};
-		int size = static_cast<int>(dfa.accept_states.size());
+		int size = static_cast<int>(dfa.size());
 
 		// accept为size-1的是额外加的那个。需要在最后补一个 catch \0 的。开头也补了一个全0的
-
-		int catchall = 0;
-		for (int i = 0; i < size; i++) {
-			if (dfa.accept_states[i] == lexer.actions.size() - 1)
-				catchall = i + 1;
-		}
-
-		std::vector<int> nultrans(size + 2, 0);
 
 		result += qy::format_array(move, {.field_width = 5});
 		result += ",";
@@ -41,19 +33,25 @@ namespace comp {
 			std::ranges::fill(move, -i);
 			for (auto&& [v, w] : dfa.graph.iter_edges(i - 1))
 				move[w] = v + 1;
-			move[0] = size + 1;
-
-			nultrans[i] = dfa.accept_states[i - 1] == lexer.actions.size() - 1 ? catchall : 0;
+			if (i < size)
+				move[0] = size;
 
 			result += qy::format_array(move, {.field_width = 5});
 			result += ",";
 		}
 
-		std::ranges::fill(move, -(size + 1));
-		result += qy::format_array(move, {.field_width = 5});
-		result += ",";
-
 		tmpl.set_string("[[YY_NXT]]", result);
+
+		std::vector<int> nultrans(size + 1, 0);
+		int catchall = 0;
+		for (int i = 0; i < size; i++) {
+			if (dfa.accept_states[i] == lexer.actions.size() - 1)
+				catchall = i + 1;
+		}
+
+		for (int i = 1; i <= size; i++) {
+			nultrans[i] = dfa.accept_states[i - 1] == lexer.actions.size() - 1 ? catchall : 0;
+		}
 		tmpl.set_string("[[YY_NUL_TRANS]]", qy::format_array(nultrans, {.with_brace = false}));
 	};
 
@@ -66,7 +64,7 @@ namespace comp {
 		tmpl.set_string("[[YY_END_OF_BUFFER]]", fmt::to_string(lexer.actions.size() + 1));
 		//yy_accept
 		auto accept_states = dfa.accept_states;
-		accept_states.push_back(static_cast<vid_t>(lexer.actions.size()));
+		// accept_states.push_back(static_cast<vid_t>(lexer.actions.size()));
 		tmpl.set_string("[[YY_ACCEPT]]",
 						qy::format_array(accept_states | plus1, {.with_brace = false}));
 	}

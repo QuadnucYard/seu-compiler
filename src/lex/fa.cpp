@@ -291,6 +291,7 @@ namespace comp {
 			nfa.graph.join(x.graph);
 			nfa.graph.add_edge(0, s, EPSILON);
 		}
-		return {std::move(nfa), std::move(subset(nfa))};
+		auto dfa = subset(nfa);
+		return {std::move(nfa), std::move(dfa)};
 	}
 } // namespace comp
