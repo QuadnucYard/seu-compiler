@@ -58,12 +58,45 @@ namespace comp {
 			default:
 				int n = static_cast<int>(nfa.graph.size());
 				nfa.graph.resize(n + 2);
-				if (regex[i] == -'.') {
+				switch (-regex[i]) {
+				case '.':
 					for (int i = 0; i < 128; i++)
 						if (i != '\n')
 							nfa.graph.add_edge(n, n + 1, i);
-				} else {
+					break;
+				case 'd':
+					for (int i = 0; i < 128; i++)
+						if (isdigit(i))
+							nfa.graph.add_edge(n, n + 1, i);
+					break;
+				case 'D':
+					for (int i = 0; i < 128; i++)
+						if (!isdigit(i))
+							nfa.graph.add_edge(n, n + 1, i);
+					break;
+				case 's':
+					for (int i = 0; i < 128; i++)
+						if (isspace(i))
+							nfa.graph.add_edge(n, n + 1, i);
+					break;
+				case 'S':
+					for (int i = 0; i < 128; i++)
+						if (!isspace(i))
+							nfa.graph.add_edge(n, n + 1, i);
+					break;
+				case 'w':
+					for (int i = 0; i < 128; i++)
+						if (isalnum(i))
+							nfa.graph.add_edge(n, n + 1, i);
+					break;
+				case 'W':
+					for (int i = 0; i < 128; i++)
+						if (!isalnum(i))
+							nfa.graph.add_edge(n, n + 1, i);
+					break;
+				default:
 					nfa.graph.add_edge(n, n + 1, regex[i]);
+					break;
 				}
 				nfa_stack.push({n, n + 1});
 				if (cc > 0)
@@ -89,18 +122,60 @@ namespace comp {
 	auto get_range(std::string_view str) {
 		std::bitset<128> id_bitset;
 		size_t m = str.length();
+		const auto add_char = [&id_bitset](char c) {
+			static std::bitset<128> tmp;
+			switch (-c) {
+			case '.':
+				tmp.set();
+				tmp.reset('\n');
+				id_bitset |= tmp;
+				break;
+			case 'd':
+				for (int i = 0; i < 128; i++)
+					if (isdigit(i))
+						id_bitset.set(i);
+				break;
+			case 'D':
+				for (int i = 0; i < 128; i++)
+					if (!isdigit(i))
+						id_bitset.set(i);
+				break;
+			case 's':
+				for (int i = 0; i < 128; i++)
+					if (isspace(i))
+						id_bitset.set(i);
+				break;
+			case 'S':
+				for (int i = 0; i < 128; i++)
+					if (!isspace(i))
+						id_bitset.set(i);
+				break;
+			case 'w':
+				for (int i = 0; i < 128; i++)
+					if (isalnum(i))
+						id_bitset.set(i);
+				break;
+			case 'W':
+				for (int i = 0; i < 128; i++)
+					if (!isalnum(i))
+						id_bitset.set(i);
+				break;
+			default:
+				id_bitset.set(c);
+			}
+		};
 		for (auto prev = std::string::npos;;) {
 			size_t p = str.find('-', prev + 1);
 			if (p == std::string::npos) { // 找完了
 				for (size_t i = prev + 1; i < m; i++)
-					id_bitset.set(str[i]);
+					add_char(str[i]);
 				break;
 			} else if (p == 0 || p == m - 1) { // 开头结尾的
 				id_bitset.set('-');
 				prev = p;
 			} else {
 				for (size_t i = prev + 1; i < p - 1; i++)
-					id_bitset.set(str[i]);
+					add_char(str[i]);
 				for (char c = str[p - 1]; c <= str[p + 1]; c++)
 					id_bitset.set(c);
 				prev = p + 1;

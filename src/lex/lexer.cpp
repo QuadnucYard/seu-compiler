@@ -63,7 +63,7 @@ namespace comp {
 				lexer.dfa_builder.add_re(re);
 			}
 			// Catchall handler
-			lexer.dfa_builder.add_re(".+");
+			lexer.dfa_builder.add_re(lexer.get_re("[.\n]").second);
 			lexer.actions.push_back("ECHO;");
 			// lexer.dfa_builder.add_re("");
 			// lexer.actions.push_back({});
