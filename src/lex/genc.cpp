@@ -9,6 +9,8 @@
 extern const char* lex_tmpl;
 
 namespace comp {
+	const auto plus1 = std::views::transform([](auto&& x) { return x + 1; });
+
 	LexCodeGen::LexCodeGen(const Lexer& lexer) : lexer{lexer}, tmpl{lex_tmpl} {}
 
 	void LexCodeGen::operator()(const DFA& dfa) {
@@ -19,14 +21,17 @@ namespace comp {
 
 	void LexCodeGen::gen_nxt_table(const DFA& dfa) {
 		std::string result;
-		int move[128];
+		int move[128]{};
 		int size = dfa.accept_states.size();
-		std::vector<int> nultrans(size, 0);
+		std::vector<int> nultrans(size + 1, 0);
 
-		for (int i = 0; i < size; i++) {
+		result += qy::format_array(move, {.field_width = 5});
+		result += ",";
+
+		for (int i = 1; i <= size; i++) {
 			std::ranges::fill(move, -i);
-			for (auto&& [v, w] : dfa.graph.iter_edges(i))
-				move[w] = v;
+			for (auto&& [v, w] : dfa.graph.iter_edges(i - 1))
+				move[w] = v + 1;
 
 			if (move[1] != -i)
 				nultrans[i] = move[1];
@@ -46,12 +51,8 @@ namespace comp {
 		tmpl.set_string("[[YY_NUM_RULES]]", fmt::to_string(lexer.actions.size()));
 		tmpl.set_string("[[YY_END_OF_BUFFER]]", fmt::to_string(lexer.actions.size() + 1));
 		//yy_accept
-		const auto plus1 = [](auto&& x) {
-			return x + 1;
-		};
 		tmpl.set_string("[[YY_ACCEPT]]",
-						qy::format_array(dfa.accept_states | std::views::transform(plus1),
-										 {.with_brace = false}));
+						qy::format_array(dfa.accept_states | plus1, {.with_brace = false}));
 	}
 
 	/*

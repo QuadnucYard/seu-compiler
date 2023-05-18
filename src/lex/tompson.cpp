@@ -13,18 +13,12 @@ namespace comp {
 			switch (-regex[i]) {
 			case '*':
 				match_star();
-				/* if (i<regex.size()-1)
-					op_stack.push(CON); */
 				break;
 			case '+':
 				match_plus();
-				/* if (i<regex.size()-1)
-					op_stack.push(CON); */
 				break;
 			case '?':
 				match_star();
-				/* if (i<regex.size()-1)
-					op_stack.push(CON); */
 				break;
 			case '[':
 				if (i > 0 && cc != -'(' && cc != -'|') {
@@ -64,7 +58,13 @@ namespace comp {
 			default:
 				int n = static_cast<int>(nfa.graph.size());
 				nfa.graph.resize(n + 2);
-				nfa.graph.add_edge(n, n + 1, regex[i]);
+				if (regex[i] == -'.') {
+					for (int i = 0; i < 128; i++)
+						if (i != '\n')
+							nfa.graph.add_edge(n, n + 1, i);
+				} else {
+					nfa.graph.add_edge(n, n + 1, regex[i]);
+				}
 				nfa_stack.push({n, n + 1});
 				if (cc > 0)
 					op_stack.push(CON);
@@ -122,7 +122,7 @@ namespace comp {
 		nfa_stack.pop();
 		SubNFA nfa1 = nfa_stack.top();
 		nfa_stack.pop();
-		nfa.graph.add_edge(nfa1.end, nfa2.start, 0);
+		nfa.graph.add_edge(nfa1.end, nfa2.start, EPSILON);
 		nfa_stack.push({nfa1.start, nfa2.end});
 	}
 

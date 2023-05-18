@@ -38,7 +38,7 @@ namespace comp {
 	/// @brief Construct DFA from a regular expression.
 	class DFABuilder {
 	public:
-		constexpr static int EPSILON = 0;
+		constexpr static int EPSILON = -1;
 		constexpr static int NON_ACCEPT = -1;
 		constexpr static int DUMMY_ACCEPT = NON_ACCEPT + 1;
 		constexpr static size_t MAXV = 512; // 最大顶点数
