@@ -17,6 +17,7 @@ int main(int argc, char const* argv[]) {
 		.default_value(""s)
 		.implicit_value("dfa.dot"s)
 		.nargs(argparse::nargs_pattern::optional);
+	prog.add_argument("-C1").default_value(false).implicit_value(true);
 
 	try {
 		prog.parse_args(argc, argv);
@@ -32,6 +33,7 @@ int main(int argc, char const* argv[]) {
 		.outfile = prog.get("--outfile"),
 		.scanner_nfa_dot = prog.get("--scanner-nfa"),
 		.scanner_dfa_dot = prog.get("--scanner-dfa"),
+		.compress = prog.get<bool>("-C1"),
 	});
 	lexer.process(input_file);
 

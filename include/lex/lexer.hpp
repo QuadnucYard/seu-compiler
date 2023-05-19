@@ -14,6 +14,7 @@ namespace comp {
 			string outfile;
 			string scanner_nfa_dot;
 			string scanner_dfa_dot;
+			bool compress;
 		};
 
 	private:
