@@ -1,6 +1,7 @@
 #include "lex/lexer.hpp"
 #include <argparse/argparse.hpp>
 #include <iostream>
+#include <vector>
 
 int main(int argc, char const* argv[]) {
 	using namespace std::string_literals;

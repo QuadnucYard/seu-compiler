@@ -9,7 +9,7 @@ namespace comp {
 
 	class LexCodeGen {
 	public:
-		LexCodeGen(const Parser& parser, const Lexer& lexer);
+		LexCodeGen(const Lexer& lexer);
 
 		void operator()(const DFA& dfa);
 

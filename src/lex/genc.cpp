@@ -5,26 +5,27 @@
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
 #include <ranges>
+#include <vector>
 
 extern const char* lex_tmpl;
 
 namespace comp {
 	const auto plus1 = std::views::transform([](auto&& x) { return x + 1; });
 
-	LexCodeGen::LexCodeGen(const Parser& parser, const Lexer& lexer) : lexer{lexer}, parser{parser}, tmpl{lex_tmpl} {}
+	LexCodeGen::LexCodeGen( const Lexer& lexer) : lexer{lexer},  tmpl{lex_tmpl} {}
 
 	void LexCodeGen::operator()(const DFA& dfa) {
 		gen_accept_table(dfa);
-		if (parser.options.compress){
-			gen_nxt_table(dfa);
+		if (lexer.options.compress){
+			gen_all_table(dfa);
 		}
 		else 
-			gen_all_table(dfa);
+			gen_nxt_table(dfa);
 		gen_case();
 	}
 
 	void LexCodeGen::gen_nxt_table(const DFA& dfa) {
-		temp.set_bool("UNCOMPRESS", true);		
+		tmpl.set_bool("C1", false);		
 		std::string result;
 		int move[128]{};
 		int size = static_cast<int>(dfa.size());
@@ -76,18 +77,19 @@ namespace comp {
 
     void LexCodeGen::gen_all_table(const DFA& dfa){
         //yy_ec
-		temp.set_bool("UNCOMPRESS", false);	
+		tmpl.set_bool("C1", true);	
         int size = static_cast<int>(dfa.accept_states.size());
-        vector<std::pair<int,int>>valid_len; 
+        std::vector<std::pair<int,int>>valid_len; 
+		std::vector<std::vector<int>>yy_nxt;
         for(int i = 1; i <= size; i++){
-            vector<int>move(128, -i);
+            std::vector<int>move(128, -i);
             for(auto &[v,w]: dfa.graph.iter_edges(i - 1)){
                 move[w] = v + 1;
             }
             move[0] = size + 1;
             yy_nxt.push_back(move);
         }
-        vector<int>equivalent_class(128);
+        std::vector<int>equivalent_class(128);
         for(int i = 0; i < 128; i++){
             equivalent_class[i] = i;
         }
@@ -97,7 +99,7 @@ namespace comp {
                     bool same;
                     if(equivalent_class[j] == j){
                         same = true;
-                        for(int k=0; k < ize; k++){
+                        for(int k = 0; k < size; k++){
                             if(yy_nxt[k][j] != yy_nxt[k][i]){
                                 same = false;
                                 break;
@@ -108,6 +110,18 @@ namespace comp {
                 }
             }          
         }
+		std::vector<int>eq;
+		for (int i = 0; i < equivalent_class.size(); i++) {
+			auto it = std::find(eq.begin(), eq.end(), equivalent_class[i]);
+			if (it == eq.end()) 
+				eq.push_back(equivalent_class[i]);
+		}
+		for (int i = 0; i < equivalent_class.size(); i++) {
+			auto it = std::find(eq.begin(), eq.end(), equivalent_class[i]);
+			int dis = it - eq.begin();
+			if (dis != equivalent_class[i])equivalent_class[i] = dis;
+		}
+
         tmpl.set_string("[[YY_EC]]", qy::format_array(equivalent_class, {.with_brace = false}));
 		
 		//yy_nul_trans
@@ -126,31 +140,37 @@ namespace comp {
         //暴力修改move
         int ec_size = *max_element(equivalent_class.begin(), equivalent_class.end()); 
         for(int i=0; i<= ec_size; i++){
-            vector<int>::iterator it = find(equivalent_class.begin(), equivalent_class.end(),i);
-            int offset = it-equivalent_class.begin();
-            for(int j = 1; j <= size ;j++){
-                move[j][i]=move[j][offset];
+            auto it = find(equivalent_class.begin(), equivalent_class.end(),i)- equivalent_class.begin();
+            for(int j = 0; j <= size; j++){
+                yy_nxt[j][i] = yy_nxt[j][offset];
             }
         }
         for(int j = 1; j <= size ;j++){
-            move[j].resize(ec_size + 1);
+            yy_nxt[j].resize(ec_size + 1);
         }
 
         //这里没有考虑所有状态都不合法的情况，待补充（？）
-		std::pair<int,int>length;
-		for(int j = 0; j <= ec_size; j++){
-			if(move[j] != -i)length.first = j;
-			break;
+		for(int i=0; i<size; i++){
+			std::pair<int,int>length;
+			for(int j = 0; j <= ec_size; j++){
+				if(yy_nxt[i][j] != -i){
+					length.first = j;
+					break;
+				}
+			}
+			for(int j = ec_size; j >= 0; j--){
+				if(yy_nxt[i][j] != -i){
+					length.second = j;
+					break;
+				}
+			}
+			valid_len.push_back(length);
 		}
-		for(int j = ec_size; j >= 0; j--){
-		if(move[j] != -i)length.second = j;
-			break;
-		}
-		valid_len.push_back(length);
+		
 
-        vector<int>chk_tbl={};
-        vector<int>nxt_tbl = {};
-        vector<int>base_tbl= {};
+        std::vector<int>chk_tbl={};
+        std::vector<int>nxt_tbl = {};
+        std::vector<int>base_tbl= {};
 
         for(int i=0; i < valid_len.size(); i++){
             int len = valid_len[i].second - valid_len[i].first;
