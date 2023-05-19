@@ -1,6 +1,7 @@
 %{
 	#include <stdio.h>
 	#include <stdlib.h>
+	#include <string.h>
 	char yytext[100];
 	int column,line,prevCol;
 	int printed = 0;
@@ -26,7 +27,10 @@ R : L  { puts("R -> L"); }  ;
 /* ID = * ID */
 int yylex() {
 	static int tokens[] = {256, '=', '*', 256, 0};
+	static const char* texts[] = {"aa", "=", "*", "bb", 0};
 	static int cnt = 0;
+	if (texts[cnt])
+		strcpy(yytext, texts[cnt]);
 	return tokens[cnt++];
 }
 

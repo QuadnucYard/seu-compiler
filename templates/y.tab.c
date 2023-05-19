@@ -9,7 +9,7 @@ typedef int YYSTYPE;
 	#define YYSTYPE_IS_DECLARED 1
 #endif
 
-typedef unsigned char yytype_uint8;
+typedef short yytype_uint8;
 
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL [[YYFINAL]]
