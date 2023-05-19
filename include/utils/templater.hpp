@@ -27,6 +27,10 @@ namespace qy {
 			replace_all_inplace(tmpl, key, value);
 		}
 
+		void set_string(std::string_view key, const auto&& value) {
+			replace_all_inplace(tmpl, key, FORMAT("{}", value));
+		}
+
 		void set_bool(std::string_view key, bool value) {
 			using namespace std::string_literals;
 			if (value) {

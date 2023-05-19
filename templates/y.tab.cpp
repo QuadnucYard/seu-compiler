@@ -5,6 +5,24 @@
 
 using namespace std;
 
+/* YYFINAL -- State number of the termination state.  */
+#define YYFINAL [[YYFINAL]]
+/* YYLAST -- Last index in YYTABLE.  */
+#define YYLAST -1
+
+/* YYNTOKENS -- Number of terminals.  */
+#define YYNTOKENS [[YYNTOKENS]]
+/* YYNNTS -- Number of nonterminals.  */
+#define YYNNTS [[YYNNTS]]
+/* YYNRULES -- Number of rules.  */
+#define YYNRULES [[YYNRULES]]
+/* YYNRULES -- Number of states.  */
+#define YYNSTATES [[YYNSTATES]]
+
+/* YYTRANSLATE(YYLEX) -- Bison symbol number corresponding to YYLEX.  */
+#define YYUNDEFTOK -1
+#define YYMAXUTOK [[YYMAXUTOK]]
+
 const int base = 0;
 
 static const unsigned char yytranslate[] = [[yytranslate]];

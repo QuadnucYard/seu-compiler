@@ -18,6 +18,8 @@ namespace comp {
 
 		void gen(const parsing_table& pt);
 
+		void gen_info();
+
 		void gen_translate();
 
 		void gen_table(const parsing_table& pt);

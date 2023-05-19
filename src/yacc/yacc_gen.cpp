@@ -11,6 +11,7 @@ namespace comp {
 		parser{parser}, analyzer{parser.analyzer}, temp{tmpl} {}
 
 	void yacc_code::gen(const parsing_table& pt) {
+		gen_info();
 		gen_translate();
 		gen_table(pt);
 		gen_case();
@@ -18,6 +19,14 @@ namespace comp {
 		gen_lhs();
 		gen_newstate();
 		gen_compressed(pt);
+	}
+
+	void yacc_code::gen_info() {
+		temp.set_string("[[YYFINAL]]", analyzer.tokens.size() + 1);
+		temp.set_string("[[YYNTOKENS]]", analyzer.tokens.size());
+		temp.set_string("[[YYNNTS]]", analyzer.nonterminals.size());
+		temp.set_string("[[YYNRULES]]", parser.actions.size());
+		temp.set_string("[[YYMAXUTOK]]", parser.translate.size() - 1);
 	}
 
 	void yacc_code::gen_translate() {
@@ -43,6 +52,7 @@ namespace comp {
 			s_goto += fmt::format("{},\n", qy::format_array(pt.goto_.iter_row(i)));
 		temp.set_string("[[action_table]]", s_action);
 		temp.set_string("[[goto_table]]", s_goto);
+		temp.set_string("[[YYNSTATES]]", pt.action.rows());
 	}
 
 	void yacc_code::gen_rhs() {
