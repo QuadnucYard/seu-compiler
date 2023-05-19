@@ -9,13 +9,19 @@ int main(int argc, char const* argv[]) {
 	argparse::ArgumentParser prog("seu-yacc");
 
 	prog.add_argument("input").help("Path of input .l file");
-	prog.add_argument("--header-file").default_value("y.tab.h"s);
-	prog.add_argument("-oFILE", "--outfile").default_value("y.tab.c"s);
+	prog.add_argument("--header-file")
+		.default_value("y.tab.h"s)
+		.help("Path of output header file.");
+	prog.add_argument("-oFILE", "--outfile")
+		.default_value("y.tab.c"s)
+		.help("Path of output parser file.");
 	prog.add_argument("--lr1-pda")
 		.default_value(""s)
 		.implicit_value("lr1-pda.dot"s)
-		.nargs(argparse::nargs_pattern::optional);
-	prog.add_argument("-C1").default_value(false).implicit_value(true);
+		.nargs(argparse::nargs_pattern::optional)
+		.help("Set to output LR(1) state graph.");
+	prog.add_argument("-C1").default_value(false).implicit_value(true).help(
+		"Set to compress LALR(1) parsing table. Default: false.");
 
 	try {
 		prog.parse_args(argc, argv);
