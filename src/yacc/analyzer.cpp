@@ -319,20 +319,24 @@ namespace comp {
 			if (kern.size() < 2)
 				continue;
 			item_set new_set{states[kern[0]]};
-			symbol_set follows;
+			// follows 形成了一个矩阵，同一行可以直接并，但如果同一列有冲突的，那就不能合并
+			std::vector<symbol_set> follows(states[kern[0]].kernel_size);
 
 			bool can_merge = true;
 			for (size_t j = 0; j < kern.size() && can_merge; j++) {
 				for (auto&& [k, item] : enumerate(states[kern[j]].items)) {
 					new_set.items[k].follow |= item.follow;
-					if (!item.has_next()) {
-						if (j > 0 && (follows & item.follow).any()) {
-							can_merge = false;
-							break;
-						} else {
-							follows |= item.follow;
-						}
+					if (!item.has_next())
+						follows[k] |= item.follow;
+				}
+				// 然后检查有无冲突
+				symbol_set all_fo;
+				for (auto&& fo : follows) {
+					if ((fo & all_fo).any()) {
+						can_merge = false;
+						break;
 					}
+					all_fo |= fo;
 				}
 			}
 			if (!can_merge)
