@@ -29,8 +29,8 @@ static const unsigned char yytranslate[] = [[yytranslate]];
 
 static const char* const yytname[] = [[yytname]];
 
-short LALR1_action[][128] = {[[action_table]]};
-short LALR1_goto[][128] = {[[goto_table]]};
+short LALR1_action[][YYNTOKENS] = {[[action_table]]};
+short LALR1_goto[][YYNNTS] = {[[goto_table]]};
 
 stack<int> token_stack;
 stack<int> state_stack;
@@ -68,7 +68,9 @@ void parse() {
 		}
 			
 		else if (info < base) {
+			switch (base - info) {
 			[[reduce]]
+			}
 			int temp=token_stack.top();
             token_stack.pop();
 			pop_stack(get_rhs[base - info], get_newstate[base - info]);
@@ -92,9 +94,9 @@ void parse() {
 
 	while(1){
         auto info = LALR1_action[state_stack.top()][point];
-
+		switch (base - info) {
 		[[reduce]]
-
+		}
 		int temp=token_stack.top();
             token_stack.pop();
 			pop_stack(get_rhs[base - info], get_newstate[base - info]);

@@ -82,7 +82,6 @@ namespace comp {
 
 	void yacc_code::gen_case() {
 		std::string result = {};
-		result += "switch (base - info) {\n";
 		for (auto& prod : analyzer.rules) {
 			if (!prod.action.empty()) {
 				result += fmt::sprintf(
@@ -93,8 +92,6 @@ namespace comp {
 					prod.id, prod.action);
 			}
 		}
-		result += "    }\n";
-
 		temp.set_string("[[reduce]]", result);
 	}
 } // namespace comp
