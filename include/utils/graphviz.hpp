@@ -1,4 +1,5 @@
 #pragma once
+#include "utils/string_utils.hpp"
 #include <fmt/os.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
@@ -76,6 +77,6 @@ namespace qy::graphviz {
 
 	std::string label_escape(const std::string& s) {
 		static std::regex pat{R"(([|"{}]))"};
-		return std::regex_replace(s, std::regex{R"(([|"{}]))"}, "\\$1");
+		return std::regex_replace(qy::replace_all(s, "\\", "\\\\"), pat, "\\$1");
 	}
 } // namespace qy::graphviz
