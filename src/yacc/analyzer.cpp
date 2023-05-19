@@ -51,7 +51,7 @@ namespace comp {
 			to_dot(sg, options.lr1_pda_dot);
 		auto pt = get_LR1_table(sg);
 		auto pt2 = get_LALR1_table(sg, pt);
-		pt2.compress();
+		// pt2.compress();
 		return pt2;
 	}
 

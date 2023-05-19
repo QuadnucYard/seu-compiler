@@ -127,11 +127,12 @@ namespace comp {
 						tab.resize(i + row.l, ERR);
 						pt.check.resize(tab.size(), ERR);
 					}
-					std::copy_n(row.a, row.l, tab.begin() + i);
 					for (size_t j = 0; j < row.l; j++)
-						if (row.a[j] != ERR)
-							pt.check[i + j] = row.a[j];
-					pt.pact[row.r] = i;
+						if (row.a[j] != ERR) {
+							tab[i + j] = row.a[j];
+							pt.check[i + j] = row.c + j;
+						}
+					pt.pact[row.r] = i - row.c;
 					break;
 				}
 			}
@@ -150,7 +151,7 @@ namespace comp {
 				d--;
 			l = d - u;
 			// [u, u + l] 嵌入
-			size_t best = tab.size(), least_conf = l, best_last_conf = -1;
+			size_t best = tab.size(), least_conf = l, best_last_conf = 0;
 			// 先尝试不扩容的嵌入
 			for (size_t i = 0; i <= tab.size(); i++) {
 				size_t conf = 0, last_conf = -1;
@@ -170,7 +171,8 @@ namespace comp {
 			}
 			if (least_conf > 1) {
 				// 如果不行，那么就扩容
-				for (size_t i = tab.size() - l; i <= tab.size(); i++) {
+				best = tab.size();
+				for (size_t i = tab.size() < l ? 0 : tab.size() - l; i <= tab.size(); i++) {
 					size_t conf = 0, last_conf = -1;
 					for (size_t j = 0; j < l; j++) {
 						if (tab[i + j] != ERR && goto_[u + j][k] != ERR &&
@@ -192,13 +194,14 @@ namespace comp {
 				pt.check.resize(tab.size(), ERR);
 			}
 			for (size_t j = 0; j < l; j++)
-				tab[best + j] = goto_[u + j][k];
-			for (size_t j = 0; j < l; j++)
-				if (pt.check[best + j] == ERR)
-					pt.check[best + j] = goto_[u + j][k];
+				if (tab[best + j] == ERR) {
+					tab[best + j] = goto_[u + j][k];
+					pt.check[best + j] = u + j;
+				}
 			// goto[j][k] = table[pgoto[k] + j], u + pgoto[k] = best
 			pt.pgoto[k] = best - u;
-			pt.defgoto[k] = u + best_last_conf; // 留给table里冲突的那个
+			pt.defgoto[k] = goto_[u + best_last_conf][k]; // 留给table里冲突的那个
+			// 有个问题，如果是最后一个因为溢出而冲突，应该做裁剪
 		}
 		// 如果这列只有一个，放在defgoto
 		// 否则把这列嵌入到table里，挑一个放到defgoto

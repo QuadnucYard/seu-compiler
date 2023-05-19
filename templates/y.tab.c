@@ -73,11 +73,11 @@ void parse() {
 	*++symbol_sp = yychar;
 	*++state_sp = 0;
 
-	while (yychar != 0 || *state_sp >= 1) {
+	while (yychar != 0 || *state_sp > 1) {
 [[IF(C1)]]
 		short yyn = yydefact[*state_sp];
 		if (yyn == 0)
-			yyn = yypact[*state_sp + yychar];
+			yyn = yytable[yypact[*state_sp] + yychar];
 [[ELSE]]
 		short yyn = LALR1_action[*state_sp][yychar];
 [[FI]]
