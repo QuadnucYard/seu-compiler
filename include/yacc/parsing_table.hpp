@@ -1,5 +1,6 @@
 #pragma once
 #include "def.hpp"
+#include "utils/fs.hpp"
 #include "utils/matrix.hpp"
 
 namespace comp {
@@ -18,6 +19,8 @@ namespace comp {
 
 		qy::matrix<sid_t> action;
 		qy::matrix<sid_t> goto_;
+
+		void to_csv(const fs::path& path) const;
 
 		parsing_table_compressed compress_less() const;
 		parsing_table_compressed compress() const;

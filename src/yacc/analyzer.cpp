@@ -52,6 +52,8 @@ namespace comp {
 		auto pt = get_LR1_table(sg);
 		auto pt2 = get_LALR1_table(sg, pt);
 		// pt2.compress();
+		pt.to_csv("lr1.csv");
+		pt2.to_csv("lalr1.csv");
 		return pt2;
 	}
 
@@ -114,7 +116,10 @@ namespace comp {
 			return s2;
 		};
 		qy::graphviz::digraph dot{path.string(), "LR(1)"};
-		dot.rankdir("LR").node_option("shape", "record").node_option("fontname", "Consolas");
+		dot.rankdir("LR")
+			.node_option("shape", "record")
+			.node_option("fontname", "Consolas")
+			.edge_option("fontname", "Consolas");
 		for (auto&& [i, s] : enumerate(sg.states)) {
 			dot.node(i, fmt::format("I{} | {{ {} | {} }}", i,
 									fmt::join(std::views::transform(s.items, _to_string_p), " "),
@@ -381,6 +386,13 @@ namespace comp {
 				if (auto& x = LALR1_goto[i][j]; x != parsing_table::ERR)
 					x = state_map[x];
 		}
+
+		decltype(LR1_states.atn) atn;
+		for (auto&& [u, e] : LR1_states.atn) {
+			auto&& [v, w] = e;
+			atn.emplace(state_map[u], std::pair{state_map[v], w});
+		}
+		to_dot({states, atn}, "lalr1-pda.dot");
 
 		return {std::move(LALR1_action), std::move(LALR1_goto)};
 	}

@@ -1,9 +1,20 @@
 #include "yacc/parsing_table.hpp"
 #include <algorithm>
+#include <fmt/os.h>
+#include <fmt/ranges.h>
 #include <map>
 #include <unordered_set>
 
 namespace comp {
+
+	void parsing_table::to_csv(const fs::path& path) const {
+		auto out{fmt::output_file(path.string())};
+		for (size_t i = 0; i < action.rows(); i++) {
+			out.print("{},{}\n", fmt::join(action.iter_row(i), ","),
+					  fmt::join(goto_.iter_row(i), ","));
+		}
+	}
+
 	parsing_table_compressed parsing_table::compress_less() const {
 		struct table_row {
 			size_t r, c, l;
