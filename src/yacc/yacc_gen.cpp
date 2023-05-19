@@ -12,11 +12,15 @@ namespace comp {
 
 	void yacc_code::gen(const parsing_table& pt) {
 		gen_info();
+		temp.set_string("[[YYNSTATES]]", pt.action.rows());
 		gen_translate();
-		gen_table(pt);
-		gen_case();
 		gen_yyr();
-		gen_compressed(pt);
+		if (parser.options.compress) {
+			gen_compressed(pt);
+		} else {
+			gen_table(pt);
+		}
+		gen_case();
 	}
 
 	void yacc_code::gen_info() {
@@ -41,18 +45,6 @@ namespace comp {
 										 })));
 	}
 
-	void yacc_code::gen_table(const parsing_table& pt) {
-		string s_action;
-		string s_goto;
-		for (size_t i = 0; i < pt.action.rows(); i++)
-			s_action += fmt::format("{},", qy::format_array(pt.action.iter_row(i)));
-		for (size_t i = 0; i < pt.goto_.rows(); i++)
-			s_goto += fmt::format("{},", qy::format_array(pt.goto_.iter_row(i)));
-		temp.set_string("[[action_table]]", s_action);
-		temp.set_string("[[goto_table]]", s_goto);
-		temp.set_string("[[YYNSTATES]]", pt.action.rows());
-	}
-
 	void yacc_code::gen_yyr() {
 		temp.set_string("[[yyr1]]",
 						qy::format_array(analyzer.rules | std::views::transform(&production::lhs)));
@@ -62,11 +54,29 @@ namespace comp {
 										 })));
 	}
 
+	void yacc_code::gen_table(const parsing_table& pt) {
+		temp.set_bool("C1", false);
+		string s_action;
+		string s_goto;
+		for (size_t i = 0; i < pt.action.rows(); i++)
+			s_action += fmt::format("{},", qy::format_array(pt.action.iter_row(i)));
+		for (size_t i = 0; i < pt.goto_.rows(); i++)
+			s_goto += fmt::format("{},", qy::format_array(pt.goto_.iter_row(i)));
+		temp.set_string("[[action_table]]", s_action);
+		temp.set_string("[[goto_table]]", s_goto);
+		temp.set_string("[[YYLAST]]", 0);
+	}
+
 	void yacc_code::gen_compressed(const parsing_table& pt) {
+		temp.set_bool("C1", true);
 		auto pt_c = pt.compress();
-		temp.set_string("[[get_defact]]", qy::format_array(pt_c.defact));
-		temp.set_string("[[get_table]]", qy::format_array(pt_c.table));
-		temp.set_string("[[get_pact]]", qy::format_array(pt_c.pact));
+		temp.set_string("[[yydefact]]", qy::format_array(pt_c.defact));
+		temp.set_string("[[yypact]]", qy::format_array(pt_c.pact));
+		temp.set_string("[[yydefgoto]]", qy::format_array(pt_c.defgoto));
+		temp.set_string("[[yypgoto]]", qy::format_array(pt_c.pgoto));
+		temp.set_string("[[yytable]]", qy::format_array(pt_c.table));
+		temp.set_string("[[yycheck]]", qy::format_array(pt_c.check));
+		temp.set_string("[[YYLAST]]", pt_c.table.size() - 1);
 	}
 
 	void yacc_code::gen_case() {

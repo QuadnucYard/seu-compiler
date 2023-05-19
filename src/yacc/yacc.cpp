@@ -15,6 +15,7 @@ int main(int argc, char const* argv[]) {
 		.default_value(""s)
 		.implicit_value("lr1-pda.dot"s)
 		.nargs(argparse::nargs_pattern::optional);
+	prog.add_argument("-C1").default_value(false).implicit_value(true);
 
 	try {
 		prog.parse_args(argc, argv);
@@ -30,6 +31,7 @@ int main(int argc, char const* argv[]) {
 		.header_file = prog.get("--header-file"),
 		.outfile = prog.get("--outfile"),
 		.lr1_pda_dot = prog.get("--lr1-pda"),
+		.compress = prog.get<bool>("-C1"),
 	});
 
 	try {

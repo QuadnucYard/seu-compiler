@@ -6,5 +6,6 @@ namespace comp {
 		std::string header_file;
 		std::string outfile;
 		std::string lr1_pda_dot;
+		bool compress;
 	};
 } // namespace comp

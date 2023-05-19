@@ -14,7 +14,7 @@ typedef short yytype_uint8;
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL [[YYFINAL]]
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST -1
+#define YYLAST [[YYLAST]]
 
 /* Store start symbol */
 // #define YYSTART [[YYSTART]]
@@ -36,17 +36,23 @@ static const yytype_uint8 yytranslate[] = [[yytranslate]];
 
 static const char* const yytname[] = [[yytname]];
 
-short LALR1_action[][YYNTOKENS] = {[[action_table]]};
-short LALR1_goto[][YYNNTS] = {[[goto_table]]};
-
 /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_uint8 yyr1[] = [[yyr1]];
 /* YYR2[YYN] -- Number of symbols composing right hand side of rule YYN.  */
 static const yytype_uint8 yyr2[] = [[yyr2]];
 
-short defact[] = [[get_defact]];
-short table[] = [[get_table]];
-short pact[] = [[get_pact]];
+[[IF(C1)]]
+short yydefact[] = [[yydefact]];
+short yypact[] = [[yypact]];
+short yydefgoto[] = [[yydefgoto]];
+short yypgoto[] = [[yypgoto]];
+short yytable[] = [[yytable]];
+short yycheck[] = [[yycheck]];
+[[ELSE]]
+short LALR1_action[][YYNTOKENS] = {[[action_table]]};
+
+short LALR1_goto[][YYNNTS] = {[[goto_table]]};
+[[FI]]
 
 void parse() {
 	int symbol_stack[100];
@@ -66,28 +72,40 @@ void parse() {
 
 	*++symbol_sp = yychar;
 	*++state_sp = 0;
-	++yyvsp;
 
-	while (yychar != 0 || *state_sp != 1) {
-		short info = LALR1_action[*state_sp][yychar];
-		if (info >= 0) {
+	while (yychar != 0 || *state_sp >= 1) {
+[[IF(C1)]]
+		short yyn = yydefact[*state_sp];
+		if (yyn == 0)
+			yyn = yypact[*state_sp + yychar];
+[[ELSE]]
+		short yyn = LALR1_action[*state_sp][yychar];
+[[FI]]
+		if (yyn >= 0) {
 			*++symbol_sp = yychar;
-			*++state_sp = info;
+			*++state_sp = yyn;
+			*++yyvsp = yyval;
 			yychar = yytranslate[yylex()];
 		} else {
-			short yyn = -info;
+			yyn = -yyn;
 			short yylen = yyr2[yyn];
 			yyval = yyvsp[1 - yylen];
 			switch (yyn) {
 			[[reduce]]
 			}
-			int temp = *symbol_sp--;
 			state_sp -= yyr2[yyn];
 			symbol_sp -= yyr2[yyn];
 			yyvsp -= yyr2[yyn];
 			*++symbol_sp = yyr1[yyn];
-			*++state_sp = LALR1_goto[*state_sp][*symbol_sp];
-			++yyvsp;
+			*++yyvsp = yyval;
+[[IF(C1)]]
+			yyn = yypgoto[*symbol_sp] + *state_sp;
+			int x = 0 <= yyn && yyn <= YYLAST && yycheck[yyn] == *state_sp ?
+				yytable[yyn] : yydefgoto[*symbol_sp];
+[[ELSE]]
+			int x = LALR1_goto[*state_sp][*symbol_sp];
+[[FI]]
+			*++state_sp = x;
 		}
 	}
 }
