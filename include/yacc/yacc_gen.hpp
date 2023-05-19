@@ -6,24 +6,31 @@ namespace comp {
 
 	struct parsing_table;
 	class SyntacticAnalyzer;
+	class Parser;
 
 	class yacc_code {
 		qy::templater temp;
+		const Parser& parser;
+		const SyntacticAnalyzer& analyzer;
 
 	public:
-		yacc_code() = default;
-		yacc_code(std::string_view tmpl);
-		void gen(const parsing_table& pt, const SyntacticAnalyzer& analyzer);
+		yacc_code(const Parser& parser, std::string_view tmpl);
+
+		void gen(const parsing_table& pt);
+
+		void gen_translate();
+
 		void gen_table(const parsing_table& pt);
-		void gen_case(const SyntacticAnalyzer& analyzer);
 
-		void gen_rhs(const SyntacticAnalyzer& analyzer);
+		void gen_case();
 
-		void gen_lhs(const SyntacticAnalyzer& analyzer);
+		void gen_rhs();
 
-		void gen_newstate(const SyntacticAnalyzer& analyzer);
+		void gen_lhs();
 
-		void gen_compressed(const SyntacticAnalyzer& analyzer, const parsing_table& pt);
+		void gen_newstate();
+
+		void gen_compressed(const parsing_table& pt);
 
 		inline qy::templater& templater() { return temp; }
 

@@ -7,6 +7,10 @@ using namespace std;
 
 const int base = 0;
 
+static const unsigned char yytranslate[] = [[yytranslate]];
+
+static const char* const yytname[] = [[yytname]];
+
 short LALR1_action[][128] = {[[action_table]]};
 short LALR1_goto[][128] = {[[goto_table]]};
 

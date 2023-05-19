@@ -14,12 +14,11 @@ namespace comp {
 	struct Parser::DeclHandler {
 		Parser& parser;
 		std::ostream& tab_inc_file;
-		sid_t token_index{258};
 
 		DeclHandler(Parser& parser, std::ostream& tab_inc_file) :
 			parser(parser), tab_inc_file(tab_inc_file) {
 			parser.analyzer.tokens = {"$end"};
-			parser.translate.resize(token_index, -1);
+			parser.translate.resize(256, -1);
 			parser.translate[0] = 0;
 		}
 
@@ -32,11 +31,11 @@ namespace comp {
 					iss >> parser.start_symbol;
 				else if (kw == "%token") {
 					while (iss >> kw) {
-						parser.symbol_map[kw] = token_index;
-						parser.translate.emplace_back(parser.analyzer.tokens.size());
+						sid_t tid = static_cast<sid_t>(parser.analyzer.tokens.size());
+						parser.symbol_map[kw] = tid;
+						parser.translate.emplace_back(tid);
 						parser.analyzer.tokens.emplace_back(kw);
-						fmt::print(tab_inc_file, "\t{} = {},\n", kw, token_index);
-						token_index++;
+						fmt::print(tab_inc_file, "\t{} = {},\n", kw, parser.translate.size() - 1);
 					}
 				}
 			}
@@ -147,7 +146,7 @@ namespace comp {
 		DeclHandler hDecl(*this, tab_inc_file);
 		RulesHandler hRule(*this);
 
-		yacc_code code_gen{yacc_tmpl};
+		yacc_code code_gen{*this, yacc_tmpl};
 
 		tab_inc_file << "enum yytokentype {\n";
 
@@ -189,7 +188,7 @@ extern YYSTYPE yylval;)";
 		code_gen.templater().set_string("[[USER_CODE_3]]", h.code_content);
 
 		auto pt = analyzer.process(options);
-		code_gen.gen(pt, analyzer);
+		code_gen.gen(pt);
 
 		code_gen.dump(options.outfile);
 	}

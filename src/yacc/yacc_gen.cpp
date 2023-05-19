@@ -7,15 +7,31 @@
 
 namespace comp {
 
-	yacc_code::yacc_code(std::string_view tmpl) : temp{tmpl} {}
+	yacc_code::yacc_code(const Parser& parser, std::string_view tmpl) :
+		parser{parser}, analyzer{parser.analyzer}, temp{tmpl} {}
 
-	void yacc_code::gen(const parsing_table& pt, const SyntacticAnalyzer& analyzer) {
+	void yacc_code::gen(const parsing_table& pt) {
+		gen_translate();
 		gen_table(pt);
-		gen_case(analyzer);
-		gen_rhs(analyzer);
-		gen_lhs(analyzer);
-		gen_newstate(analyzer);
-		gen_compressed(analyzer, pt);
+		gen_case();
+		gen_rhs();
+		gen_lhs();
+		gen_newstate();
+		gen_compressed(pt);
+	}
+
+	void yacc_code::gen_translate() {
+		string s_translate;
+		temp.set_string("[[yytranslate]]", qy::format_array(parser.translate));
+
+		std::vector<string> tname;
+		std::ranges::copy(analyzer.tokens, std::back_inserter(tname));
+		std::ranges::transform(analyzer.nonterminals, std::back_inserter(tname), std::identity{},
+							   &nonterminal::name);
+		temp.set_string("[[yytname]]",
+						qy::format_array(tname | std::views::transform([](const string& s) {
+											 return fmt::format("\"{}\"", s);
+										 })));
 	}
 
 	void yacc_code::gen_table(const parsing_table& pt) {
@@ -29,47 +45,46 @@ namespace comp {
 		temp.set_string("[[goto_table]]", s_goto);
 	}
 
-	void yacc_code::gen_rhs(const SyntacticAnalyzer& analyzer) {
+	void yacc_code::gen_rhs() {
 		temp.set_string("[[get_rhs]]",
 						qy::format_array(analyzer.rules | std::views::transform([](auto&& t) {
 											 return t.rhs.size();
 										 })));
 	}
 
-	void yacc_code::gen_lhs(const SyntacticAnalyzer& analyzer){
-			temp.set_string("[[get_lhs]]",
-						qy::format_array(analyzer.rules | std::views::transform([](auto&& t) {
-											 return -t.lhs;
-										 })));
+	void yacc_code::gen_lhs() {
+		temp.set_string("[[get_lhs]]",
+						qy::format_array(analyzer.rules |
+										 std::views::transform([](auto&& t) { return -t.lhs; })));
 	}
 
-	void yacc_code::gen_newstate(const SyntacticAnalyzer& analyzer) {
+	void yacc_code::gen_newstate() {
 		temp.set_string("[[get_newstate]]",
 						qy::format_array(analyzer.rules | std::views::transform(&production::lhs)));
 	}
 
-	void yacc_code::gen_compressed(const SyntacticAnalyzer& analyzer, const parsing_table& pt) {
+	void yacc_code::gen_compressed(const parsing_table& pt) {
 		auto pt_c = pt.compress();
 		temp.set_string("[[get_defact]]", qy::format_array(pt_c.defact));
 		temp.set_string("[[get_table]]", qy::format_array(pt_c.table));
 		temp.set_string("[[get_pact]]", qy::format_array(pt_c.pact));
 	}
 
-	void yacc_code::gen_case(const SyntacticAnalyzer& analyzer) {
+	void yacc_code::gen_case() {
 		std::string result = {};
 		result += "switch (base - info) {\n";
 		for (auto& prod : analyzer.rules) {
-			if (!prod.action.empty())
+			if (!prod.action.empty()) {
 				result += fmt::sprintf(
 					R"(case %d:
     %s
-    
+    break;
 )",
 					prod.id, prod.action);
-					result+="    break;\n";
+			}
 		}
-		result += "        }\n";
-		
+		result += "    }\n";
+
 		temp.set_string("[[reduce]]", result);
 	}
 } // namespace comp

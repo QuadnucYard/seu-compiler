@@ -125,7 +125,6 @@ namespace comp {
 									  parsing_table& LR1_table) const;
 
 	public:
-
 		std::vector<string> tokens;			   // All tokens involved. Index == sid
 		production_list rules;				   // All rules involved.
 		std::vector<nonterminal> nonterminals; // All nonterminals involved. Index == -sid

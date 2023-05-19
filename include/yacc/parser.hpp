@@ -23,7 +23,7 @@ namespace comp {
 		sid_t get_symbol_id(const string& name) const;
 
 	private:
-		inline static string aug_start{"$start"};
+		inline static string aug_start{"$accept"};
 		Options options;
 		string start_symbol;
 		std::vector<sid_t> translate; // Map lex token id to yacc token id
@@ -34,5 +34,7 @@ namespace comp {
 
 		struct DeclHandler;
 		struct RulesHandler;
+
+		friend class yacc_code;
 	};
 } // namespace comp
