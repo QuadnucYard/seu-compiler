@@ -37,6 +37,7 @@ namespace comp {
 						parser.analyzer.tokens.emplace_back(kw);
 						fmt::print(tab_inc_file, "\t{} = {},\n", kw, parser.translate.size() - 1);
 					}
+				} else if (kw == "%union") {
 				}
 			}
 		}
@@ -170,7 +171,7 @@ namespace comp {
 		for (string s; std::getline(source_file, s); h.lineno++) {
 			if (h.code(s))
 				continue;
-			else if (s == "%%") {
+			else if (s.starts_with("%%")) {
 				++h.section;
 				if (h.section == 1) {
 					tab_inc_file << "};\n";

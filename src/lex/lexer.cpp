@@ -86,7 +86,7 @@ namespace comp {
 		for (std::string s; std::getline(source_file, s); h.lineno++) {
 			if (h.code(s))
 				continue;
-			else if (s == "%%") {
+			else if (s.starts_with("%%")) {
 				++h.section;
 				if (h.section == 1) {
 					codegen.templater().set_string("[[USER_CODE_1]]",
