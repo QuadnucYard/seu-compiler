@@ -17,15 +17,15 @@ namespace comp {
 	void LexCodeGen::operator()(const DFA& dfa) {
 		gen_accept_table(dfa);
 		if (lexer.options.compress){
-			gen_all_table(dfa);
+			gen_nxt_table(dfa);
 		}
 		else 
-			gen_nxt_table(dfa);
+			gen_all_table(dfa);
 		gen_case();
 	}
 
 	void LexCodeGen::gen_nxt_table(const DFA& dfa) {
-		tmpl.set_bool("C1", false);		
+		tmpl.set_bool("C1", true);		
 		std::string result;
 		int move[128]{};
 		int size = static_cast<int>(dfa.size());
@@ -77,7 +77,7 @@ namespace comp {
 
     void LexCodeGen::gen_all_table(const DFA& dfa){
         //yy_ec
-		tmpl.set_bool("C1", true);	
+		tmpl.set_bool("C1", false);	
         int size = static_cast<int>(dfa.accept_states.size());
         std::vector<std::pair<int,int>>valid_len; 
 		std::vector<std::vector<int>>yy_nxt;
@@ -140,12 +140,12 @@ namespace comp {
         //暴力修改move
         int ec_size = *max_element(equivalent_class.begin(), equivalent_class.end()); 
         for(int i=0; i<= ec_size; i++){
-            auto it = find(equivalent_class.begin(), equivalent_class.end(),i)- equivalent_class.begin();
-            for(int j = 0; j <= size; j++){
+            auto offset = find(equivalent_class.begin(), equivalent_class.end(), i)- equivalent_class.begin();
+            for(int j = 0; j < size; j++){
                 yy_nxt[j][i] = yy_nxt[j][offset];
             }
         }
-        for(int j = 1; j <= size ;j++){
+        for(int j = 0; j < size; j++){
             yy_nxt[j].resize(ec_size + 1);
         }
 
@@ -167,7 +167,6 @@ namespace comp {
 			valid_len.push_back(length);
 		}
 		
-
         std::vector<int>chk_tbl={};
         std::vector<int>nxt_tbl = {};
         std::vector<int>base_tbl= {};
