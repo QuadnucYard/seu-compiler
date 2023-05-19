@@ -24,8 +24,8 @@ input
 	;
 
 line
-	: '#'
-	| expr '#'  { printf ("expr %f\n", $1); }
+	: '\n'
+	| expr '\n'  { printf ("expr %f\n", $1); }
 	;
 
 expr
@@ -41,7 +41,7 @@ term
 	;
 
 fact
-	: NUM			{ $$ = yylval; printf("num %f\n", $1); }
+	: NUM			{ $$ = yylval; }
 	| '(' expr ')'  { $$ = $2; }
 	;
 
