@@ -44,6 +44,7 @@ namespace comp {
 	};
 
 	struct Parser::RulesHandler {
+		
 		Parser& parser;
 		std::istringstream iss;
 		RawRule rule;
@@ -75,10 +76,12 @@ namespace comp {
 				} else if (t == "|") {
 					rule.rhs.push_back({});
 					parser.actions.push_back(string{qy::trim(action)});
+					action.clear();
 				} else if (t == ";") {
 					parser.rules.push_back(std::move(rule));
 					rule.rhs.clear();
 					parser.actions.push_back(string{qy::trim(action)});
+					action.clear();
 				} else if (action_started && t == "}") {
 					action += t;
 					action_started = false;
@@ -102,6 +105,7 @@ namespace comp {
 
 			parser.rules[0].rhs = {{parser.start_symbol}};
 
+			size_t k=0;
 			for (size_t i = 0; i < parser.rules.size(); i++) {
 				for (auto&& r : parser.rules[i].rhs) {
 					symbol_vec sv;
@@ -116,7 +120,7 @@ namespace comp {
 						sv.push_back(parser.get_symbol_id(s));
 					}
 					ana.rules.emplace_back(static_cast<sid_t>(ana.rules.size()),
-										   static_cast<sid_t>(i), sv, "");
+										   static_cast<sid_t>(i), sv, parser.actions[k++]);
 				}
 			}
 			// 必须要在最后，这样才能保证rules是固定的，span有效

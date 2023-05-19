@@ -13,6 +13,7 @@ namespace comp {
 		gen_table(pt);
 		gen_case(analyzer);
 		gen_rhs(analyzer);
+		gen_lhs(analyzer);
 		gen_newstate(analyzer);
 		gen_compressed(analyzer, pt);
 	}
@@ -32,6 +33,13 @@ namespace comp {
 		temp.set_string("[[get_rhs]]",
 						qy::format_array(analyzer.rules | std::views::transform([](auto&& t) {
 											 return t.rhs.size();
+										 })));
+	}
+
+	void yacc_code::gen_lhs(const SyntacticAnalyzer& analyzer){
+			temp.set_string("[[get_lhs]]",
+						qy::format_array(analyzer.rules | std::views::transform([](auto&& t) {
+											 return -t.lhs;
 										 })));
 	}
 
@@ -58,8 +66,10 @@ namespace comp {
     
 )",
 					prod.id, prod.action);
+					result+="    break;\n";
 		}
 		result += "        }\n";
+		
 		temp.set_string("[[reduce]]", result);
 	}
 } // namespace comp
