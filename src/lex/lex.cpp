@@ -9,16 +9,21 @@ int main(int argc, char const* argv[]) {
 	argparse::ArgumentParser prog("seu-lex");
 
 	prog.add_argument("input").help("Path of input .l file");
-	prog.add_argument("-oFILE", "--outfile").default_value("lex.yy.c"s);
+	prog.add_argument("-oFILE", "--outfile")
+		.default_value("lex.yy.c"s)
+		.help("Path of output scanner file.");
 	prog.add_argument("--scanner-nfa")
 		.default_value(""s)
 		.implicit_value("nfa.dot"s)
-		.nargs(argparse::nargs_pattern::optional);
+		.nargs(argparse::nargs_pattern::optional)
+		.help("Set to output NFA graph.");
 	prog.add_argument("--scanner-dfa")
 		.default_value(""s)
 		.implicit_value("dfa.dot"s)
-		.nargs(argparse::nargs_pattern::optional);
-	prog.add_argument("-C1").default_value(false).implicit_value(true);
+		.nargs(argparse::nargs_pattern::optional)
+		.help("Set to output DFA graph.");
+	prog.add_argument("-C1").default_value(false).implicit_value(true).help(
+		"Set to compress DFA transition table. Default: false.");
 
 	try {
 		prog.parse_args(argc, argv);
