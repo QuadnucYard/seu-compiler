@@ -18,7 +18,7 @@ namespace comp {
 				match_plus();
 				break;
 			case '?':
-				match_star();
+				match_opt();
 				break;
 			case '[':
 				if (i > 0 && cc != -'(' && cc != -'|') {

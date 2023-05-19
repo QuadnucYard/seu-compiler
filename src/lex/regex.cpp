@@ -7,18 +7,22 @@ namespace comp {
 												  const dict<std::string>& definitions) {
 		std::stack<char> bra; // Brackets stack
 
+		//is )
 		auto match = [&bra](char c) {
 			if (bra.empty() || bra.top() != c)
 				throw syntax_error("Syntax error");
 			bra.pop();
 		};
+
+		//is [ matched
 		auto is_squared = [&bra]() {
 			return !bra.empty() && bra.top() == '[';
 		};
 
 		std::string res;
-
+		//前一个字符是否是'\'
 		bool escaped = false;
+		//当前是否在引号的环境里
 		bool quoted = false;
 		size_t brace_start = -1;
 		for (size_t i = 0; i < s.length(); i++) {
@@ -38,7 +42,7 @@ namespace comp {
 					c = '\b';
 				else if (c == 'f')
 					c = '\f';
-				else if (is_squared() &&
+				else if (
 						 (c == 's' || c == 'S' || c == 'w' || c == 'W' || c == 'd' || c == 'D'))
 					c = -c;
 				res += c;
