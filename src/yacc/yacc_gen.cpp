@@ -15,9 +15,7 @@ namespace comp {
 		gen_translate();
 		gen_table(pt);
 		gen_case();
-		gen_rhs();
-		gen_lhs();
-		gen_newstate();
+		gen_yyr();
 		gen_compressed(pt);
 	}
 
@@ -47,30 +45,21 @@ namespace comp {
 		string s_action;
 		string s_goto;
 		for (size_t i = 0; i < pt.action.rows(); i++)
-			s_action += fmt::format("{},\n", qy::format_array(pt.action.iter_row(i)));
+			s_action += fmt::format("{},", qy::format_array(pt.action.iter_row(i)));
 		for (size_t i = 0; i < pt.goto_.rows(); i++)
-			s_goto += fmt::format("{},\n", qy::format_array(pt.goto_.iter_row(i)));
+			s_goto += fmt::format("{},", qy::format_array(pt.goto_.iter_row(i)));
 		temp.set_string("[[action_table]]", s_action);
 		temp.set_string("[[goto_table]]", s_goto);
 		temp.set_string("[[YYNSTATES]]", pt.action.rows());
 	}
 
-	void yacc_code::gen_rhs() {
-		temp.set_string("[[get_rhs]]",
+	void yacc_code::gen_yyr() {
+		temp.set_string("[[yyr1]]",
+						qy::format_array(analyzer.rules | std::views::transform(&production::lhs)));
+		temp.set_string("[[yyr2]]",
 						qy::format_array(analyzer.rules | std::views::transform([](auto&& t) {
 											 return t.rhs.size();
 										 })));
-	}
-
-	void yacc_code::gen_lhs() {
-		temp.set_string("[[get_lhs]]",
-						qy::format_array(analyzer.rules |
-										 std::views::transform([](auto&& t) { return -t.lhs; })));
-	}
-
-	void yacc_code::gen_newstate() {
-		temp.set_string("[[get_newstate]]",
-						qy::format_array(analyzer.rules | std::views::transform(&production::lhs)));
 	}
 
 	void yacc_code::gen_compressed(const parsing_table& pt) {
@@ -84,12 +73,18 @@ namespace comp {
 		std::string result = {};
 		for (auto& prod : analyzer.rules) {
 			if (!prod.action.empty()) {
+				string act = qy::replace_all(prod.action, "$$", "(yyval)");
+				for (size_t i = 1; i <= prod.rhs.size(); i++) {
+					qy::replace_all_inplace(
+						act, fmt::format("${}", i),
+						fmt::format("(yyvsp[({}) - ({})])", i, prod.rhs.size()));
+				}
 				result += fmt::sprintf(
 					R"(case %d:
     %s
     break;
 )",
-					prod.id, prod.action);
+					prod.id, act);
 			}
 		}
 		temp.set_string("[[reduce]]", result);

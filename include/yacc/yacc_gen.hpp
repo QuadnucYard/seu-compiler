@@ -26,11 +26,7 @@ namespace comp {
 
 		void gen_case();
 
-		void gen_rhs();
-
-		void gen_lhs();
-
-		void gen_newstate();
+		void gen_yyr();
 
 		void gen_compressed(const parsing_table& pt);
 

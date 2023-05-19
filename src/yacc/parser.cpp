@@ -43,7 +43,6 @@ namespace comp {
 	};
 
 	struct Parser::RulesHandler {
-		
 		Parser& parser;
 		std::istringstream iss;
 		RawRule rule;
@@ -61,7 +60,25 @@ namespace comp {
 			action_started = false;
 		}
 
-		static char unescape(std::string_view s) { return s[1]; }
+		static char unescape(std::string_view s) {
+			if (s[1] == '\\') {
+				switch (s[2]) {
+				case '\\':
+					return '\\';
+				case 'b':
+					return '\b';
+				case 'f':
+					return '\f';
+				case 'n':
+					return '\n';
+				case 't':
+					return '\t';
+				case 'v':
+					return '\v';
+				}
+			}
+			return s[1];
+		}
 
 		void operator()(string&& s) {
 			iss.str(s);
@@ -104,7 +121,7 @@ namespace comp {
 
 			parser.rules[0].rhs = {{parser.start_symbol}};
 
-			size_t k=0;
+			size_t k = 0;
 			for (size_t i = 0; i < parser.rules.size(); i++) {
 				for (auto&& r : parser.rules[i].rhs) {
 					symbol_vec sv;
@@ -167,6 +184,7 @@ typedef int YYSTYPE;
 extern YYSTYPE yylval;)";
 					code_gen.templater().set_string("[[USER_CODE_1]]",
 													h.code_content + "[[USER_CODE_1]]");
+					h.code_content.clear();
 				}
 				continue;
 			}
