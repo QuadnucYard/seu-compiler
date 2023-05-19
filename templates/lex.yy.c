@@ -280,8 +280,24 @@ static yyconst short int yy_accept[] = {
 static yyconst yy_state_type yy_NUL_trans[] = {
 [[YY_NUL_TRANS]]};
 
+[[IF(UNCOMPRESS)]]
 static yyconst short yy_nxt[][128] = {
 [[YY_NXT]]};
+
+[[ELSE]]
+static yyconst int yy_ec[128] = {
+[[YY_EC]]};
+
+static yyconst short int yy_base[] = {
+[[YY_BASE]]};
+
+static yyconst short int yy_nxt[] = {
+[[YY_NXT]]};
+
+static yyconst short int yy_chk[] = {
+[[YY_CHK]]};
+
+[[FI]]
 
 static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
@@ -478,6 +494,7 @@ YY_DECL
 
 		yy_current_state = yy_start;
 yy_match:
+[[IF(UNCOMPRESS)]]
 		while ( (yy_current_state = yy_nxt[yy_current_state][YY_SC_TO_UI(*yy_cp)]) > 0 )
 			{
 			if ( yy_accept[yy_current_state] )
@@ -490,7 +507,21 @@ yy_match:
 			}
 
 		yy_current_state = -yy_current_state;
+[[ELSE]]
+		register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
+		while ( yy_current_state == chk[base[yy_current_state] + yy_c])
+			{
+			yy_current_state = nxt[base[yy_current_state] + yy_c];
+			if ( yy_accept[yy_current_state] )
+				{
+				yy_last_accepting_state = yy_current_state;
+				yy_last_accepting_cpos = yy_cp;
+				}
 
+			++yy_cp;
+			}
+		yy_current_state = -yy_current_state;
+[[FI]]
 yy_find_action:
 		yy_act = yy_accept[yy_current_state];
 
@@ -791,6 +822,7 @@ static yy_state_type yy_get_previous_state()
 
 	for ( yy_cp = yytext_ptr + YY_MORE_ADJ; yy_cp < yy_c_buf_p; ++yy_cp )
 		{
+		[[IF(UNCOMPRESS)]]
 		if ( *yy_cp )
 			{
 			yy_current_state = yy_nxt[yy_current_state][YY_SC_TO_UI(*yy_cp)];
@@ -803,6 +835,18 @@ static yy_state_type yy_get_previous_state()
 			yy_last_accepting_cpos = yy_cp;
 			}
 		}
+		[[ELSE]]
+		if ( *yy_cp )
+			{
+			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)]
+			if(yy_current_state == chk[base[yy_current_state] + yy_c]){
+				yy_current_state = yy_nxt[base[yy_current_state] + yy_c];
+			}
+			else yy_current_state = -yy_current_state;
+			}
+		else
+				yy_current_state = yy_NUL_trans[yy_current_state];
+		[[FI]]
 
 	return yy_current_state;
 	}

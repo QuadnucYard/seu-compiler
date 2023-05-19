@@ -9,7 +9,7 @@ namespace comp {
 
 	class LexCodeGen {
 	public:
-		LexCodeGen(const Lexer& lexer);
+		LexCodeGen(const Parser& parser, const Lexer& lexer);
 
 		void operator()(const DFA& dfa);
 
@@ -20,6 +20,7 @@ namespace comp {
 	private:
 		void gen_nxt_table(const DFA& dfa);
 		void gen_accept_table(const DFA& dfa);
+		void gen_all_table(const DFA& dfa);
 		void gen_case();
 
 	private:
