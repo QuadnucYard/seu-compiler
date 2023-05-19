@@ -62,12 +62,13 @@ void parse() {
 
 	symbol_sp = symbol_stack;
 	state_sp = state_stack;
+	yyvsp = yyvsa;
 
 	*++symbol_sp = yychar;
 	*++state_sp = 0;
 	++yyvsp;
 
-	while (yychar != 0 && *state_sp != 1) {
+	while (yychar != 0 || *state_sp != 1) {
 		short info = LALR1_action[*state_sp][yychar];
 		if (info >= 0) {
 			*++symbol_sp = yychar;

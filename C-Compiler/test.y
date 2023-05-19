@@ -1,8 +1,8 @@
 %{
 	#include <stdio.h>
 	#include <stdlib.h>
-	extern char yytext[];
-	extern int column,line,prevCol;
+	char yytext[100];
+	int column,line,prevCol;
 	int printed = 0;
 	void yyerror(char const *s);
 	int yylex();
@@ -23,7 +23,7 @@ L : '*' R   { puts("L -> '*' R"); }
 R : L  { puts("R -> L"); }  ;
 
 %%
-
+/* ID = * ID */
 int yylex() {
 	static int tokens[] = {256, '=', '*', 256, 0};
 	static int cnt = 0;
