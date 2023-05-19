@@ -176,7 +176,7 @@ namespace comp {
 					tab_inc_file << "};\n";
 					tab_inc_file << R"(
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef int YYSTYPE;
+
 # define YYSTYPE_IS_DECLARED 1
 # define YYSTYPE_IS_TRIVIAL 1
 #endif
