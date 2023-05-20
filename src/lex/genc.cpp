@@ -25,7 +25,7 @@ namespace comp {
 	}
 
 	void LexCodeGen::gen_nxt_table(const DFA& dfa) {
-		tmpl.set_bool("C1", true);		
+		tmpl.set_bool("C1", true);
 		std::string result;
 		int move[128]{};
 		int size = static_cast<int>(dfa.size());
@@ -77,9 +77,9 @@ namespace comp {
 
     void LexCodeGen::gen_all_table(const DFA& dfa){
         //yy_ec
-		tmpl.set_bool("C1", false);	
-        int size = static_cast<int>(dfa.accept_states.size());
-        std::vector<std::pair<int,int>>valid_len; 
+		tmpl.set_bool("C1", false);
+		int size = static_cast<int>(dfa.accept_states.size());
+		std::vector<std::pair<int,int>>valid_len; 
 		std::vector<std::vector<int>>yy_nxt;
         for(int i = 1; i <= size; i++){
             std::vector<int>move(128, -i);
@@ -173,15 +173,15 @@ namespace comp {
 
         for(int i=0; i < valid_len.size(); i++){
             int len = valid_len[i].second - valid_len[i].first;
-            for(int temp = 0; temp <= nxt_tbl.size(); i++){
-                bool safe = true;
-                for(int t = temp; t < len; t++){
-                    if( temp + t < nxt_tbl.size() && nxt_tbl[t+temp]!= -1000 && yy_nxt[i][t]!= -i){
+			for (int temp = 0; temp <= nxt_tbl.size(); temp++) {
+				bool safe = true;
+				for (int t = temp; t < len; t++) {
+					if( temp + t < nxt_tbl.size() && nxt_tbl[t+temp]!= -1000 && yy_nxt[i][t]!= -i){
                         safe = false;
                         break;
                     }
-                }
-                if(safe){
+				}
+				if(safe){
                     if(temp + len > nxt_tbl.size()){
                         nxt_tbl.resize(temp + len, -1000);
                         chk_tbl.resize(temp + len, -1000);
@@ -195,10 +195,10 @@ namespace comp {
                     base_tbl.push_back(temp - valid_len[i].first) ;
                     break;           
                 }
-            }
-        }
-        tmpl.set_string("[[YY_BASE]]", qy::format_array(base_tbl, {.with_brace = false}));
-        tmpl.set_string("[[YY_NXT]]", qy::format_array(nxt_tbl, {.with_brace = false}));
+			}
+		}
+		tmpl.set_string("[[YY_BASE]]", qy::format_array(base_tbl, {.with_brace = false}));
+		tmpl.set_string("[[YY_NXT]]", qy::format_array(nxt_tbl, {.with_brace = false}));
         tmpl.set_string("[[YY_CHK]]", qy::format_array(chk_tbl, {.with_brace = false}));
     }
 

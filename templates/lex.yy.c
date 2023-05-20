@@ -281,11 +281,7 @@ static yyconst yy_state_type yy_NUL_trans[] = {
 [[YY_NUL_TRANS]]};
 
 [[IF(C1)]]
-static yyconst short yy_nxt[][128] = {
-[[YY_NXT]]};
 
-
-[[ELSE]]
 static yyconst int yy_ec[128] = {
 [[YY_EC]]};
 
@@ -297,6 +293,11 @@ static yyconst short int yy_nxt[] = {
 
 static yyconst short int yy_chk[] = {
 [[YY_CHK]]};
+
+[[ELSE]]
+
+static yyconst short yy_nxt[][128] = {
+[[YY_NXT]]};
 
 [[FI]]
 
@@ -496,6 +497,19 @@ YY_DECL
 		yy_current_state = yy_start;
 yy_match:
 [[IF(C1)]]
+register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
+		while ( yy_current_state == chk[base[yy_current_state] + yy_c])
+			{
+			yy_current_state = nxt[base[yy_current_state] + yy_c];
+			if ( yy_accept[yy_current_state] )
+				{
+				yy_last_accepting_state = yy_current_state;
+				yy_last_accepting_cpos = yy_cp;
+				}
+
+			++yy_cp;
+			}
+[[ELSE]]
 		while ( (yy_current_state = yy_nxt[yy_current_state][YY_SC_TO_UI(*yy_cp)]) > 0 )
 			{
 			if ( yy_accept[yy_current_state] )
@@ -507,21 +521,7 @@ yy_match:
 			++yy_cp;
 			}
 
-		yy_current_state = -yy_current_state;
-		//yy_current_state = -yy_current_state;		
-[[ELSE]]
-		register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
-		while ( yy_current_state == chk[base[yy_current_state] + yy_c])
-			{
-			yy_current_state = nxt[base[yy_current_state] + yy_c];
-			if ( yy_accept[yy_current_state] )
-				{
-				yy_last_accepting_state = yy_current_state;
-				yy_last_accepting_cpos = yy_cp;
-				}
-
-			++yy_cp;
-			}	
+		yy_current_state = -yy_current_state;			
 [[FI]]
 yy_find_action:
 		yy_act = yy_accept[yy_current_state];
@@ -833,17 +833,14 @@ static yy_state_type yy_get_previous_state()
 			//else yy_current_state = -yy_current_state;
 			}
 		else
-				yy_current_state = yy_NUL_trans[yy_current_state];
+			yy_current_state = yy_NUL_trans[yy_current_state];
 		[[ELSE]]
-				if ( *yy_cp )
+		if ( *yy_cp )
 			{
 			yy_current_state = yy_nxt[yy_current_state][YY_SC_TO_UI(*yy_cp)];
 			}
 		else
 			yy_current_state = yy_NUL_trans[yy_current_state];
-		
-
-		
 		[[FI]]
 		if ( yy_accept[yy_current_state] )
 			{
