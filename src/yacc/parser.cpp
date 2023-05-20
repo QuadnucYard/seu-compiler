@@ -11,13 +11,56 @@ extern const char* yacc_tmpl;
 
 namespace comp {
 
+	static char unescape(char c) {
+		switch (c) {
+		case '\\':
+			return '\\';
+		case 'b':
+			return '\b';
+		case 'f':
+			return '\f';
+		case 'n':
+			return '\n';
+		case 't':
+			return '\t';
+		case 'v':
+			return '\v';
+		}
+		return 0;
+	}
+
+	static char unescape_char(std::string_view s) {
+		if (s[1] == '\\')
+			return unescape(s[2]);
+		return s[1];
+	}
+
+	static string unescape_string(std::string_view s) {
+		string res;
+		bool escaped = false;
+		for (auto c : s.substr(1, s.length() - 2)) {
+			if (escaped) {
+				res.push_back(unescape(c));
+				escaped = false;
+			} else if (c == '\\') {
+				escaped = true;
+			} else {
+				res.push_back(c);
+			}
+		}
+		return res;
+	}
+
 	struct Parser::DeclHandler {
 		Parser& parser;
 		std::ostream& tab_inc_file;
 
+		std::vector<std::pair<token::assoc_flag, std::vector<string>>> prec;
+		std::unordered_map<string, string> nterm_types;
+
 		DeclHandler(Parser& parser, std::ostream& tab_inc_file) :
 			parser(parser), tab_inc_file(tab_inc_file) {
-			parser.analyzer.tokens = {"$end"};
+			parser.analyzer.tokens = {{"$end", "$", "", 0}};
 			parser.translate.resize(256, -1);
 			parser.translate[0] = 0;
 		}
@@ -30,15 +73,56 @@ namespace comp {
 				if (kw == "%start")
 					iss >> parser.start_symbol;
 				else if (kw == "%token") {
+					string tag;
 					while (iss >> kw) {
-						sid_t tid = static_cast<sid_t>(parser.analyzer.tokens.size());
-						parser.symbol_map[kw] = tid;
-						parser.translate.emplace_back(tid);
-						parser.analyzer.tokens.emplace_back(kw);
-						fmt::print(tab_inc_file, "\t{} = {},\n", kw, parser.translate.size() - 1);
+						if (kw.starts_with("<") && kw.ends_with(">"))
+							tag = std::move(kw);
+						else if (qy::is_quoted(kw)) {
+							parser.analyzer.tokens.back().literal = unescape_string(kw);
+						} else if (auto x = std::atoi(kw.c_str()); x > 0) {
+							parser.analyzer.tokens.back().num = x;
+						} else {
+							sid_t tid = static_cast<sid_t>(parser.analyzer.tokens.size());
+							parser.symbol_map[kw] = tid;
+							parser.translate.emplace_back(tid);
+							parser.analyzer.tokens.emplace_back(kw, "", tag, 0);
+							fmt::print(tab_inc_file, "\t{} = {},\n", kw,
+									   parser.translate.size() - 1);
+						}
 					}
+				} else if (kw == "%type") {
+					string tag;
+					while (iss >> kw) {
+						if (kw.starts_with("<") && kw.ends_with(">"))
+							tag = std::move(kw);
+						else
+							nterm_types.emplace(std::move(kw), tag);
+					}
+				} else if (kw == "%left" || kw == "%right" || kw == "%nonassoc") {
+					auto flag = kw == "%left"	 ? token::assoc_flag::LEFT
+								: kw == "%right" ? token::assoc_flag::RIGHT
+												 : token::assoc_flag::NONE;
+					std::vector<string> tok;
+					while (iss >> kw)
+						tok.push_back(std::move(kw));
+					prec.emplace_back(flag, std::move(tok));
 				} else if (kw == "%union") {
 				}
+			}
+		}
+
+		void finalize() const {
+			sid_t i = 1;
+			for (auto&& [assoc, a] : prec) {
+				for (auto&& s : a) {
+					auto& t = parser.analyzer.get_token(s);
+					t.assoc = assoc;
+					t.prec = i;
+				}
+				i++;
+			}
+			for (auto&& [t, tag] : nterm_types) {
+				parser.analyzer.get_nterm(t).tag = tag;
 			}
 		}
 	};
@@ -59,26 +143,6 @@ namespace comp {
 			parser.symbol_map.emplace(aug_start, 0);
 			parser.actions.push_back("");
 			action_started = false;
-		}
-
-		static char unescape(std::string_view s) {
-			if (s[1] == '\\') {
-				switch (s[2]) {
-				case '\\':
-					return '\\';
-				case 'b':
-					return '\b';
-				case 'f':
-					return '\f';
-				case 'n':
-					return '\n';
-				case 't':
-					return '\t';
-				case 'v':
-					return '\v';
-				}
-			}
-			return s[1];
 		}
 
 		void operator()(string&& s) {
@@ -107,7 +171,13 @@ namespace comp {
 					action += t;
 					action += ' ';
 				} else if (!rule.rhs.empty()) {
-					rule.rhs.back().push_back(t);
+					if (t == "%empty") {
+					} else if (t == "%prec") {
+					} else if (!t.starts_with('%')) {
+						rule.rhs.back().push_back(t);
+					} else {
+						throw syntax_error(fmt::format("Unknown definition token: {}.", t));
+					}
 				}
 				prev = std::move(t);
 			}
@@ -131,8 +201,9 @@ namespace comp {
 						if (!parser.symbol_map.contains(s)) {
 							auto tid = static_cast<sid_t>(ana.tokens.size());
 							parser.symbol_map.emplace(s, tid);
-							parser.translate[unescape(s)] = tid;
-							ana.tokens.emplace_back(s);
+							char char_val = unescape_char(s);
+							parser.translate[char_val] = tid;
+							ana.tokens.emplace_back(s, unescape_string(s), "", char_val);
 						}
 						sv.push_back(parser.get_symbol_id(s));
 					}
@@ -143,8 +214,7 @@ namespace comp {
 			// 必须要在最后，这样才能保证rules是固定的，span有效
 			for (size_t i = 0, s = 0; i < parser.rules.size(); i++) {
 				size_t sz = parser.rules[i].rhs.size();
-				ana.nonterminals.emplace_back(parser.rules[i].lhs,
-											  std::span{ana.rules.begin() + s, sz});
+				ana.nterms.emplace_back(parser.rules[i].lhs, std::span{ana.rules.begin() + s, sz});
 				s += sz;
 			}
 		}
@@ -201,6 +271,7 @@ extern YYSTYPE yylval;)";
 		}
 		// End process
 		hRule.finalize();
+		hDecl.finalize();
 
 		code_gen.templater().set_string("[[USER_CODE_1]]", "");
 		code_gen.templater().set_string("[[USER_CODE_2]]", "");

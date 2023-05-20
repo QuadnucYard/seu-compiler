@@ -7,3 +7,4 @@ build/
 
 # Include project files only
 .vscode
+.*/

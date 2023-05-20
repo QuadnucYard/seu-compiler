@@ -26,7 +26,7 @@ namespace comp {
 	void yacc_code::gen_info() {
 		temp.set_string("[[YYFINAL]]", analyzer.tokens.size() + 1);
 		temp.set_string("[[YYNTOKENS]]", analyzer.tokens.size());
-		temp.set_string("[[YYNNTS]]", analyzer.nonterminals.size());
+		temp.set_string("[[YYNNTS]]", analyzer.nterms.size());
 		temp.set_string("[[YYNRULES]]", parser.actions.size());
 		temp.set_string("[[YYMAXUTOK]]", parser.translate.size() - 1);
 	}
@@ -36,8 +36,9 @@ namespace comp {
 		temp.set_string("[[yytranslate]]", qy::format_array(parser.translate));
 
 		std::vector<string> tname;
-		std::ranges::copy(analyzer.tokens, std::back_inserter(tname));
-		std::ranges::transform(analyzer.nonterminals, std::back_inserter(tname), std::identity{},
+		std::ranges::transform(analyzer.tokens, std::back_inserter(tname), std::identity{},
+							   &token::name);
+		std::ranges::transform(analyzer.nterms, std::back_inserter(tname), std::identity{},
 							   &nonterminal::name);
 		temp.set_string("[[yytname]]",
 						qy::format_array(tname | std::views::transform([](const string& s) {

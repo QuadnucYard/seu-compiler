@@ -42,7 +42,7 @@ namespace comp {
 		get_firsts();
 
 		// Print firsts
-		// for (auto& t : nonterminals)
+		// for (auto& t : nterms)
 		// 	fmt::print("First({})={}\n", t.name, to_string(t.first));
 		// fmt::print("\n");
 
@@ -58,27 +58,43 @@ namespace comp {
 	}
 
 	const string& SyntacticAnalyzer::get_symbol_name(sid_t sym) const {
-		return sym >= 0 ? tokens[sym] : nonterminals[-sym].name;
+		return sym >= 0 ? tokens[sym].name : nterms[-sym].name;
+	}
+
+	const token& SyntacticAnalyzer::get_token(const string& name) const {
+		return *std::ranges::find(tokens, name, &token::name);
+	}
+
+	token& SyntacticAnalyzer::get_token(const string& name) {
+		return *std::ranges::find(tokens, name, &token::name);
+	}
+
+	const nonterminal& SyntacticAnalyzer::get_nterm(const string& name) const {
+		return *std::ranges::find(nterms, name, &nonterminal::name);
+	}
+
+	nonterminal& SyntacticAnalyzer::get_nterm(const string& name) {
+		return *std::ranges::find(nterms, name, &nonterminal::name);
 	}
 
 	string SyntacticAnalyzer::to_string(const symbol_set& set) const {
 		string s{};
 		for (size_t i = 0; i < tokens.size(); i++)
 			if (set.test(i))
-				s.append(tokens[i]);
+				s.append(tokens[i].name);
 		return "{" + s + "}";
 	}
 
 	string SyntacticAnalyzer::to_string(const item& it) const {
-		string s{nonterminals[it.prod->lhs].name};
+		string s{nterms[it.prod->lhs].name};
 		s.append(" ->");
 		for (size_t i = 0; i < it.prod->rhs.size(); i++) {
 			auto sym = it.prod->rhs[i];
 			s.push_back(std::cmp_equal(i, it.dot) ? '.' : ' ');
 			if (sym >= 0)
-				s.append(tokens[sym]);
+				s.append(tokens[sym].name);
 			else
-				s.append(nonterminals[-sym].name);
+				s.append(nterms[-sym].name);
 		}
 		if (!it.has_next())
 			s.push_back('.');
@@ -95,7 +111,7 @@ namespace comp {
 
 	void SyntacticAnalyzer::to_dot(const state_graph& sg, const fs::path& path) const {
 		const auto _to_string_p = [this](const item& it) {
-			string s{nonterminals[it.prod->lhs].name};
+			string s{nterms[it.prod->lhs].name};
 			s.append(R"( \-\>)");
 			for (size_t i = 0; i < it.prod->rhs.size(); i++) {
 				auto sym = it.prod->rhs[i];
@@ -111,7 +127,7 @@ namespace comp {
 			string s2{};
 			for (size_t i = 0; i < tokens.size(); i++)
 				if (it.follow.test(i))
-					s2.append(qy::graphviz::label_escape(tokens[i]));
+					s2.append(qy::graphviz::label_escape(tokens[i].name));
 			s2.append("\\n");
 			return s2;
 		};
@@ -146,18 +162,18 @@ namespace comp {
 	}
 
 	void SyntacticAnalyzer::get_firsts() {
-		qy::unweighted_graph g0(nonterminals.size());
+		qy::unweighted_graph g0(nterms.size());
 
 		// 1. Init graph and firsts
 
-		for (auto& nt : nonterminals)
+		for (auto& nt : nterms)
 			for (auto& p : nt.productions)
 				for (sid_t s : p.rhs) {
 					if (s >= 0) {
 						nt.first.set(s);
 					} else {
 						g0.add_edge(p.lhs, -s);
-						if (nonterminals[-s].nullable)
+						if (nterms[-s].nullable)
 							continue;
 					}
 					break;
@@ -171,7 +187,7 @@ namespace comp {
 
 		std::vector<symbol_set> firsts(g.size());
 		for (auto [i, s] : enumerate(scc))
-			firsts[s] |= nonterminals[i].first;
+			firsts[s] |= nterms[i].first;
 
 		// 3. 在新图上合并first
 
@@ -182,7 +198,7 @@ namespace comp {
 		// 4. 再转回来
 
 		for (auto [i, s] : enumerate(scc))
-			nonterminals[i].first = firsts[s];
+			nterms[i].first = firsts[s];
 	}
 
 	SyntacticAnalyzer::state_graph SyntacticAnalyzer::get_LR1_states() const {
@@ -240,12 +256,12 @@ namespace comp {
 				continue;
 			if (sid_t s = it.next(); s < 0) {
 				// 这里其实所有左部相同的都会参与
-				for (auto& p : nonterminals[-s].productions) {
+				for (auto& p : nterms[-s].productions) {
 					const auto& it = result.items[i]; // Caution realloc trap!!
 					// 下面的计算可能有问题
 					item new_item{&p, 0,
 								  !it.has_next1()  ? it.follow
-								  : it.next1() < 0 ? nonterminals[-it.next1()].first
+								  : it.next1() < 0 ? nterms[-it.next1()].first
 												   : single_set(it.next1())};
 					std::pair index{new_item.key()};
 					if (auto _i = close.find(index); _i != close.end()) {
@@ -269,8 +285,7 @@ namespace comp {
 	parsing_table SyntacticAnalyzer::get_LR1_table(const state_graph& LR1_states) const {
 		const auto& [states, atn] = LR1_states;
 
-		size_t n_states = states.size(), n_tokens = tokens.size(),
-			   n_nonterminals = nonterminals.size();
+		size_t n_states = states.size(), n_tokens = tokens.size(), n_nonterminals = nterms.size();
 
 		parsing_table LR1_table{{n_states, n_tokens, parsing_table::ERR},
 								{n_states, n_nonterminals, parsing_table::ERR}};
@@ -301,8 +316,7 @@ namespace comp {
 	parsing_table SyntacticAnalyzer::get_LALR1_table(const state_graph& LR1_states,
 													 parsing_table& LR1_table) const {
 		auto states = LR1_states.states;
-		size_t n_states = states.size(), n_tokens = tokens.size(),
-			   n_nonterminals = nonterminals.size();
+		size_t n_states = states.size(), n_tokens = tokens.size(), n_nonterminals = nterms.size();
 
 		std::vector<std::vector<size_t>> kernel_grouped; // 同心状态分组
 		for (auto&& [i, is] : enumerate(LR1_states.states)) {

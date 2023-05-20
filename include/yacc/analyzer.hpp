@@ -24,9 +24,25 @@ namespace comp {
 	/// The iterator of
 	using production_group = std::span<production>;
 
+	struct token {
+		enum class assoc_flag {
+			NONE,
+			LEFT,
+			RIGHT,
+		};
+
+		string name;						// 名称
+		string literal;						// 字面值
+		string tag;							// union中的标记
+		sid_t num;							// 数值，暂不考虑指定
+		assoc_flag assoc{assoc_flag::NONE}; // 结合性
+		sid_t prec{0};						// 优先级
+	};
+
 	/// @brief 非终结符
 	struct nonterminal {
 		string name;				  // 字面值
+		string tag;					  // 标记
 		production_group productions; // 所有产生式
 		symbol_set first;			  // Set of first
 		bool nullable{false};		  // 是否可产生ε
@@ -108,6 +124,12 @@ namespace comp {
 		/// @return Name of the symbol
 		const string& get_symbol_name(sid_t sym) const;
 
+		const token& get_token(const string& name) const;
+		token& get_token(const string& name);
+
+		const nonterminal& get_nterm(const string& name) const;
+		nonterminal& get_nterm(const string& name);
+
 		string to_string(const symbol_set& set) const;
 		string to_string(const item& it) const;
 		string to_string(const item_set& is) const;
@@ -125,8 +147,8 @@ namespace comp {
 									  parsing_table& LR1_table) const;
 
 	public:
-		std::vector<string> tokens;			   // All tokens involved. Index == sid
-		production_list rules;				   // All rules involved.
-		std::vector<nonterminal> nonterminals; // All nonterminals involved. Index == -sid
+		std::vector<token> tokens;		 // All tokens involved. Index == sid
+		production_list rules;			 // All rules involved.
+		std::vector<nonterminal> nterms; // All nonterminals involved. Index == -sid
 	};
 } // namespace comp
