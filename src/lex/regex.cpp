@@ -1,5 +1,6 @@
 #include "lex/regex.hpp"
 #include "utils/exceptions.hpp"
+#include <fmt/core.h>
 #include <stack>
 
 namespace comp {
@@ -8,9 +9,15 @@ namespace comp {
 		std::stack<char> bra; // Brackets stack
 
 		//is )
-		auto match = [&bra](char c) {
-			if (bra.empty() || bra.top() != c)
-				throw syntax_error("Syntax error");
+		auto match = [&s, &bra](char c) {
+			if (bra.empty())
+				throw syntax_error(fmt::format(
+					"Regex parsing error for \"{}\". Receive '{}', but no bracket expected.", s,
+					c));
+			if (bra.top() != c)
+				throw syntax_error(
+					fmt::format("Regex parsing error for \"{}\". Receive '{}', expected '{}'.", s,
+								c, bra.top()));
 			bra.pop();
 		};
 
@@ -105,13 +112,18 @@ namespace comp {
 			if (brace_start == static_cast<size_t>(-1)) // If outside the braces
 				res += is_special ? -c : c;
 		}
-		if (quoted || escaped || !bra.empty())
-			throw syntax_error("Syntax error");
+		if (quoted)
+			throw syntax_error(
+				fmt::format("Regex parsing error for \"{}\". Mismatched quotation char.", s));
+		if (escaped)
+			throw syntax_error(
+				fmt::format("Regex parsing error for \"{}\". Mismatched escape char.", s));
+		if (!bra.empty())
+			throw syntax_error(fmt::format(
+				"Regex parsing error for \"{}\". Unenclosed bracket '{}'.", s, bra.top()));
 		return {s.length(), res};
 	}
 
-	std::string unescape_regex(std::string_view s) {
-		return unescape_regex(s, {}).second;
-	}
+	std::string unescape_regex(std::string_view s) { return unescape_regex(s, {}).second; }
 
 } // namespace comp
