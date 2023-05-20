@@ -1,8 +1,10 @@
 #include "lex/tompson.hpp"
+#include "lex/regex.hpp"
 #include <bitset>
 #include <unordered_set>
 
 namespace comp {
+
 	NFA TompsonAlgo::operator()(std::string_view regex) {
 		string _regex;
 		for (char c : regex)
@@ -10,7 +12,8 @@ namespace comp {
 
 		char cc = -1;
 		for (size_t i = 0; i < regex.size(); i++) {
-			switch (-regex[i]) {
+			char c = regex[i];
+			switch (-c) {
 			case '*':
 				match_star();
 				break;
@@ -58,52 +61,19 @@ namespace comp {
 			default:
 				int n = static_cast<int>(nfa.graph.size());
 				nfa.graph.resize(n + 2);
-				switch (-regex[i]) {
-				case '.':
-					for (int i = 0; i < 128; i++)
-						if (i != '\n')
+				if (auto matcher = wildcard_matcher::get(-c)) {
+					for (int i = 0; i < CHARSET_SIZE; i++)
+						if (matcher(i))
 							nfa.graph.add_edge(n, n + 1, i);
-					break;
-				case 'd':
-					for (int i = 0; i < 128; i++)
-						if (isdigit(i))
-							nfa.graph.add_edge(n, n + 1, i);
-					break;
-				case 'D':
-					for (int i = 0; i < 128; i++)
-						if (!isdigit(i))
-							nfa.graph.add_edge(n, n + 1, i);
-					break;
-				case 's':
-					for (int i = 0; i < 128; i++)
-						if (isspace(i))
-							nfa.graph.add_edge(n, n + 1, i);
-					break;
-				case 'S':
-					for (int i = 0; i < 128; i++)
-						if (!isspace(i))
-							nfa.graph.add_edge(n, n + 1, i);
-					break;
-				case 'w':
-					for (int i = 0; i < 128; i++)
-						if (isalnum(i))
-							nfa.graph.add_edge(n, n + 1, i);
-					break;
-				case 'W':
-					for (int i = 0; i < 128; i++)
-						if (!isalnum(i))
-							nfa.graph.add_edge(n, n + 1, i);
-					break;
-				default:
-					nfa.graph.add_edge(n, n + 1, regex[i]);
-					break;
+				} else {
+					nfa.graph.add_edge(n, n + 1, c);
 				}
 				nfa_stack.push({n, n + 1});
 				if (cc > 0 || cc == -'*' || cc == -'+' || cc == -'?')
 					op_stack.push(CAT);
 				break;
 			}
-			cc = regex[i];
+			cc = c;
 		}
 		while (op_stack.size() && op_stack.top() == CAT)
 			match_concat();
@@ -120,47 +90,14 @@ namespace comp {
 	}
 
 	auto get_range(std::string_view str) {
-		std::bitset<128> id_bitset;
+		std::bitset<TompsonAlgo::CHARSET_SIZE> id_bitset;
 		size_t m = str.length();
 		const auto add_char = [&id_bitset](char c) {
-			static std::bitset<128> tmp;
-			switch (-c) {
-			case '.':
-				tmp.set();
-				tmp.reset('\n');
-				id_bitset |= tmp;
-				break;
-			case 'd':
-				for (int i = 0; i < 128; i++)
-					if (isdigit(i))
+			if (auto matcher = wildcard_matcher::get(-c)) {
+				for (int i = 0; i < TompsonAlgo::CHARSET_SIZE; i++)
+					if (matcher(i))
 						id_bitset.set(i);
-				break;
-			case 'D':
-				for (int i = 0; i < 128; i++)
-					if (!isdigit(i))
-						id_bitset.set(i);
-				break;
-			case 's':
-				for (int i = 0; i < 128; i++)
-					if (isspace(i))
-						id_bitset.set(i);
-				break;
-			case 'S':
-				for (int i = 0; i < 128; i++)
-					if (!isspace(i))
-						id_bitset.set(i);
-				break;
-			case 'w':
-				for (int i = 0; i < 128; i++)
-					if (isalnum(i))
-						id_bitset.set(i);
-				break;
-			case 'W':
-				for (int i = 0; i < 128; i++)
-					if (!isalnum(i))
-						id_bitset.set(i);
-				break;
-			default:
+			} else {
 				id_bitset.set(c);
 			}
 		};
@@ -191,7 +128,7 @@ namespace comp {
 		nfa.graph.resize(n + 2);
 		SubNFA new_sub{n, n + 1};
 		nfa_stack.push(new_sub);
-		for (int c = 0; c < 128; c++)
+		for (int c = 0; c < CHARSET_SIZE; c++)
 			if (id_bitset.test(c))
 				nfa.graph.add_edge(new_sub.start, new_sub.end, c);
 	}

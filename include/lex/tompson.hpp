@@ -5,10 +5,11 @@
 namespace comp {
 
 	class TompsonAlgo {
-		static constexpr int CAT = 1;
-		static constexpr sid_t EPSILON = DFABuilder::EPSILON;
-
 	public:
+		constexpr static int CAT = 1;
+		constexpr static sid_t EPSILON = DFABuilder::EPSILON;
+		constexpr static sid_t CHARSET_SIZE = DFABuilder::MAXS;
+
 		NFA operator()(std::string_view regex);
 
 	private:
@@ -26,8 +27,6 @@ namespace comp {
 		NFA nfa;
 	};
 
-	inline NFA tompson(std::string_view regex) {
-		return TompsonAlgo()(regex);
-	}
+	inline NFA tompson(std::string_view regex) { return TompsonAlgo()(regex); }
 
 } // namespace comp
