@@ -42,8 +42,7 @@ namespace comp {
 					c = '\b';
 				else if (c == 'f')
 					c = '\f';
-				else if (
-						 (c == 's' || c == 'S' || c == 'w' || c == 'W' || c == 'd' || c == 'D'))
+				else if (c == 's' || c == 'S' || c == 'w' || c == 'W' || c == 'd' || c == 'D')
 					c = -c;
 				res += c;
 				escaped = false;
@@ -63,9 +62,6 @@ namespace comp {
 			}
 			bool is_special = !is_squared();
 			switch (c) {
-			case '.':
-				is_special = true;
-				break;
 			case '(':
 			case '[':
 				bra.push(c);
@@ -95,6 +91,8 @@ namespace comp {
 			case '+':
 			case '?':
 			case '|':
+			case '.':
+				// Such symbols inside "[]" are all literals.
 				break;
 			case '^':
 				// Only the one strictly after '[' is special.
