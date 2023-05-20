@@ -17,15 +17,15 @@ namespace comp {
 	void LexCodeGen::operator()(const DFA& dfa) {
 		gen_accept_table(dfa);
 		if (lexer.options.compress){
-			gen_nxt_table(dfa);
+			gen_all_table(dfa);
 		}
 		else 
-			gen_all_table(dfa);
+			gen_nxt_table(dfa);
 		gen_case();
 	}
 
 	void LexCodeGen::gen_nxt_table(const DFA& dfa) {
-		tmpl.set_bool("C1", true);
+		tmpl.set_bool("C1", false);
 		std::string result;
 		int move[128]{};
 		int size = static_cast<int>(dfa.size());
@@ -77,9 +77,9 @@ namespace comp {
 
     void LexCodeGen::gen_all_table(const DFA& dfa){
         //yy_ec
-		tmpl.set_bool("C1", false);
-		int size = static_cast<int>(dfa.accept_states.size());
-		std::vector<std::pair<int,int>>valid_len; 
+		tmpl.set_bool("C1", true);	
+        int size = static_cast<int>(dfa.accept_states.size());
+        std::vector<std::pair<int,int>>valid_len; 
 		std::vector<std::vector<int>>yy_nxt;
         for(int i = 1; i <= size; i++){
             std::vector<int>move(128, -i);
@@ -148,6 +148,8 @@ namespace comp {
         for(int j = 0; j < size; j++){
             yy_nxt[j].resize(ec_size + 1);
         }
+        
+
 
         //这里没有考虑所有状态都不合法的情况，待补充（？）
 		for(int i=0; i<size; i++){
@@ -172,28 +174,21 @@ namespace comp {
         std::vector<int>base_tbl= {};
 
         for(int i=0; i < valid_len.size(); i++){
-            int len = valid_len[i].second - valid_len[i].first;
-<<<<<<< HEAD
-            for(int temp = 0; temp <= nxt_tbl.size(); i++){
+            int len = valid_len[i].second - valid_len[i].first + 1;
+            for(int temp = 0; temp <= nxt_tbl.size(); temp++){
                 bool safe = true;
-                for(int t = temp; t < len; t++){
-                    if( temp + t < nxt_tbl.size() && nxt_tbl[t+temp] != -1000 && yy_nxt[i][t]!= -i ){
-=======
-			for (int temp = 0; temp <= nxt_tbl.size(); temp++) {
-				bool safe = true;
-				for (int t = temp; t < len; t++) {
-					if( temp + t < nxt_tbl.size() && nxt_tbl[t+temp]!= -1000 && yy_nxt[i][t]!= -i){
->>>>>>> 89540dc52ab93ba9bf5bcf1a580bec01911ecee0
+                for(int t = 0; t < len; t++){
+                    if( temp + t < nxt_tbl.size() && nxt_tbl[t+temp]!= -1000 && yy_nxt[i][t]!= -i){
                         safe = false;
                         break;
                     }
-				}
-				if(safe){
+                }
+                if(safe){
                     if(temp + len > nxt_tbl.size()){
                         nxt_tbl.resize(temp + len, -1000);
                         chk_tbl.resize(temp + len, -1000);
                     }
-                    for(size_t j = 0; j < len;j++){
+                    for(size_t j = 0; j< yy_nxt[i].size() ; j++){
                         if(yy_nxt[i][j]!= -i){
                             nxt_tbl[temp + j] = yy_nxt[i][j];
                             chk_tbl[temp + j] = i;
@@ -202,10 +197,18 @@ namespace comp {
                     base_tbl.push_back(temp - valid_len[i].first) ;
                     break;           
                 }
-			}
-		}
-		tmpl.set_string("[[YY_BASE]]", qy::format_array(base_tbl, {.with_brace = false}));
-		tmpl.set_string("[[YY_NXT]]", qy::format_array(nxt_tbl, {.with_brace = false}));
+            }
+        }
+		// int count=chk_tbl.size()-1;
+		// while(count>=0){
+		// 	if(chk_tbl[count]!=-1000)break;
+		// 	else count--;
+		// }
+		// chk_tbl.resize(count+1);
+		// nxt_tbl.resize(count+1);
+
+        tmpl.set_string("[[YY_BASE]]", qy::format_array(base_tbl, {.with_brace = false}));
+        tmpl.set_string("[[YY_NXT]]", qy::format_array(nxt_tbl, {.with_brace = false}));
         tmpl.set_string("[[YY_CHK]]", qy::format_array(chk_tbl, {.with_brace = false}));
     }
 
