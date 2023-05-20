@@ -1,3 +1,4 @@
+set_config("plat", "mingw")
 set_project("seu-compiler")
 
 set_languages("c++20")

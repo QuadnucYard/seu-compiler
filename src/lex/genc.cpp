@@ -142,7 +142,7 @@ namespace comp {
         for(int i=0; i<= ec_size; i++){
             auto offset = find(equivalent_class.begin(), equivalent_class.end(), i)- equivalent_class.begin();
             for(int j = 0; j < size; j++){
-                yy_nxt[j][i] = yy_nxt[j][offset];
+                yy_nxt[j][i] = yy_nxt[j][offset]< 0 ? yy_nxt[j][offset]+1: yy_nxt[j][offset] ;
             }
         }
         for(int j = 0; j < size; j++){
@@ -176,7 +176,7 @@ namespace comp {
             for(int temp = 0; temp <= nxt_tbl.size(); i++){
                 bool safe = true;
                 for(int t = temp; t < len; t++){
-                    if( temp + t < nxt_tbl.size() && nxt_tbl[t+temp]!= -1000 && yy_nxt[i][t]!= -i){
+                    if( temp + t < nxt_tbl.size() && nxt_tbl[t+temp] != -1000 && yy_nxt[i][t]!= -i ){
                         safe = false;
                         break;
                     }
