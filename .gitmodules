@@ -1,3 +1,0 @@
-[submodule "ext/tl-ranges"]
-	path = ext/tl-ranges
-	url = git@github.com:TartanLlama/ranges.git
