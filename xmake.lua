@@ -1,4 +1,3 @@
-set_config("plat", "mingw")
 set_project("seu-compiler")
 
 set_languages("c++20")
@@ -64,13 +63,13 @@ target("lex")
 
 target("parser")
     set_kind("static")
-    add_files("src/common/*.cpp", "src/yacc/*.cpp|yacc.cpp")
+    add_files("src/common/*.cpp", "src/yacc/*.cpp|main.cpp")
     add_packages("fmt", "tl-ranges")
-    add_template("templates/y.tab.cpp", "yacc_tmpl")
+    add_template("templates/y.tab.c", "yacc_tmpl")
 
 target("yacc")
     add_deps("parser")
-    add_files("src/yacc/yacc.cpp")
+    add_files("src/yacc/main.cpp")
     add_packages("argparse")
 
 
