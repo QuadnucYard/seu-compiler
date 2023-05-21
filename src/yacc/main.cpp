@@ -1,5 +1,4 @@
-
-#include "yacc/parser.hpp"
+#include "yacc/yacc.hpp"
 #include <argparse/argparse.hpp>
 #include <iostream>
 

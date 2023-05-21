@@ -1,6 +1,6 @@
 #include "yacc/yacc_gen.hpp"
 #include "utils/outfmt.hpp"
-#include "yacc/parser.hpp"
+#include "yacc/yacc.hpp"
 #include "yacc/yparser.hpp"
 #include <fmt/ostream.h>
 #include <fmt/printf.h>

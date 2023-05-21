@@ -1,4 +1,4 @@
-#include "yacc/parser.hpp"
+#include "yacc/yacc.hpp"
 #include "yacc/yparser.hpp"
 #include <fstream>
 
