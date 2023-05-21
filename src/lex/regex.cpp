@@ -67,7 +67,18 @@ namespace comp {
 				res += c;
 				continue;
 			}
-			bool is_special = !is_squared();
+			if (is_squared()) {
+				if (c == ']') {
+					match('[');
+					res += -c;
+				} else if (c=='^' && res.back() == -'['){
+					res += -c;
+				} else {
+					res += c;
+				}
+				continue;
+			}
+			bool is_special = true;
 			switch (c) {
 			case '(':
 			case '[':
@@ -80,31 +91,11 @@ namespace comp {
 			case ')':
 				match('(');
 				break;
-			case ']':
-				match('[');
-				is_special = true;
-				break;
 			case '}':
 				match('{');
 				res += definitions.at(std::string{s.substr(brace_start + 1, i - brace_start - 1)});
 				brace_start = -1;
 				continue;
-			case ' ':
-				if (is_squared())
-					break; // Fallthrough trick
-			case '\t':
-				return {i, res};
-			case '*':
-			case '+':
-			case '?':
-			case '|':
-			case '.':
-				// Such symbols inside "[]" are all literals.
-				break;
-			case '^':
-				// Only the one strictly after '[' is special.
-				is_special = is_squared() && s[i - 1] == '[';
-				break;
 			default:
 				is_special = false;
 				break;
