@@ -68,4 +68,44 @@ namespace qy {
 		return replace_all_inplace(src, old_value, new_value);
 	}
 
+	inline char unescape(char c) {
+		switch (c) {
+		case '\\':
+			return '\\';
+		case 'b':
+			return '\b';
+		case 'f':
+			return '\f';
+		case 'n':
+			return '\n';
+		case 't':
+			return '\t';
+		case 'v':
+			return '\v';
+		}
+		return 0;
+	}
+
+	inline char unescape_char(std::string_view s) {
+		if (s[1] == '\\')
+			return unescape(s[2]);
+		return s[1];
+	}
+
+	inline std::string unescape_string(std::string_view s) {
+		std::string res;
+		bool escaped = false;
+		for (auto c : s.substr(1, s.length() - 2)) {
+			if (escaped) {
+				res.push_back(unescape(c));
+				escaped = false;
+			} else if (c == '\\') {
+				escaped = true;
+			} else {
+				res.push_back(c);
+			}
+		}
+		return res;
+	}
+
 } // namespace qy

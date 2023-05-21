@@ -1,16 +1,37 @@
 #include "yacc/yacc_gen.hpp"
 #include "utils/outfmt.hpp"
 #include "yacc/parser.hpp"
+#include "yacc/yparser.hpp"
+#include <fmt/ostream.h>
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
 #include <ranges>
 
 namespace comp {
 
-	yacc_code::yacc_code(const Parser& parser, std::string_view tmpl) :
-		parser{parser}, analyzer{parser.analyzer}, temp{tmpl} {}
+	YaccCodeGen::YaccCodeGen(const Parser& parser, const YParser& yparser, std::string_view tmpl) :
+		parser{parser}, yparser{yparser}, analyzer{parser.analyzer}, temp{tmpl} {}
 
-	void yacc_code::gen(const parsing_table& pt) {
+	void YaccCodeGen::gen_inc() {
+		std::ofstream tab_inc_file(parser.options.header_file);
+		tab_inc_file << "enum yytokentype {\n";
+		for (auto&& t : parser.analyzer.tokens)
+			if (t.is_defined)
+				fmt::print(tab_inc_file, "\t{} = {},\n", t.name, t.num);
+		tab_inc_file << "};\n";
+		tab_inc_file << fmt::format(
+			R"(
+#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
+typedef {} YYSTYPE;
+# define YYSTYPE_IS_DECLARED 1
+# define YYSTYPE_IS_TRIVIAL 1
+#endif
+
+extern YYSTYPE yylval;)",
+			yparser.union_type.empty() ? "int" : "union " + yparser.union_type);
+	}
+
+	void YaccCodeGen::gen(const parsing_table& pt) {
 		gen_info();
 		temp.set_string("[[YYNSTATES]]", pt.action.rows());
 		gen_translate();
@@ -21,19 +42,22 @@ namespace comp {
 			gen_table(pt);
 		}
 		gen_case();
+
+		temp.set_string("[[USER_CODE_1]]", fmt::to_string(fmt::join(yparser.prologues, "")));
+		temp.set_string("[[USER_CODE_3]]", yparser.epilogue);
 	}
 
-	void yacc_code::gen_info() {
+	void YaccCodeGen::gen_info() {
 		temp.set_string("[[YYFINAL]]", analyzer.tokens.size() + 1);
 		temp.set_string("[[YYNTOKENS]]", analyzer.tokens.size());
 		temp.set_string("[[YYNNTS]]", analyzer.nterms.size());
-		temp.set_string("[[YYNRULES]]", parser.actions.size());
-		temp.set_string("[[YYMAXUTOK]]", parser.translate.size() - 1);
+		temp.set_string("[[YYNRULES]]", analyzer.rules.size());
+		temp.set_string("[[YYMAXUTOK]]", analyzer.translate.size() - 1);
 	}
 
-	void yacc_code::gen_translate() {
+	void YaccCodeGen::gen_translate() {
 		string s_translate;
-		temp.set_string("[[yytranslate]]", qy::format_array(parser.translate));
+		temp.set_string("[[yytranslate]]", qy::format_array(analyzer.translate));
 
 		std::vector<string> tname;
 		std::ranges::transform(analyzer.tokens, std::back_inserter(tname), std::identity{},
@@ -46,7 +70,7 @@ namespace comp {
 										 })));
 	}
 
-	void yacc_code::gen_yyr() {
+	void YaccCodeGen::gen_yyr() {
 		temp.set_string("[[yyr1]]",
 						qy::format_array(analyzer.rules | std::views::transform(&production::lhs)));
 		temp.set_string("[[yyr2]]",
@@ -55,7 +79,7 @@ namespace comp {
 										 })));
 	}
 
-	void yacc_code::gen_table(const parsing_table& pt) {
+	void YaccCodeGen::gen_table(const parsing_table& pt) {
 		temp.set_bool("C1", false);
 		string s_action;
 		string s_goto;
@@ -68,7 +92,7 @@ namespace comp {
 		temp.set_string("[[YYLAST]]", 0);
 	}
 
-	void yacc_code::gen_compressed(const parsing_table& pt) {
+	void YaccCodeGen::gen_compressed(const parsing_table& pt) {
 		temp.set_bool("C1", true);
 		auto pt_c = pt.compress();
 		temp.set_string("[[yydefact]]", qy::format_array(pt_c.defact));
@@ -80,7 +104,7 @@ namespace comp {
 		temp.set_string("[[YYLAST]]", pt_c.table.size() - 1);
 	}
 
-	void yacc_code::gen_case() {
+	void YaccCodeGen::gen_case() {
 		std::string result = {};
 		for (auto& prod : analyzer.rules) {
 			if (!prod.action.empty()) {
