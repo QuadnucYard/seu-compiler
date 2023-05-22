@@ -293,11 +293,15 @@ namespace comp {
 
 		for (size_t i = 0; i < n_states; i++) {
 			auto r = atn.equal_range(i);
+			size_t m_prev=-1;
 			for (auto&& pair : std::ranges::subrange(r.first, r.second)) {
 				auto&& e = pair.second;
 				// nonterminal
 				if (e.second < 0)
-					LR1_goto[i][-e.second] = e.first;
+					if(tokens[-e.second].prec>m_prev){
+						LR1_goto[i][-e.second] = e.first;
+						m_prev=tokens[-e.second].prec;
+					}	
 				else
 					LR1_action[i][e.second] = e.first;
 			}
