@@ -4,7 +4,7 @@
 
 namespace comp {
 	class LParser : GParser {
-		friend class Lexer;
+		friend class Lex;
 		friend class LexCodeGen;
 
 	private:

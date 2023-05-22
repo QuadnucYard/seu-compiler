@@ -5,12 +5,12 @@
 namespace comp {
 
 	struct DFA;
-	class Lexer;
+	class Lex;
 	class LParser;
 
 	class LexCodeGen {
 	public:
-		LexCodeGen(const Lexer& lexer, const LParser& lparser);
+		LexCodeGen(const Lex& lexer, const LParser& lparser);
 
 		void operator()(const DFA& dfa);
 
@@ -25,7 +25,7 @@ namespace comp {
 		void gen_case();
 
 	private:
-		const Lexer& lexer;
+		const Lex& lexer;
 		const LParser& lparser;
 
 		qy::templater tmpl;

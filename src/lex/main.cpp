@@ -1,4 +1,4 @@
-#include "lex/lexer.hpp"
+#include "lex/lex.hpp"
 #include <argparse/argparse.hpp>
 #include <iostream>
 #include <vector>
@@ -35,7 +35,7 @@ int main(int argc, char const* argv[]) {
 
 	auto input_file = prog.get("input");
 
-	auto lexer = comp::Lexer({
+	auto lexer = comp::Lex({
 		.outfile = prog.get("--outfile"),
 		.scanner_nfa_dot = prog.get("--scanner-nfa"),
 		.scanner_dfa_dot = prog.get("--scanner-dfa"),

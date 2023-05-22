@@ -1,13 +1,13 @@
-#include "lex/lexer.hpp"
+#include "lex/lex.hpp"
 #include "lex/genc.hpp"
 #include "lex/lparser.hpp"
 #include "lex/regex.hpp"
 
 namespace comp {
 
-	Lexer::Lexer(const Options& options) : options{options} {}
+	Lex::Lex(const Options& options) : options{options} {}
 
-	void Lexer::process(const fs::path& src_path) {
+	void Lex::process(const fs::path& src_path) {
 		std::ifstream source_file(src_path);
 		if (!source_file.is_open())
 			throw std::runtime_error("File not found");

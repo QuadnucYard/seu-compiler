@@ -1,6 +1,6 @@
 #include "lex/genc.hpp"
 #include "lex/fa.hpp"
-#include "lex/lexer.hpp"
+#include "lex/lex.hpp"
 #include "lex/lparser.hpp"
 #include "utils/outfmt.hpp"
 #include <fmt/printf.h>
@@ -13,7 +13,7 @@ extern const char* lex_tmpl;
 namespace comp {
 	const auto plus1 = std::views::transform([](auto&& x) { return x + 1; });
 
-	LexCodeGen::LexCodeGen(const Lexer& lexer, const LParser& lparser) :
+	LexCodeGen::LexCodeGen(const Lex& lexer, const LParser& lparser) :
 		lexer{lexer}, lparser{lparser}, tmpl{lex_tmpl} {}
 
 	void LexCodeGen::operator()(const DFA& dfa) {

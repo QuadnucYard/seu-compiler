@@ -2,7 +2,7 @@
 #include "fa.hpp"
 
 namespace comp {
-	class Lexer {
+	class Lex {
 	public:
 		struct Options {
 			string outfile;
@@ -12,7 +12,7 @@ namespace comp {
 		};
 
 	public:
-		Lexer(const Options& options);
+		Lex(const Options& options);
 		void process(const fs::path& src_path);
 
 	private:

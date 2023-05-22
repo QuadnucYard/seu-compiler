@@ -50,31 +50,31 @@ end
 
 add_test_target("utils", "graph")
 
-target("lexer")
+target("lex-impl")
     set_kind("static")
-    add_files("src/common/*.cpp", "src/lex/*.cpp|lex.cpp")
+    add_files("src/common/*.cpp", "src/lex/*.cpp|main.cpp")
     add_packages("fmt")
     add_template("templates/lex.yy.c", "lex_tmpl")
 
 target("lex")
-    add_deps("lexer")
-    add_files("src/lex/lex.cpp")
+    add_deps("lex-impl")
+    add_files("src/lex/main.cpp")
     add_packages("argparse")
 
-target("parser")
+target("yacc-impl")
     set_kind("static")
     add_files("src/common/*.cpp", "src/yacc/*.cpp|main.cpp")
     add_packages("fmt", "tl-ranges")
     add_template("templates/y.tab.c", "yacc_tmpl")
 
 target("yacc")
-    add_deps("parser")
+    add_deps("yacc-impl")
     add_files("src/yacc/main.cpp")
     add_packages("argparse")
 
 
 target("test_fa")
-    add_deps("lexer")
+    add_deps("lex-impl")
     add_files("test/test_fa.cpp")
 
 target("example_templater")
