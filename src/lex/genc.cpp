@@ -83,15 +83,20 @@ namespace comp {
     void LexCodeGen::gen_all_table(const DFA& dfa){
         //yy_ec
 		tmpl.set_bool("C1", true);	
-        int size = static_cast<int>(dfa.accept_states.size());
+        int size = static_cast<int>(dfa.size());
+
         std::vector<std::pair<int,int>>valid_len; 
 		std::vector<std::vector<int>>yy_nxt;
+
+		std::vector<int> move(128,0);
+		yy_nxt.push_back(move);
+
         for(int i = 1; i <= size; i++){
             std::vector<int>move(128, -i);
             for(auto &[v,w]: dfa.graph.iter_edges(i - 1)){
                 move[w] = v + 1;
             }
-            move[0] = size + 1;
+            if (i < size) move[0] = size;
             yy_nxt.push_back(move);
         }
         std::vector<int>equivalent_class(128);
@@ -147,17 +152,21 @@ namespace comp {
         for(int i=0; i<= ec_size; i++){
             auto offset = find(equivalent_class.begin(), equivalent_class.end(), i)- equivalent_class.begin();
             for(int j = 0; j < size; j++){
-                yy_nxt[j][i] = yy_nxt[j][offset]< 0 ? yy_nxt[j][offset]+1: yy_nxt[j][offset] ;
+                yy_nxt[j][i] = yy_nxt[j][offset];
             }
         }
         for(int j = 0; j < size; j++){
             yy_nxt[j].resize(ec_size + 1);
         }
         
+        //把状态0的valid情况也考虑进去
+		std::pair<int,int>length0;
+		length0.first = 0;
+		length0.second = ec_size;
+		valid_len.push_back(length0);
 
-
-        //这里没有考虑所有状态都不合法的情况，待补充（？）
-		for(int i=0; i<size; i++){
+        //这里没有考虑所有状态都不合法的情况，后面补充
+		for(int i = 1; i<=size; i++){
 			std::pair<int,int>length;
 			for(int j = 0; j <= ec_size; j++){
 				if(yy_nxt[i][j] != -i){
@@ -179,6 +188,10 @@ namespace comp {
         std::vector<int>base_tbl= {};
 
         for(int i=0; i < valid_len.size(); i++){
+			//如果valid的first和second都为0需要判断，如果nxt[0]合法则继续，否则break
+			if(valid_len[i].second == 0 && yy_nxt[i][0] == -i){
+				continue;
+			}
             int len = valid_len[i].second - valid_len[i].first + 1;
             for(int temp = 0; temp <= nxt_tbl.size(); temp++){
                 bool safe = true;
@@ -193,8 +206,9 @@ namespace comp {
                         nxt_tbl.resize(temp + len, -1000);
                         chk_tbl.resize(temp + len, -1000);
                     }
+					//补充考虑状态0的情况
                     for(size_t j = 0; j< yy_nxt[i].size() ; j++){
-                        if(yy_nxt[i][j]!= -i){
+                        if( i == 0 || yy_nxt[i][j]!= -i){
                             nxt_tbl[temp + j] = yy_nxt[i][j];
                             chk_tbl[temp + j] = i;
                         }

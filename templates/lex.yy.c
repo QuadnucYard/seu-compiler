@@ -497,10 +497,9 @@ YY_DECL
 		yy_current_state = yy_start;
 yy_match:
 [[IF(C1)]]
-register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
-		while ( yy_current_state == chk[base[yy_current_state] + yy_c])
+		while (yy_base[yy_current_state]+yy_ec[YY_SC_TO_UI(*yy_cp)] < sizeof(yy_nxt)/sizeof(yy_nxt[0]) && yy_current_state == yy_chk[yy_base[yy_current_state]+yy_ec[YY_SC_TO_UI(*yy_cp)]])
 			{
-			yy_current_state = nxt[base[yy_current_state] + yy_c];
+			yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 			if ( yy_accept[yy_current_state] )
 				{
 				yy_last_accepting_state = yy_current_state;
@@ -827,10 +826,10 @@ static yy_state_type yy_get_previous_state()
 		if ( *yy_cp )
 			{
 			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)]
-			if(yy_current_state == chk[base[yy_current_state] + yy_c]){
+			if(yy_base[yy_current_state] + yy_c < sizeof(yy_chk)/sizeof(yy_chk[0]) && yy_current_state == yy_chk[yy_base[yy_current_state] + yy_c]){
 				yy_current_state = yy_nxt[base[yy_current_state] + yy_c];
 			}
-			//else yy_current_state = -yy_current_state;
+			else yy_current_state = -yy_current_state;
 			}
 		else
 			yy_current_state = yy_NUL_trans[yy_current_state];
