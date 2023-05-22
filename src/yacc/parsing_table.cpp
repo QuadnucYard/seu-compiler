@@ -141,9 +141,9 @@ namespace comp {
 					for (size_t j = 0; j < row.l; j++)
 						if (row.a[j] != ERR) {
 							tab[i + j] = row.a[j];
-							pt.check[i + j] = row.c + j;
+							pt.check[i + j] = static_cast<sid_t>(row.c + j);
 						}
-					pt.pact[row.r] = i - row.c;
+					pt.pact[row.r] = static_cast<sid_t>(i - row.c);
 					break;
 				}
 			}
@@ -207,10 +207,10 @@ namespace comp {
 			for (size_t j = 0; j < l; j++)
 				if (tab[best + j] == ERR) {
 					tab[best + j] = goto_[u + j][k];
-					pt.check[best + j] = u + j;
+					pt.check[best + j] = static_cast<sid_t>(u + j);
 				}
 			// goto[j][k] = table[pgoto[k] + j], u + pgoto[k] = best
-			pt.pgoto[k] = best - u;
+			pt.pgoto[k] = static_cast<sid_t>(best - u);
 			pt.defgoto[k] = goto_[u + best_last_conf][k]; // 留给table里冲突的那个
 			// 有个问题，如果是最后一个因为溢出而冲突，应该做裁剪
 		}

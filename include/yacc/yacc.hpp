@@ -5,11 +5,11 @@
 
 namespace comp {
 
-	class Parser : public Recognizer {
+	class Yacc {
 		using Options = ParserOptions;
 
 	public:
-		Parser(const Options& options);
+		Yacc(const Options& options);
 
 		void process(const fs::path& src_path);
 

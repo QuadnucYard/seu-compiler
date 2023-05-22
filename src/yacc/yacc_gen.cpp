@@ -9,7 +9,7 @@
 
 namespace comp {
 
-	YaccCodeGen::YaccCodeGen(const Parser& parser, const YParser& yparser, std::string_view tmpl) :
+	YaccCodeGen::YaccCodeGen(const Yacc& parser, const YParser& yparser, std::string_view tmpl) :
 		parser{parser}, yparser{yparser}, analyzer{parser.analyzer}, temp{tmpl} {}
 
 	void YaccCodeGen::gen_inc() {

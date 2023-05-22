@@ -8,9 +8,9 @@ using namespace qy;
 
 namespace comp {
 
-	Parser::Parser(const Options& options) : options{options} {}
+	Yacc::Yacc(const Options& options) : options{options} {}
 
-	void comp::Parser::process(const fs::path& src_path) {
+	void comp::Yacc::process(const fs::path& src_path) {
 		std::ifstream source_file(src_path);
 		if (!source_file.is_open())
 			throw std::runtime_error("File not found");

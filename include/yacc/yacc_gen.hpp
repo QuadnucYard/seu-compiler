@@ -6,17 +6,17 @@ namespace comp {
 
 	struct parsing_table;
 	class SyntacticAnalyzer;
-	class Parser;
+	class Yacc;
 	class YParser;
 
 	class YaccCodeGen {
 		qy::templater temp;
-		const Parser& parser;
+		const Yacc& parser;
 		const YParser& yparser;
 		const SyntacticAnalyzer& analyzer;
 
 	public:
-		YaccCodeGen(const Parser& parser, const YParser& yparser, std::string_view tmpl);
+		YaccCodeGen(const Yacc& parser, const YParser& yparser, std::string_view tmpl);
 
 		void gen_inc();
 

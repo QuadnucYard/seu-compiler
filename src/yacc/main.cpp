@@ -32,7 +32,7 @@ int main(int argc, char const* argv[]) {
 
 	auto input_file = prog.get("input");
 
-	auto lexer = comp::Parser({
+	auto yacc = comp::Yacc({
 		.header_file = prog.get("--header-file"),
 		.outfile = prog.get("--outfile"),
 		.lr1_pda_dot = prog.get("--lr1-pda"),
@@ -40,7 +40,7 @@ int main(int argc, char const* argv[]) {
 	});
 
 	try {
-		lexer.process(input_file);
+		yacc.process(input_file);
 	} catch (const std::exception& err) {
 		std::cerr << "fuck!" << err.what() << std::endl;
 		return 2;
