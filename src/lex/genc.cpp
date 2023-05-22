@@ -1,6 +1,7 @@
 #include "lex/genc.hpp"
 #include "lex/fa.hpp"
 #include "lex/lexer.hpp"
+#include "lex/lparser.hpp"
 #include "utils/outfmt.hpp"
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
@@ -12,7 +13,8 @@ extern const char* lex_tmpl;
 namespace comp {
 	const auto plus1 = std::views::transform([](auto&& x) { return x + 1; });
 
-	LexCodeGen::LexCodeGen( const Lexer& lexer) : lexer{lexer},  tmpl{lex_tmpl} {}
+	LexCodeGen::LexCodeGen(const Lexer& lexer, const LParser& lparser) :
+		lexer{lexer}, lparser{lparser}, tmpl{lex_tmpl} {}
 
 	void LexCodeGen::operator()(const DFA& dfa) {
 		gen_accept_table(dfa);
@@ -22,6 +24,9 @@ namespace comp {
 		else 
 			gen_nxt_table(dfa);
 		gen_case();
+
+		tmpl.set_string("[[USER_CODE_1]]", fmt::to_string(fmt::join(lparser.prologues, "")));
+		tmpl.set_string("[[USER_CODE_3]]", lparser.epilogue);
 	}
 
 	void LexCodeGen::gen_nxt_table(const DFA& dfa) {
@@ -51,12 +56,12 @@ namespace comp {
 		std::vector<int> nultrans(size + 1, 0);
 		int catchall = 0;
 		for (int i = 0; i < size; i++) {
-			if (dfa.accept_states[i] == lexer.actions.size() - 1)
+			if (dfa.accept_states[i] == lparser.rules.size() - 1)
 				catchall = i + 1;
 		}
 
 		for (int i = 1; i <= size; i++) {
-			nultrans[i] = dfa.accept_states[i - 1] == lexer.actions.size() - 1 ? catchall : 0;
+			nultrans[i] = dfa.accept_states[i - 1] == lparser.rules.size() - 1 ? catchall : 0;
 		}
 		tmpl.set_string("[[YY_NUL_TRANS]]", qy::format_array(nultrans, {.with_brace = false}));
 	};
@@ -66,8 +71,8 @@ namespace comp {
         #define YY_NUM_RULES 101
         #define YY_END_OF_BUFFER 102
         */
-		tmpl.set_string("[[YY_NUM_RULES]]", fmt::to_string(lexer.actions.size()));
-		tmpl.set_string("[[YY_END_OF_BUFFER]]", fmt::to_string(lexer.actions.size() + 1));
+		tmpl.set_string("[[YY_NUM_RULES]]", fmt::to_string(lparser.rules.size()));
+		tmpl.set_string("[[YY_END_OF_BUFFER]]", fmt::to_string(lparser.rules.size() + 1));
 		//yy_accept
 		auto accept_states = dfa.accept_states;
 		// accept_states.push_back(static_cast<vid_t>(lexer.actions.size()));
@@ -128,12 +133,12 @@ namespace comp {
 		std::vector<int> nultrans(size + 1, 0);
 		int catchall = 0;
 		for (int i = 0; i < size; i++) {
-			if (dfa.accept_states[i] == lexer.actions.size() - 1)
+			if (dfa.accept_states[i] == lparser.rules.size() - 1)
 				catchall = i + 1;
 		}
 
 		for (int i = 1; i <= size; i++) {
-			nultrans[i] = dfa.accept_states[i - 1] == lexer.actions.size() - 1 ? catchall : 0;
+			nultrans[i] = dfa.accept_states[i - 1] == lparser.rules.size() - 1 ? catchall : 0;
 		}
 		tmpl.set_string("[[YY_NUL_TRANS]]", qy::format_array(nultrans, {.with_brace = false}));
 
@@ -224,14 +229,14 @@ namespace comp {
 		//对应yy.c：line 6210起
 		std::string result;
 		//第一个case定义为-1了,为了协调在这里先加1和flex写法一致
-		for (size_t i = 0; i < lexer.actions.size(); i++) {
+		for (size_t i = 0; i < lparser.rules.size(); i++) {
 			result += fmt::sprintf(
 				R"(case %d:
 YY_RULE_SETUP
 %s
     YY_BREAK
 )",
-				i + 1, lexer.actions[i]);
+				i + 1, lparser.rules[i].action);
 		}
 		tmpl.set_string("[[ACTIONS]]", result);
 	};

@@ -25,8 +25,6 @@ namespace comp {
 		std::vector<std::pair<token::assoc_flag, std::vector<string>>> prec;
 		std::unordered_map<string, string> nterm_types;
 		string union_type;
-		std::vector<string> prologues;
-		string epilogue;
 
 	public:
 		YParser(std::istream& in, SyntacticAnalyzer& analyzer);

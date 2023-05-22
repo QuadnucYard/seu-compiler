@@ -1,13 +1,15 @@
 #include "common/glexer.hpp"
+#include "utils/exceptions.hpp"
+#include <fmt/core.h>
 #include <sstream>
+#include <unordered_map>
 
 namespace comp {
 	GLexer::GLexer(std::istream& in) : in{in} { getc(); }
 
 	GToken GLexer::scan_noop() {
 		while (in) {
-			skip_ws();
-			skip_comment();
+			scan_skip();
 			if (peek == '%')
 				return get_directive();
 			if (peek == '<')
@@ -28,10 +30,18 @@ namespace comp {
 		return {GToken::END, EOF};
 	}
 
+	void GLexer::scan_skip() {
+		for (skip_ws(); skip_comment(); skip_ws())
+			;
+		skip_ws();
+	}
+
+	char GLexer::get_peek() const { return peek; }
+
 	char GLexer::getc() {
 		prev = peek;
 		peek = in.get();
-		if (peek == '\n') {
+		if (prev == '\n') {
 			column = 0;
 			line++;
 		} else if (peek == '\t')
@@ -52,19 +62,22 @@ namespace comp {
 			;
 	}
 
-	void GLexer::skip_comment() {
+	bool GLexer::skip_comment() {
 		if (peek == '/') {
 			if (getc() == '/') {
 				while (getc() != '\n')
 					;
+				return true;
 			} else if (peek == '*') {
 				while (!(getc() == '/' && prev == '*'))
 					;
 				getc();
+				return true;
 			} else {
 				unget();
 			}
 		}
+		return false;
 	}
 
 	GToken GLexer::get_directive() {
@@ -133,6 +146,38 @@ namespace comp {
 		return {GToken::OP, c};
 	}
 
+	GToken GLexer::get_regex(const std::unordered_map<string, string>& definitions) {
+		int bra = 0;
+		std::string s;
+		while (!isspace(peek)) {
+			if (peek == '\\') {
+				s.push_back(peek);
+				s.push_back(getc());
+				getc();
+			} else if (peek == '(') {
+				s.push_back(peek);
+				getc();
+				bra++;
+			} else if (peek == ')') {
+				s.push_back(peek);
+				getc();
+				bra--;
+			} else if (peek == '"')
+				read_string(s);
+			else if (peek == '[')
+				read_closure(s, '[', ']');
+			else if (peek == '{') {
+				string m;
+				read_closure(m, '{', '}');
+				s.append(definitions.at(m.substr(1, m.length() - 2)));
+			} else {
+				s.push_back(peek);
+				getc();
+			}
+		}
+		return {GToken::RE, s};
+	}
+
 	GToken GLexer::get_codeblock() {
 		string s;
 		for (int bra = 1; bra > 0;) {
@@ -174,6 +219,30 @@ namespace comp {
 		return {GToken::EPI, iss.str()};
 	}
 
+	void GLexer::read_line(string& s) {
+		/* string tmp;
+		std::getline(in, tmp);
+		s.push_back(peek);
+		s.append(tmp);
+		prev = '\n';
+		line++;
+		column = -1;
+		getc(); */
+		do {
+			s.push_back(peek);
+		} while (getc() != EOF && prev != '\n');
+	}
+
+	void GLexer::read_closure(string& s, char left, char right) {
+		if (peek == left && prev != '\\') {
+			do {
+				s.push_back(peek);
+			} while (getc() != right || prev == '\\');
+			s.push_back(peek);
+			getc();
+		}
+	}
+
 	// 读完字符
 	void GLexer::read_char(string& s) {
 		if (peek == '\'' && prev != '\\') {
@@ -185,12 +254,12 @@ namespace comp {
 		}
 	}
 
-	void GLexer::read_string(string& s) {
+	void GLexer::read_string(string& s) { read_closure(s, '"', '"'); }
+
+	void GLexer::read_string_unquoted(string& s) {
 		if (peek == '"' && prev != '\\') {
-			do {
+			while (getc() != '"' || prev == '\\')
 				s.push_back(peek);
-			} while (getc() != '"' || prev == '\\');
-			s.push_back(peek);
 			getc();
 		}
 	}

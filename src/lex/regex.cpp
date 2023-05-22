@@ -4,8 +4,7 @@
 #include <stack>
 
 namespace comp {
-	std::pair<size_t, std::string> unescape_regex(std::string_view s,
-												  const dict<std::string>& definitions) {
+	std::string unescape_regex(std::string_view s) {
 		std::stack<char> bra; // Brackets stack
 
 		//is )
@@ -31,7 +30,6 @@ namespace comp {
 		bool escaped = false;
 		//当前是否在引号的环境里
 		bool quoted = false;
-		size_t brace_start = -1;
 		for (size_t i = 0; i < s.length(); i++) {
 			char c = s[i];
 			if (escaped) { // Escape chars
@@ -71,7 +69,7 @@ namespace comp {
 				if (c == ']') {
 					match('[');
 					res += -c;
-				} else if (c=='^' && res.back() == -'['){
+				} else if (c == '.' || c == '^' && res.back() == -'[') {
 					res += -c;
 				} else {
 					res += c;
@@ -84,24 +82,20 @@ namespace comp {
 			case '[':
 				bra.push(c);
 				break;
-			case '{':
-				brace_start = i;
-				bra.push(c);
-				break;
 			case ')':
 				match('(');
 				break;
-			case '}':
-				match('{');
-				res += definitions.at(std::string{s.substr(brace_start + 1, i - brace_start - 1)});
-				brace_start = -1;
-				continue;
+			case '*':
+			case '+':
+			case '?':
+			case '|':
+			case '.':
+				break;
 			default:
 				is_special = false;
 				break;
 			}
-			if (brace_start == static_cast<size_t>(-1)) // If outside the braces
-				res += is_special ? -c : c;
+			res += is_special ? -c : c;
 		}
 		if (quoted)
 			throw syntax_error(
@@ -112,9 +106,7 @@ namespace comp {
 		if (!bra.empty())
 			throw syntax_error(fmt::format(
 				"Regex parsing error for \"{}\". Unenclosed bracket '{}'.", s, bra.top()));
-		return {s.length(), res};
+		return res;
 	}
-
-	std::string unescape_regex(std::string_view s) { return unescape_regex(s, {}).second; }
 
 } // namespace comp

@@ -17,9 +17,6 @@ namespace comp {
 		Options options;
 		SyntacticAnalyzer analyzer;
 
-		struct DeclHandler;
-		struct RulesHandler;
-
 		friend class YaccCodeGen;
 	};
 } // namespace comp

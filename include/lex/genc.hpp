@@ -6,10 +6,11 @@ namespace comp {
 
 	struct DFA;
 	class Lexer;
+	class LParser;
 
 	class LexCodeGen {
 	public:
-		LexCodeGen(const Lexer& lexer);
+		LexCodeGen(const Lexer& lexer, const LParser& lparser);
 
 		void operator()(const DFA& dfa);
 
@@ -25,6 +26,7 @@ namespace comp {
 
 	private:
 		const Lexer& lexer;
+		const LParser& lparser;
 
 		qy::templater tmpl;
 	};

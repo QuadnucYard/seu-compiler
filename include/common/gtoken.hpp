@@ -7,7 +7,7 @@ namespace comp {
 	using std::string;
 
 	struct GToken {
-		enum { INT, ID, OP, SEP, DIR, TAG, CHAR, STRING, ACT, PRO, EPI, END } type;
+		enum { INT, ID, OP, SEP, DIR, TAG, CHAR, STRING, RE, ACT, PRO, EPI, END } type;
 
 		std::variant<int, char, string> val;
 

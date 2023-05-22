@@ -1,12 +1,13 @@
 #pragma once
 #include "gtoken.hpp"
 #include <iostream>
+#include <unordered_map>
 
 namespace comp {
 
 	/// @brief Parser for grammar file.
 	class GLexer {
-	private:
+	protected:
 		std::istream& in;
 
 		int line{0}; // Line number, from 0
@@ -16,7 +17,13 @@ namespace comp {
 	public:
 		GLexer(std::istream& in);
 
+		inline bool eof() const { return in.eof(); }
+
 		GToken scan_noop();
+
+		void scan_skip();
+
+		char get_peek() const;
 
 		/// @brief Get the next char from the stream, and update stats.
 		/// @return The peek char.
@@ -29,7 +36,7 @@ namespace comp {
 		void skip_ws();
 
 		/// @brief Skip comments in the stream.
-		void skip_comment();
+		bool skip_comment();
 
 		/// @brief Get a directive token from the stream.
 		/// @return A <DIR> token.
@@ -59,6 +66,10 @@ namespace comp {
 		/// @return A <OP> token.
 		GToken get_op();
 
+		/// @brief Get a regex token from the stream.
+		/// @return A <RE> token.
+		GToken get_regex(const std::unordered_map<string, string>& definitions);
+
 		/// @brief Get a codeblock token from the stream.
 		/// @return A <ACT> token.
 		GToken get_codeblock();
@@ -71,6 +82,10 @@ namespace comp {
 		/// @return A <EPI> token.
 		GToken get_epilogue();
 
+		void read_line(string& s);
+
+		void read_closure(string& s, char left, char right);
+
 		/// @brief Read the current char into the give string.
 		/// @param s String to read to.
 		void read_char(string& s);
@@ -78,6 +93,8 @@ namespace comp {
 		/// @brief Read the current string into the give string.
 		/// @param s String to read to.
 		void read_string(string& s);
+
+		void read_string_unquoted(string& s);
 
 		/// @brief Read the current comment into the give string.
 		/// @param s String to read to.
