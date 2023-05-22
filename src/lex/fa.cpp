@@ -10,6 +10,8 @@
 
 namespace comp {
 
+	using tl::views::enumerate;
+
 #ifdef GRAPH_FMT
 	void DFA::to_dot(const fs::path& path) const {
 		qy::graphviz::digraph dot(path.string(), "G");
@@ -19,7 +21,7 @@ namespace comp {
 			.edge_option("fontname", "Consolas");
 		dot.node_option("shape", "none").node("\"\"");
 		dot.node_option("shape", "doublecircle").node_option("fontname", "Consolas");
-		for (auto&& [i, a] : tl::views::enumerate(accept_states))
+		for (auto&& [i, a] : enumerate(accept_states))
 			if (a != DFABuilder::NON_ACCEPT)
 				dot.node(i, {{"xlabel", fmt::format("#{}", a)}});
 		dot.node_option("shape", "circle");
@@ -39,14 +41,10 @@ namespace comp {
 		return g.to_edge_vector();
 	}
 
-	void DFABuilder::add_re(const string& re) {
-		all_dfa.push_back(nfa2dfa(re2nfa(re)));
-		auto _g = easy(all_dfa.back().graph);
-	}
+	void DFABuilder::add_re(const string& re) { all_dfa.push_back(nfa2dfa(re2nfa(re))); }
 
 	NFA DFABuilder::re2nfa(const string& re) const {
 		NFA nfa = tompson(re);
-		auto _g = easy(nfa.graph);
 		return nfa;
 	}
 
@@ -67,36 +65,35 @@ namespace comp {
 	DFA DFABuilder::hopcroft(const DFA& dfa) const {
 		using vertex_set = std::bitset<MAXV>;
 
-		std::unordered_set<vertex_set> partition = [&dfa, this] {
+		std::vector<vertex_set> partition = [&dfa, this] {
 			vertex_set s1, s2;
 			for (size_t i = 0; i < dfa.size(); i++) {
 				(dfa.accept_states[i] == NON_ACCEPT ? s1 : s2).set(i);
 			}
-			return std::unordered_set{s1, s2};
+			return std::vector{s1, s2};
 		}();
-		std::unordered_set<vertex_set> worklist = partition;
+		std::unordered_set<vertex_set> worklist{partition.begin(), partition.end()};
 
 		while (!worklist.empty()) {
 			auto S = *worklist.begin();
 			worklist.erase(worklist.begin());
+			vertex_set images[MAXS];
+			for (auto&& [u, v, w] : dfa.graph.edges())
+				if (S.test(v))
+					images[w].set(u);
 			for (sid_t c = 0; c < MAXS; c++) {
-				vertex_set image;
-				for (auto&& [u, v, w] : dfa.graph.edges()) {
-					if (w == c && S.test(v))
-						image.set(u);
-				}
-				if (image.none())
+				if (images[c].none())
 					continue;
-				for (auto& q : decltype(partition){partition}) {
-					auto q1 = q & image;
+				for (size_t i = 0; i < partition.size(); i++) {
+					auto q = partition[i];
+					auto q1 = q & images[c];
 					if (q1.none())
 						continue;
 					auto q2 = q ^ q1;
 					if (q2.none())
 						continue;
-					partition.erase(q);
-					partition.insert(q1);
-					partition.insert(q2);
+					partition[i] = q1;
+					partition.push_back(q2);
 					if (worklist.contains(q)) {
 						worklist.erase(q);
 						worklist.insert(q1);
@@ -113,7 +110,7 @@ namespace comp {
 		}
 
 		std::vector<vid_t> mapped(dfa.size()); // 原DFA的点映射到哪个点
-		for (auto&& [i, s] : tl::views::enumerate(partition)) {
+		for (auto&& [i, s] : enumerate(partition)) {
 			for (size_t j = 0; j < s.size(); j++) {
 				if (s.test(j))
 					mapped[j] = static_cast<vid_t>(i);
@@ -239,7 +236,6 @@ namespace comp {
 		 * 如果NFA的acc是唯一的，指明是哪个
 		 * 那么dfa的acc就是状态是否包含
 		 */
-		auto _g = easy(dfa.graph);
 		return dfa;
 	}
 
@@ -282,7 +278,7 @@ namespace comp {
 		nfa.graph.resize(1);
 		nfa.accept = -1;
 		nfa.accept_states.push_back(NON_ACCEPT);
-		for (auto&& [i, x] : tl::views::enumerate(all_dfa)) {
+		for (auto&& [i, x] : enumerate(all_dfa)) {
 			nfa.accept_states.insert(nfa.accept_states.end(), x.accept_states.begin(),
 									 x.accept_states.end());
 			std::replace(nfa.accept_states.begin() + nfa.size(), nfa.accept_states.end(),
