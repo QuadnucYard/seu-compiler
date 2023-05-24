@@ -10,7 +10,6 @@ namespace comp {
 	public:
 		constexpr static sid_t END_MARKER = 0;
 
-	private:
 		struct item {
 			using key_type = std::pair<const production*, unsigned>;
 
@@ -36,13 +35,15 @@ namespace comp {
 
 			inline bool operator==(const item& o) const = default;
 			inline auto operator<=>(const item& o) const = default;
+
+			inline size_t hashcode() const noexcept {
+				return prod->id ^ (dot << 8) ^ std::hash<symbol_set>{}(follow);
+			}
 		};
 
 		struct item_set {
 			size_t kernel_size;		 // How many kernel items in the set.
 			std::vector<item> items; // All items in the set
-
-			// bool contains(const item& i) const;
 
 			/// @brief Get the derived set of items.
 			/// @param symbol The next symbol.
@@ -56,12 +57,9 @@ namespace comp {
 
 			bool operator==(const item_set& o) const;
 
-			// inline auto operator<=>(const item_set& o) const = default;
-			// inline bool operator<(const item_set& o) const {
-			// 	return kernel_size < o.kernel_size ||
-			// 		   kernel_size == o.kernel_size &&
-			// 			   std::ranges::lexicographical_compare(items, o.items);
-			// }
+			inline size_t hashcode() const noexcept;
+
+			inline size_t kern_hashcode() const noexcept;
 		};
 
 		struct state_graph {
@@ -106,3 +104,17 @@ namespace comp {
 		std::vector<sid_t> translate;	 // Map lex token id to yacc token id
 	};
 } // namespace comp
+
+template <>
+struct std::hash<comp::SyntacticAnalyzer::item> {
+	std::size_t operator()(comp::SyntacticAnalyzer::item const& it) const noexcept {
+		return it.hashcode();
+	}
+};
+
+template <>
+struct std::hash<comp::SyntacticAnalyzer::item_set> {
+	std::size_t operator()(comp::SyntacticAnalyzer::item_set const& is) const noexcept {
+		return is.hashcode();
+	}
+};

@@ -1,10 +1,13 @@
 #include "yacc/analyzer.hpp"
 #include "utils/graph.hpp"
 #include "utils/graphviz.hpp"
+#include "utils/hash.hpp"
 #include "utils/myalgo.hpp"
 #include <algorithm>
+#include <chrono>
+#include <fmt/chrono.h>
 #include <fmt/core.h>
-#include <map>
+#include <fmt/std.h>
 #include <numeric>
 #include <queue>
 #include <ranges>
@@ -37,7 +40,16 @@ namespace comp {
 						  o.items.begin() + o.kernel_size);
 	}
 
+	inline size_t comp::SyntacticAnalyzer::item_set::hashcode() const noexcept {
+		return kernel_size ^ qy::hash_range(items);
+	}
+
+	inline size_t comp::SyntacticAnalyzer::item_set::kern_hashcode() const noexcept {
+		return kernel_size ^ qy::hash_range(items.begin(), items.begin() + kernel_size, &item::key);
+	}
+
 	parsing_table SyntacticAnalyzer::process(const ParserOptions& options) {
+		auto t0 = std::chrono::high_resolution_clock::now();
 		get_nullables();
 		get_firsts();
 
@@ -45,15 +57,21 @@ namespace comp {
 		// for (auto& t : nterms)
 		// 	fmt::print("First({})={}\n", t.name, to_string(t.first));
 		// fmt::print("\n");
-
+		auto t1 = std::chrono::high_resolution_clock::now();
 		auto sg = get_LR1_states();
+		auto t2 = std::chrono::high_resolution_clock::now();
 		if (!options.lr1_pda_dot.empty())
 			to_dot(sg, options.lr1_pda_dot);
 		auto pt = get_LR1_table(sg);
+		auto t3 = std::chrono::high_resolution_clock::now();
 		auto pt2 = get_LALR1_table(sg, pt);
-		// pt2.compress();
-		pt.to_csv("lr1.csv");
-		pt2.to_csv("lalr1.csv");
+		auto t4 = std::chrono::high_resolution_clock::now();
+		pt2.compress();
+		auto t5 = std::chrono::high_resolution_clock::now();
+		// pt.to_csv("lr1.csv");
+		// pt2.to_csv("lalr1.csv");
+		fmt::print("states {} {}\n", pt.action.rows(), pt2.action.rows());
+		fmt::print("{:%S} {:%S} {:%S} {:%S} {:%S}\n", t1 - t0, t2 - t1, t3 - t2, t4 - t3, t5 - t4);
 		return pt2;
 	}
 
@@ -206,8 +224,8 @@ namespace comp {
 		// The first closure
 		auto initial = initial_closure();
 		std::vector<item_set> states{initial};
-		// std::map<item_set, size_t> states_map{{initial, 0}};
-		std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> atn; // A state graph for test
+		std::unordered_map<item_set, size_t> states_map{{initial, 0}}; // 记录每个状态的id
+		std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> atn;   // A state graph for test
 		for (size_t i = 0; i < states.size(); i++) {
 			// Connections between closures
 			std::unordered_map<sid_t, item_set> nexts;
@@ -217,14 +235,15 @@ namespace comp {
 				if (p.has_next())
 					nexts[p.next()].items.emplace_back(p.next_item());
 
-			for (auto& [k, v] : nexts) {
+			for (auto&& [k, v] : nexts) {
 				v.kernel_size = v.items.size();
 				sid_t to;
-				if (auto idx = qy::ranges::index_of(states, v); idx == -1) {
-					to = static_cast<sid_t>(states.size());
-					states.emplace_back(v);
+				if (auto it = states_map.find(v); it != states_map.end()) {
+					to = static_cast<sid_t>(it->second);
 				} else {
-					to = static_cast<sid_t>(idx);
+					to = static_cast<sid_t>(states.size());
+					states_map[v] = to;
+					states.emplace_back(std::move(v));
 				}
 				atn.emplace(static_cast<sid_t>(i), std::pair{to, k});
 			}
@@ -239,14 +258,12 @@ namespace comp {
 	SyntacticAnalyzer::item_set SyntacticAnalyzer::closure(const item_set& is) const {
 		item_set result{is};
 		std::queue<size_t> open;
-		std::map<item::key_type, size_t> close; // 用 unordered 会无法编译……
-		// ERROR! 这个算法是有后效性的
+		std::unordered_map<item::key_type, size_t> close;
+
 		for (size_t i = 0; i < result.items.size(); i++) {
 			close.emplace(result.items[i].key(), i);
 			open.emplace(i);
 		}
-
-		// TODO 应该也可以做个图出来？
 
 		while (!open.empty()) {
 			size_t i = open.front();
@@ -258,7 +275,6 @@ namespace comp {
 				// 这里其实所有左部相同的都会参与
 				for (auto& p : nterms[-s].productions) {
 					const auto& it = result.items[i]; // Caution realloc trap!!
-					// 下面的计算可能有问题
 					item new_item{&p, 0,
 								  !it.has_next1()  ? it.follow
 								  : it.next1() < 0 ? nterms[-it.next1()].first
@@ -272,8 +288,9 @@ namespace comp {
 							open.emplace(_i->second);
 						}
 					} else {
-						close.emplace(index, result.items.size());
-						open.emplace(result.items.size());
+						size_t n = result.items.size();
+						close.emplace(index, n);
+						open.emplace(n);
 						result.items.emplace_back(new_item);
 					}
 				}
@@ -293,16 +310,16 @@ namespace comp {
 
 		for (size_t i = 0; i < n_states; i++) {
 			auto r = atn.equal_range(i);
-			size_t m_prev=-1;
+			size_t m_prev = -1;
 			for (auto&& pair : std::ranges::subrange(r.first, r.second)) {
 				auto&& e = pair.second;
 				// nonterminal
-				if (e.second < 0)
-					if(tokens[-e.second].prec>m_prev){
+				if (e.second < 0) {
+					if (tokens[-e.second].prec > m_prev) {
 						LR1_goto[i][-e.second] = e.first;
-						m_prev=tokens[-e.second].prec;
-					}	
-				else
+						m_prev = tokens[-e.second].prec;
+					}
+				} else
 					LR1_action[i][e.second] = e.first;
 			}
 			for (auto& it : states[i].items) {
@@ -321,21 +338,30 @@ namespace comp {
 													 parsing_table& LR1_table) const {
 		auto states = LR1_states.states;
 		size_t n_states = states.size(), n_tokens = tokens.size(), n_nonterminals = nterms.size();
+		auto t1 = std::chrono::high_resolution_clock::now();
 
+		auto hasher = [](item_set const& is) {
+			return is.kern_hashcode();
+		};
+		auto keyeq = [](item_set const& is1, item_set const& is2) {
+			return is1.kernel_equals(is2);
+		};
+
+		std::unordered_map<item_set, size_t, decltype(hasher), decltype(keyeq)> grouping;
 		std::vector<std::vector<size_t>> kernel_grouped; // 同心状态分组
 		for (auto&& [i, is] : enumerate(LR1_states.states)) {
-			if (auto it = std::ranges::find_if(
-					kernel_grouped, [&](auto& t) { return states[t.at(0)].kernel_equals(is); });
-				it != kernel_grouped.end()) {
-				it->emplace_back(i);
+			if (auto it = grouping.find(is); it != grouping.end()) {
+				kernel_grouped[it->second].emplace_back(i);
 			} else {
+				grouping[is] = kernel_grouped.size();
 				kernel_grouped.emplace_back(std::vector{i});
 			}
 		}
+		fmt::print("core {}\n", kernel_grouped.size());
 		// 状态数：1960。有417个同心状态。
-
-		std::vector<size_t> state_map(n_states); // 删除状态后，标号重映射
-		std::iota(state_map.begin(), state_map.end(), 0);
+		auto t2 = std::chrono::high_resolution_clock::now();
+		std::vector<size_t> remap(n_states); // 删除状态后，标号重映射
+		std::iota(remap.begin(), remap.end(), 0);
 		size_t len = LR1_table.action.cols();
 
 		for (auto&& kern : kernel_grouped) {
@@ -374,14 +400,14 @@ namespace comp {
 			}
 			states[kern[0]] = new_set;
 			for (auto k : kern)
-				state_map[k] = kern[0];
+				remap[k] = kern[0];
 		}
-
+		auto t3 = std::chrono::high_resolution_clock::now();
 		auto [LALR1_action, LALR1_goto] = LR1_table;
 
-		// 现在 state_map[i] != i 的都是要删除的。可以保证都是大号映射到小号
+		// 现在 remap[i] != i 的都是要删除的。可以保证都是大号映射到小号
 		for (ptrdiff_t i = n_states - 1; i >= 0; i--) {
-			if (state_map[i] != i) {
+			if (remap[i] != i) {
 				LALR1_action.remove_row(i);
 				LALR1_goto.remove_row(i);
 				states.erase(states.begin() + i);
@@ -389,29 +415,31 @@ namespace comp {
 		}
 		// 然后删掉中间空的
 		for (size_t i = 0, cnt = 0; i < n_states; i++) {
-			if (auto& x = state_map[i]; x == i) {
+			if (auto& x = remap[i]; x == i) {
 				x = cnt++;
 			} else {
-				x = state_map[x];
+				x = remap[x];
 			}
 		}
 		// 对 action/goto 重映射
 		for (size_t i = 0; i < n_states; i++) {
 			for (size_t j = 0; j < n_tokens; j++)
 				if (auto& x = LALR1_action[i][j]; x > 0)
-					x = state_map[x];
+					x = remap[x];
 			for (size_t j = 0; j < n_nonterminals; j++)
 				if (auto& x = LALR1_goto[i][j]; x != parsing_table::ERR)
-					x = state_map[x];
+					x = remap[x];
 		}
-
+		auto t4 = std::chrono::high_resolution_clock::now();
 		decltype(LR1_states.atn) atn;
 		for (auto&& [u, e] : LR1_states.atn) {
 			auto&& [v, w] = e;
-			atn.emplace(state_map[u], std::pair{state_map[v], w});
+			atn.emplace(remap[u], std::pair{remap[v], w});
 		}
-		to_dot({states, atn}, "lalr1-pda.dot");
 
+		// to_dot({states, atn}, "lalr1-pda.dot");
+		auto t5 = std::chrono::high_resolution_clock::now();
+		fmt::print("lalr1 {:%S} {:%S} {:%S} {:%S}\n", t2 - t1, t3 - t2, t4 - t3, t5 - t4);
 		return {std::move(LALR1_action), std::move(LALR1_goto)};
 	}
 
