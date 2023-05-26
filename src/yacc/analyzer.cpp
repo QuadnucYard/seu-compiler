@@ -13,6 +13,7 @@
 #include <ranges>
 #include <set>
 #include <tl/enumerate.hpp>
+#include <unordered_set>
 
 using tl::views::enumerate;
 
@@ -172,11 +173,53 @@ namespace comp {
 	}
 
 	void SyntacticAnalyzer::get_nullables() {
-		bool changed = true;
+		const auto check_nullable = [this](const production& prod) {
+			return std::ranges::all_of(prod.rhs,
+									   [this](sid_t s) { return s < 0 && nterms[-s].nullable; });
+		};
+
+		std::queue<sid_t> open;
+		for (auto&& [i, nterm] : enumerate(nterms)) {
+			if (std::ranges::any_of(nterm.productions, [](auto&& p) { return p.rhs.empty(); })) {
+				nterm.nullable = true;
+				open.push(static_cast<sid_t>(i));
+			}
+		}
+
+		// 每个非终结符的 nullable 确定会影响哪些产生式
+		std::vector<std::unordered_set<size_t>> effects(nterms.size());
+		std::unordered_multimap<sid_t, size_t> effects2;
+		for (auto&& [i, prod] : enumerate(rules))
+			for (sid_t s : prod.rhs)
+				if (s < 0)
+					effects[-s].insert(i);
+
+		while (!open.empty()) {
+			size_t i = open.front();
+			open.pop();
+			for (sid_t e : effects[i]) {
+				const auto& prod = rules[e];
+				if (!nterms[prod.lhs].nullable && check_nullable(prod)) {
+					nterms[prod.lhs].nullable = true;
+					open.push(prod.lhs);
+				}
+			}
+		}
+
+		/* bool changed = true;
 		while (changed) {
 			changed = false;
-			// ! 不考虑空产生式，那么nullable都是false
-		}
+			for (auto&& prod : rules) {
+				if (nterms[prod.lhs].nullable)
+					continue;
+				if (check_nullable(prod)) {
+					nterms[prod.lhs].nullable = true;
+					changed = true;
+				}
+			}
+		} */
+
+		return;
 	}
 
 	void SyntacticAnalyzer::get_firsts() {
