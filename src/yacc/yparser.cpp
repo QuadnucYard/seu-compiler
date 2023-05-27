@@ -11,10 +11,8 @@ namespace comp {
 		analyzer.tokens = {{"$end", "$", "", 0}};
 		analyzer.translate.resize(256, -1);
 		analyzer.translate[0] = 0;
-
-		rules.push_back({aug_start, {{start_symbol}}});
+		rules.push_back({aug_start, {{{{start_symbol}}, "", ""}}});
 		symbol_map.emplace(aug_start, 0);
-		actions.push_back("");
 	}
 
 	void YParser::parse() {
@@ -101,36 +99,36 @@ namespace comp {
 	}
 
 	void YParser::_rules() {
-		RawRule rule;
+		RawRuleGroup group;
 		while (section == 1 && tok.type != GToken::END) {
 			if (check_section())
 				break;
 			assert(tok.type == GToken::ID);
-			rule.lhs = tok._string();
+			group.lhs = tok._string();
 			assert(next0().type == GToken::OP && tok._char() == ':');
-			symbol_map.emplace(rule.lhs, -static_cast<sid_t>(rules.size()));
-			rule.rhs.push_back({});
-			actions.push_back({});
+			symbol_map.emplace(group.lhs, -static_cast<sid_t>(rules.size()));
+			group.rules.push_back({});
 			for (next0();; next0()) {
 				if (tok.type == GToken::OP) {
 					auto op = tok._char();
 					if (op == '|') {
-						rule.rhs.push_back({});
-						actions.push_back({});
+						group.rules.push_back({});
 					} else if (op == ';') {
-						rules.push_back(std::move(rule));
-						rule.rhs.clear();
+						rules.push_back(std::move(group));
+						group.rules.clear();
 						break;
 					}
 				} else if (tok.type == GToken::ACT) {
-					actions.back() = tok._string();
+					group.rules.back().action = tok._string();
 				} else if (tok.type == GToken::DIR) {
 					auto dir = tok._string();
 					if (dir == "%empty") {
 					} else if (dir == "%prec") {
+						group.rules.back().prec = next0()._string();
 					}
 				} else if (tok.type == GToken::ID || tok.type == GToken::CHAR) {
-					rule.rhs.back().push_back(tok._string());
+					string s = tok._string();
+					group.rules.back().rhs.push_back(s);
 				} else {
 					throw syntax_error(
 						fmt::format("Unknown definition token: <{}>{}.", tok.type, tok.val));
@@ -141,13 +139,10 @@ namespace comp {
 	}
 
 	void YParser::finalize() {
-		// rules
-		rules[0].rhs[0][0] = start_symbol;
-		for (size_t i = 0, k = 0; i < rules.size(); i++) {
-			for (auto&& r : rules[i].rhs) {
-				symbol_vec sv;
-				for (auto& s : r) {
-					// Register tokens
+		// Register tokens
+		for (auto& group : rules) {
+			for (auto& r : group.rules) {
+				for (auto& s : r.rhs) {
 					if (!symbol_map.contains(s)) {
 						auto tid = static_cast<sid_t>(analyzer.tokens.size());
 						symbol_map.emplace(s, tid);
@@ -155,18 +150,8 @@ namespace comp {
 						analyzer.translate[char_val] = tid;
 						analyzer.tokens.emplace_back(s, qy::unescape_string(s), "", char_val);
 					}
-					sv.push_back(symbol_map.at(s));
 				}
-				analyzer.rules.emplace_back(static_cast<sid_t>(analyzer.rules.size()),
-											static_cast<sid_t>(i), sv, actions[k++]);
 			}
-		}
-		// 生成非终结符
-		// 必须要在最后，这样才能保证rules是固定的，span有效
-		for (size_t i = 0, s = 0; i < rules.size(); i++) {
-			size_t sz = rules[i].rhs.size();
-			analyzer.nterms.emplace_back(rules[i].lhs, std::span{analyzer.rules.begin() + s, sz});
-			s += sz;
 		}
 		// 处理 token 的标号
 		for (sid_t tid = 256; auto& t : analyzer.tokens | std::views::drop(1)) {
@@ -185,8 +170,40 @@ namespace comp {
 			}
 			i++;
 		}
+		// rules
+		rules[0].rules[0].rhs[0] = start_symbol;
+		for (size_t i = 0, k = 0; i < rules.size(); i++) {
+			for (auto&& r : rules[i].rules) {
+				symbol_vec sv;
+				for (auto& s : r.rhs)
+					sv.push_back(symbol_map.at(s));
+				analyzer.rules.emplace_back(
+					static_cast<sid_t>(analyzer.rules.size()), static_cast<sid_t>(i), std::move(sv),
+					r.prec.empty() ? 0 : analyzer.tokens[symbol_map.at(r.prec)].prec, r.action);
+			}
+		}
+		// 生成非终结符
+		// 必须要在最后，这样才能保证rules是固定的，span有效
+		for (size_t s = 0; auto& group : rules) {
+			size_t sz = group.rules.size();
+			analyzer.nterms.emplace_back(group.lhs, std::span{analyzer.rules.begin() + s, sz});
+			s += sz;
+		}
+		// 非终结符的tag
 		for (auto&& [t, tag] : nterm_types) {
 			analyzer.get_nterm(t).tag = tag;
+		}
+		// 求每个rule的优先级
+		for (auto&& rule : analyzer.rules) {
+			if (rule.prec > 0)
+				continue;
+			// 用最后一个非终结符的优先级表示这个rule的优先级
+			for (auto s : std::views::reverse(rule.rhs)) {
+				if (s > 0) {
+					rule.prec = analyzer.tokens[s].prec;
+					break;
+				}
+			}
 		}
 	}
 } // namespace comp
