@@ -12,6 +12,7 @@
 #include <queue>
 #include <ranges>
 #include <set>
+#include<map>
 #include <tl/enumerate.hpp>
 #include <unordered_set>
 
@@ -374,23 +375,35 @@ namespace comp {
 		auto& [LR1_action, LR1_goto] = LR1_table;
 
 		for (size_t i = 0; i < n_states; i++) {
-			size_t m_prev = -1;
+			
+			std::map<int,int>hash;
 			for (auto&& pair : qy::ranges::pair_range(dfa.equal_range(i))) {
 				auto&& e = pair.second;
 				// nonterminal
-				if (e.second < 0) {
-					if (tokens[-e.second].prec > m_prev) {
-						LR1_goto[i][-e.second] = e.first;
-						m_prev = tokens[-e.second].prec;
-					}
-				} else
+				if (e.second < 0) 	
+					LR1_goto[i][-e.second] = e.first;	
+				else{
 					LR1_action[i][e.second] = e.first;
+				}
+					
 			}
 			for (auto& it : states[i].items) {
 				if (!it.has_next()) {
+					size_t m_prev = it.prod->prec;
 					for (size_t j = 0; j < n_tokens; j++) {
-						if (it.follow.test(j))
-							LR1_action[i][j] = -it.prod->id;
+						if (it.follow.test(j)){
+							if(!LR1_action[i][j])
+								LR1_action[i][j] = -it.prod->id;
+							else{
+								
+								if(states[LR1_action[i][j]].items[0].prod->prec<m_prev)
+									LR1_action[i][j]=-it.prod->id;
+								else if(states[LR1_action[i][j]].items[0].prod->prec>m_prev)
+									continue;
+								else if(tokens[j].assoc==token::assoc_flag::LEFT)
+									LR1_action[i][j]=-it.prod->id;
+							}
+						}	
 					}
 				}
 			}
