@@ -112,12 +112,10 @@ namespace comp {
 
 	GToken GLexer::get_tag() {
 		string s;
-		do {
+		while (getc() != '>')
 			s.push_back(peek);
-		} while (getc() != '>');
-		s.push_back(peek);
 		getc();
-		return {GToken::TAG, s};
+		return {GToken::TAG, s}; // 解析结果不包含尖括号
 	}
 
 	GToken GLexer::get_char() {

@@ -108,11 +108,18 @@ extern YYSTYPE yylval;)",
 		std::string result = {};
 		for (auto& prod : analyzer.rules) {
 			if (!prod.action.empty()) {
-				string act = qy::replace_all(prod.action, "$$", "(yyval)");
+				auto& nt_ = analyzer.nterms[prod.lhs];
+				string act = qy::replace_all(
+					prod.action, "$$",
+					nt_.tag.empty() ? "(yyval)" : fmt::format("(yyval.{})", nt_.tag));
 				for (size_t i = 1; i <= prod.rhs.size(); i++) {
+					sid_t s = prod.rhs[i - 1];
+					std::string_view tag = s > 0 ? analyzer.tokens[s].tag : analyzer.nterms[-s].tag;
 					qy::replace_all_inplace(
 						act, fmt::format("${}", i),
-						fmt::format("(yyvsp[({}) - ({})])", i, prod.rhs.size()));
+						tag.empty()
+							? fmt::format("(yyvsp[({}) - ({})])", i, prod.rhs.size())
+							: fmt::format("(yyvsp[({}) - ({})].{})", i, prod.rhs.size(), tag));
 				}
 				result += fmt::sprintf(
 					R"(case %d:
