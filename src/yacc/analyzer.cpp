@@ -374,9 +374,8 @@ namespace comp {
 		auto& [LR1_action, LR1_goto] = LR1_table;
 
 		for (size_t i = 0; i < n_states; i++) {
-			auto r = atn.equal_range(i);
 			size_t m_prev = -1;
-			for (auto&& pair : std::ranges::subrange(r.first, r.second)) {
+			for (auto&& pair : qy::ranges::pair_range(atn.equal_range(i))) {
 				auto&& e = pair.second;
 				// nonterminal
 				if (e.second < 0) {
