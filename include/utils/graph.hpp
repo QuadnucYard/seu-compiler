@@ -10,10 +10,8 @@
 	#define GRAPH_FMT
 #endif
 #ifdef GRAPH_FMT
-	#include <fmt/core.h>
-	#include <fmt/os.h>
-	#include <filesystem>
-namespace fs = std::filesystem;
+	#include "fs.hpp"
+	#include "graphviz.hpp"
 #endif
 
 namespace qy {
@@ -120,9 +118,8 @@ namespace qy {
 		/// @param u The start vertex. Should grantee valid index.
 		/// @param args Arguments to construct the edge.
 		/// @return This.
-		basic_graph& add_edge(id_t u, auto&&... args) {
+		void add_edge(id_t u, auto&&... args) {
 			at(u).emplace_back(std::forward<decltype(args)>(args)...);
-			return *this;
 		}
 
 		const safe_vertex_weight_type& operator[](id_t u) const { return std::get<1>(g[u]); }
@@ -226,8 +223,9 @@ namespace qy {
 		}
 
 		/// @brief Get the topological order of the graph.
+		/// @param assert_acyclic If true, throw an exception if the graph is not acyclic.
 		/// @return A vector of vertex indices that represents the topological order.
-		id_vec topological_sort() const {
+		id_vec topological_sort(bool assert_acyclic = true) const {
 			id_t n = static_cast<id_t>(g.size());
 			id_vec deg(n);
 			id_vec queue;
@@ -238,13 +236,16 @@ namespace qy {
 			for (id_t i = 0; i < n; i++)
 				if (!deg[i])
 					queue.push_back(i);
-			for (id_t i = 0; i < n; i++) {
+			for (id_t i = 0; i < queue.size(); i++) {
 				id_t u = queue[i];
 				for (id_t v : iter_nexts(u)) {
 					if (--deg[v] == 0)
 						queue.push_back(v);
 				}
 			}
+			if (assert_acyclic && n != queue.size())
+				throw std::runtime_error("Not acyclic!");
+			// If the graph is not acyclic, it will throw index error.
 			return queue;
 		}
 
@@ -265,18 +266,15 @@ namespace qy {
 
 #ifdef GRAPH_FMT
 		void to_dot(const fs::path& path) const {
-			auto out = fmt::output_file(path.string());
-			out.print("digraph G {{\n");
-			out.print("    rankdir = LR;\n");
-			out.print("    node [shape = circle];\n");
+			gv::digraph dot(path.string(), "G");
+			dot.rankdir("LR").node_option("shape", "circle");
 			if constexpr (has_edge_weight) {
 				for (auto&& [u, v, w] : edges())
-					out.print("    {} -> {} [label=\"{}\"];\n", u, v, w);
+					dot.edge(u, v, w);
 			} else {
 				for (auto&& [u, v] : edges())
-					out.print("    {} -> {};\n", u, v);
+					dot.edge(u, v);
 			}
-			out.print("}}\n");
 		}
 #endif
 

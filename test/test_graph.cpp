@@ -27,6 +27,7 @@ int main(int argc, char const* argv[]) {
 	g0.add_edge(7, 6, 0);
 	g0.add_edge(7, std::tuple{6, 0}); // Also OK.
 	g0.add_edge(0, std::pair{1, 2});  // Also OK.
+	g0.to_dot("test.dot");
 	// fmt::print("{}\n", g0[3]);
 	// Print edges.
 	print_graph(g0);
@@ -50,7 +51,8 @@ int main(int argc, char const* argv[]) {
 	// Also support unweighted graphs.
 	qy::unweighted_graph g1(5);
 	// Chain-style adding edges.
-	g1.add_edge(0, 3).add_edge(1, 2);
+	g1.add_edge(0, 3);
+	g1.add_edge(1, 2);
 
 	// Strongly connected components and topological sort
 	{
@@ -65,8 +67,11 @@ int main(int argc, char const* argv[]) {
 	{
 		fmt::print("Test join\n");
 		qy::unweighted_graph g1{3}, g2{3};
-		g1.add_edge(0, 1).add_edge(1, 2).add_edge(2, 0);
-		g2.add_edge(0, 1).add_edge(0, 2);
+		g1.add_edge(0, 1);
+		g1.add_edge(1, 2);
+		g1.add_edge(2, 0);
+		g2.add_edge(0, 1);
+		g2.add_edge(0, 2);
 		g2.join(g1);
 		print_graph(g2);
 

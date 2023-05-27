@@ -75,8 +75,12 @@ namespace qy::graphviz {
 		}
 	};
 
-	std::string label_escape(const std::string& s) {
+	inline std::string label_escape(const std::string& s) {
 		static std::regex pat{R"(([|"{}]))"};
 		return std::regex_replace(qy::replace_all(s, "\\", "\\\\"), pat, "\\$1");
 	}
 } // namespace qy::graphviz
+
+namespace qy {
+	namespace gv = graphviz;
+} // namespace  qy
