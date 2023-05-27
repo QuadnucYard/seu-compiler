@@ -160,7 +160,7 @@ namespace comp {
 									fmt::join(std::views::transform(s.items, _to_string_p), " "),
 									fmt::join(std::views::transform(s.items, _to_string_f), " ")));
 		}
-		for (auto&& [u, e] : sg.atn) {
+		for (auto&& [u, e] : sg.dfa) {
 			auto&& [v, w] = e;
 			dot.edge(u, v, get_symbol_name(w));
 		}
@@ -268,7 +268,7 @@ namespace comp {
 		auto initial = initial_closure();
 		std::vector<item_set> states{initial};
 		std::unordered_map<item_set, size_t> states_map{{initial, 0}}; // 记录每个状态的id
-		std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> atn;   // A state graph for test
+		std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> dfa;   // A state graph for test
 		for (size_t i = 0; i < states.size(); i++) {
 			// Connections between closures
 			std::unordered_map<sid_t, item_set> nexts;
@@ -288,10 +288,10 @@ namespace comp {
 					states_map[v] = to;
 					states.emplace_back(std::move(v));
 				}
-				atn.emplace(static_cast<sid_t>(i), std::pair{to, k});
+				dfa.emplace(static_cast<sid_t>(i), std::pair{to, k});
 			}
 		}
-		return {std::move(states), std::move(atn)};
+		return {std::move(states), std::move(dfa)};
 	}
 
 	SyntacticAnalyzer::item_set SyntacticAnalyzer::initial_closure() const {
@@ -365,7 +365,7 @@ namespace comp {
 	}
 
 	parsing_table SyntacticAnalyzer::get_LR1_table(const state_graph& LR1_states) const {
-		const auto& [states, atn] = LR1_states;
+		const auto& [states, dfa] = LR1_states;
 
 		size_t n_states = states.size(), n_tokens = tokens.size(), n_nonterminals = nterms.size();
 
@@ -375,7 +375,7 @@ namespace comp {
 
 		for (size_t i = 0; i < n_states; i++) {
 			size_t m_prev = -1;
-			for (auto&& pair : qy::ranges::pair_range(atn.equal_range(i))) {
+			for (auto&& pair : qy::ranges::pair_range(dfa.equal_range(i))) {
 				auto&& e = pair.second;
 				// nonterminal
 				if (e.second < 0) {
@@ -495,13 +495,13 @@ namespace comp {
 					x = remap[x];
 		}
 		auto t4 = std::chrono::high_resolution_clock::now();
-		decltype(LR1_states.atn) atn;
-		for (auto&& [u, e] : LR1_states.atn) {
+		decltype(LR1_states.dfa) dfa;
+		for (auto&& [u, e] : LR1_states.dfa) {
 			auto&& [v, w] = e;
-			atn.emplace(remap[u], std::pair{remap[v], w});
+			dfa.emplace(remap[u], std::pair{remap[v], w});
 		}
 
-		// to_dot({states, atn}, "lalr1-pda.dot");
+		// to_dot({states, dfa}, "lalr1-pda.dot");
 		auto t5 = std::chrono::high_resolution_clock::now();
 		fmt::print("lalr1 {:%S} {:%S} {:%S} {:%S}\n", t2 - t1, t3 - t2, t4 - t3, t5 - t4);
 		return {std::move(LALR1_action), std::move(LALR1_goto)};

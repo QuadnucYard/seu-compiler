@@ -64,7 +64,7 @@ namespace comp {
 
 		struct state_graph {
 			std::vector<item_set> states;
-			std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> atn;
+			std::unordered_multimap<sid_t, std::pair<sid_t, sid_t>> dfa;
 		};
 
 	public:

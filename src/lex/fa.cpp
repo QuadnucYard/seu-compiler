@@ -116,12 +116,12 @@ namespace comp {
 					mapped[j] = static_cast<vid_t>(i);
 			}
 		}
-		std::set<std::tuple<vid_t, vid_t, sid_t>> atn;
+		std::set<std::tuple<vid_t, vid_t, sid_t>> edges;
 		for (auto&& [u, v, w] : dfa.graph.edges())
-			atn.emplace(mapped[u], mapped[v], w);
+			edges.emplace(mapped[u], mapped[v], w);
 		DFA res(partition.size());
 		res.start = mapped[dfa.start];
-		for (auto&& [u, v, w] : atn)
+		for (auto&& [u, v, w] : edges)
 			res.graph.add_edge(u, v, w);
 		for (size_t i = 0; i < dfa.size(); i++)
 			res.accept_states[mapped[i]] = dfa.accept_states[i];
