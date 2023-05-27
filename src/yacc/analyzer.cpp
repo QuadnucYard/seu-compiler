@@ -273,13 +273,14 @@ namespace comp {
 		for (size_t i = 0; i < states.size(); i++) {
 			// Connections between closures
 			std::unordered_map<sid_t, item_set> nexts;
-			states[i] = closure(states[i]);
+			closure(states[i]);
 			// 需要group by next symbol
 			for (auto& p : states[i].items)
 				if (p.has_next())
 					nexts[p.next()].items.emplace_back(p.next_item());
 
 			for (auto&& [k, v] : nexts) {
+				// std::ranges::sort(v.items, {}, &item::hashcode);
 				v.kernel_size = v.items.size();
 				sid_t to;
 				if (auto it = states_map.find(v); it != states_map.end()) {
@@ -299,8 +300,7 @@ namespace comp {
 		return {1, std::vector<item>{{&rules[0], 0, single_set(END_MARKER)}}};
 	}
 
-	SyntacticAnalyzer::item_set SyntacticAnalyzer::closure(const item_set& is) const {
-		item_set result{is};
+	void SyntacticAnalyzer::closure(item_set& result) const {
 		std::queue<size_t> open;
 		std::unordered_map<item::key_type, size_t> close;
 
@@ -337,6 +337,11 @@ namespace comp {
 				}
 			}
 		}
+	}
+
+	SyntacticAnalyzer::item_set SyntacticAnalyzer::closure(const item_set& is) const {
+		item_set result{is};
+		closure(result);
 		return result;
 	}
 

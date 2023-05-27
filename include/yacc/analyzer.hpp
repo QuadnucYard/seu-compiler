@@ -92,6 +92,7 @@ namespace comp {
 		void get_firsts();
 		state_graph get_LR1_states() const;
 		item_set initial_closure() const;
+		void closure(item_set& is) const;
 		item_set closure(const item_set& is) const;
 		symbol_set next_follow(const item& it) const;
 		parsing_table get_LR1_table(const state_graph& LR1_states) const;
