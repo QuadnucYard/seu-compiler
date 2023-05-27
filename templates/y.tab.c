@@ -86,10 +86,10 @@ void parse() {
 			*++state_sp = yyn;
 			*++yyvsp = yyval;
 			yychar = yytranslate[yylex()];
-			 printf("shift to state %d \n",*state_sp);
+			 /* printf("shift to state %d \n",*state_sp);
             for(int* i=state_stack+1;i<=state_sp;i++)
                 printf("%d ", *i);
-                printf("\n");
+                printf("\n"); */
 		} else {
 			yyn = -yyn;
 			short yylen = yyr2[yyn];
@@ -99,6 +99,7 @@ void parse() {
 			}
 			if(yyn==1)
 				break;
+			printf("%s -> \n", yytname[yyr1[yyn] + YYNTOKENS]);
 			state_sp -= yyr2[yyn];
 			symbol_sp -= yyr2[yyn];
 			yyvsp -= yyr2[yyn];
@@ -112,10 +113,10 @@ void parse() {
 			int x = LALR1_goto[*state_sp][*symbol_sp];
 [[FI]]
 			*++state_sp = x;
-			printf("goto state %d \n",x);
+			/* printf("goto state %d \n",x);
             for(int* i=state_stack+1;i<=state_sp;i++)
                 printf("%d ", *i);
-                printf("\n");
+                printf("\n"); */
 		}
 	}
 }
