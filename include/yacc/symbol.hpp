@@ -20,6 +20,7 @@ namespace comp {
 		sid_t id;		// 全局序号
 		sid_t lhs;		// 左部
 		symbol_vec rhs; // 右部
+		sid_t prec;		// 优先级
 		string action;	// 语义动作
 	};
 
