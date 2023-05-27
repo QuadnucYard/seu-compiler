@@ -1,8 +1,8 @@
 #pragma once
-#include "common/recognizer.hpp"
 #include "parsing_table.hpp"
 #include "symbol.hpp"
 #include "yacc/options.hpp"
+#include <unordered_map>
 
 namespace comp {
 
