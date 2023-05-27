@@ -318,10 +318,7 @@ namespace comp {
 				// 这里其实所有左部相同的都会参与
 				for (auto& p : nterms[-s].productions) {
 					const auto& it = result.items[i]; // Caution realloc trap!!
-					item new_item{&p, 0,
-								  !it.has_next1()  ? it.follow
-								  : it.next1() < 0 ? nterms[-it.next1()].first
-												   : single_set(it.next1())};
+					item new_item{&p, 0, next_follow(it)};
 					std::pair index{new_item.key()};
 					if (auto _i = close.find(index); _i != close.end()) {
 						auto& it2 = result.items.at(_i->second);
@@ -340,6 +337,31 @@ namespace comp {
 			}
 		}
 		return result;
+	}
+
+	symbol_set SyntacticAnalyzer::next_follow(const item& it) const {
+		// 可以做一个预判，但也没必要
+		// if (!it.has_next1())
+		// 	return it.follow;
+		// if (it.next1() > 0)
+		// 	return single_set(it.next1());
+		// 然后考虑nullable递推
+		symbol_set fo;
+		auto& rhs = it.prod->rhs;
+		size_t j = it.dot + 1;
+		for (; j < rhs.size(); j++) {
+			sid_t s = rhs[j];
+			if (s >= 0) {
+				fo.set(s);
+				break;
+			}
+			fo |= nterms[-s].first;
+			if (!nterms[-s].nullable)
+				break;
+		}
+		if (j == rhs.size())
+			fo |= it.follow;
+		return fo;
 	}
 
 	parsing_table SyntacticAnalyzer::get_LR1_table(const state_graph& LR1_states) const {
