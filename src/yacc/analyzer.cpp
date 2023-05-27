@@ -3,16 +3,11 @@
 #include "utils/graphviz.hpp"
 #include "utils/hash.hpp"
 #include "utils/myalgo.hpp"
+#include "utils/stopwatch.hpp"
 #include <algorithm>
-#include <chrono>
-#include <fmt/chrono.h>
-#include <fmt/core.h>
-#include <fmt/std.h>
 #include <numeric>
 #include <queue>
 #include <ranges>
-#include <set>
-#include<map>
 #include <tl/enumerate.hpp>
 #include <unordered_set>
 
@@ -51,29 +46,25 @@ namespace comp {
 	}
 
 	parsing_table SyntacticAnalyzer::process(const ParserOptions& options) {
-		auto t0 = std::chrono::high_resolution_clock::now();
+		qy::stopwatch sw;
 		get_nullables();
+		sw.record();
 		get_firsts();
-
-		// Print firsts
-		// for (auto& t : nterms)
-		// 	fmt::print("First({})={}\n", t.name, to_string(t.first));
-		// fmt::print("\n");
-		auto t1 = std::chrono::high_resolution_clock::now();
+		sw.record();
 		auto sg = get_LR1_states();
-		auto t2 = std::chrono::high_resolution_clock::now();
+		sw.record();
 		if (!options.lr1_pda_dot.empty())
 			to_dot(sg, options.lr1_pda_dot);
 		auto pt = get_LR1_table(sg);
-		auto t3 = std::chrono::high_resolution_clock::now();
+		sw.record();
 		auto pt2 = get_LALR1_table(sg, pt);
-		auto t4 = std::chrono::high_resolution_clock::now();
+		sw.record();
 		pt2.compress();
-		auto t5 = std::chrono::high_resolution_clock::now();
+		sw.record();
 		// pt.to_csv("lr1.csv");
 		// pt2.to_csv("lalr1.csv");
+		sw.print("Process");
 		fmt::print("states {} {}\n", pt.action.rows(), pt2.action.rows());
-		fmt::print("{:%S} {:%S} {:%S} {:%S} {:%S}\n", t1 - t0, t2 - t1, t3 - t2, t4 - t3, t5 - t4);
 		return pt2;
 	}
 
@@ -380,35 +371,32 @@ namespace comp {
 		auto& [LR1_action, LR1_goto] = LR1_table;
 
 		for (size_t i = 0; i < n_states; i++) {
-			
-			std::map<int,int>hash;
+			std::unordered_map<int, int> hash;
 			for (auto&& pair : qy::ranges::pair_range(dfa.equal_range(i))) {
 				auto&& e = pair.second;
-				// nonterminal
-				if (e.second < 0) 	
-					LR1_goto[i][-e.second] = e.first;	
-				else{
+				if (e.second < 0)
+					LR1_goto[i][-e.second] = e.first;
+				else
 					LR1_action[i][e.second] = e.first;
-				}
-					
 			}
 			for (auto& it : states[i].items) {
-				if (!it.has_next()) {
-					size_t m_prev = it.prod->prec;
-					for (size_t j = 0; j < n_tokens; j++) {
-						if (it.follow.test(j)){
-							if(!LR1_action[i][j])
-								LR1_action[i][j] = -it.prod->id;
-							else{
-								
-								if(states[LR1_action[i][j]].items[0].prod->prec<m_prev)
-									LR1_action[i][j]=-it.prod->id;
-								else if(states[LR1_action[i][j]].items[0].prod->prec>m_prev)
-									continue;
-								else if(tokens[j].assoc==token::assoc_flag::LEFT)
-									LR1_action[i][j]=-it.prod->id;
-							}
-						}	
+				if (it.has_next())
+					continue;
+				size_t m_prev = it.prod->prec;
+				for (size_t j = 0; j < n_tokens; j++) {
+					if (!it.follow.test(j))
+						continue;
+					if (LR1_action[i][j] == parsing_table::ERR) {
+						LR1_action[i][j] = -it.prod->id;
+					} else {
+						auto prec = states[LR1_action[i][j]].items[0].prod->prec;
+						if (prec < m_prev)
+							LR1_action[i][j] = -it.prod->id;
+						else if (prec > m_prev)
+							continue;
+						else if (tokens[j].assoc == token::assoc_flag::LEFT)
+							LR1_action[i][j] = -it.prod->id;
+						// 如果还相等，那么就选择id最小的产生式
 					}
 				}
 			}
@@ -420,7 +408,6 @@ namespace comp {
 													 parsing_table& LR1_table) const {
 		auto states = LR1_states.states;
 		size_t n_states = states.size(), n_tokens = tokens.size(), n_nonterminals = nterms.size();
-		auto t1 = std::chrono::high_resolution_clock::now();
 
 		auto hasher = [](item_set const& is) {
 			return is.kern_hashcode();
@@ -441,7 +428,7 @@ namespace comp {
 		}
 		fmt::print("core {}\n", kernel_grouped.size());
 		// 状态数：1960。有417个同心状态。
-		auto t2 = std::chrono::high_resolution_clock::now();
+
 		std::vector<size_t> remap(n_states); // 删除状态后，标号重映射
 		std::iota(remap.begin(), remap.end(), 0);
 		size_t len = LR1_table.action.cols();
@@ -484,7 +471,7 @@ namespace comp {
 			for (auto k : kern)
 				remap[k] = kern[0];
 		}
-		auto t3 = std::chrono::high_resolution_clock::now();
+
 		auto [LALR1_action, LALR1_goto] = LR1_table;
 
 		// 现在 remap[i] != i 的都是要删除的。可以保证都是大号映射到小号
@@ -512,7 +499,7 @@ namespace comp {
 				if (auto& x = LALR1_goto[i][j]; x != parsing_table::ERR)
 					x = remap[x];
 		}
-		auto t4 = std::chrono::high_resolution_clock::now();
+
 		decltype(LR1_states.dfa) dfa;
 		for (auto&& [u, e] : LR1_states.dfa) {
 			auto&& [v, w] = e;
@@ -520,8 +507,6 @@ namespace comp {
 		}
 
 		// to_dot({states, dfa}, "lalr1-pda.dot");
-		auto t5 = std::chrono::high_resolution_clock::now();
-		fmt::print("lalr1 {:%S} {:%S} {:%S} {:%S}\n", t2 - t1, t3 - t2, t4 - t3, t5 - t4);
 		return {std::move(LALR1_action), std::move(LALR1_goto)};
 	}
 

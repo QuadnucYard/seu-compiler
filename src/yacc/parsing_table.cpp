@@ -1,9 +1,11 @@
 #include "yacc/parsing_table.hpp"
+#include "utils/stopwatch.hpp"
 #include <algorithm>
 #include <fmt/os.h>
 #include <fmt/ranges.h>
 #include <map>
 #include <unordered_set>
+
 
 namespace comp {
 
@@ -83,6 +85,8 @@ namespace comp {
 	}
 
 	parsing_table_compressed parsing_table::compress() const {
+		qy::stopwatch sw;
+
 		struct table_row {
 			size_t r, c, l;
 			const sid_t* a;
@@ -93,6 +97,8 @@ namespace comp {
 		pt.defact.resize(action.rows());
 		pt.pgoto.resize(goto_.cols(), 0);
 		pt.defgoto.resize(goto_.cols(), -1);
+
+		sw.record();
 
 		size_t n_row = action.rows();
 		size_t n_col = action.cols();
@@ -119,6 +125,7 @@ namespace comp {
 		}
 
 		// 下面考虑贪心嵌入
+		sw.record();
 
 		auto& tab = pt.table;
 
@@ -149,6 +156,7 @@ namespace comp {
 			}
 		}
 
+		sw.record();
 		// 然后压goto
 		// pgoto 存首地址，defgoto 存指针
 		for (size_t k = 0; k < goto_.cols(); k++) {
@@ -216,6 +224,9 @@ namespace comp {
 		}
 		// 如果这列只有一个，放在defgoto
 		// 否则把这列嵌入到table里，挑一个放到defgoto
+		sw.record();
+		sw.print("Compress");
+
 		return pt;
 	}
 } // namespace comp
