@@ -1,5 +1,5 @@
 #include "lex/regex.hpp"
-#include "utils/exceptions.hpp"
+#include "common/exceptions.hpp"
 #include <fmt/core.h>
 #include <stack>
 

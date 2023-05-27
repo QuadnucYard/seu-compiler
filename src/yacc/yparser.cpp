@@ -1,5 +1,5 @@
 #include "yacc/yparser.hpp"
-#include "utils/exceptions.hpp"
+#include "common/exceptions.hpp"
 #include "utils/string_utils.hpp"
 #include "yacc/analyzer.hpp"
 #include <cassert>

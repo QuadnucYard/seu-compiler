@@ -1,5 +1,5 @@
 #include "common/glexer.hpp"
-#include "utils/exceptions.hpp"
+#include "common/exceptions.hpp"
 #include <fmt/core.h>
 #include <sstream>
 #include <unordered_map>
