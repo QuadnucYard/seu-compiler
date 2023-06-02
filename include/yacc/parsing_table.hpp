@@ -22,7 +22,6 @@ namespace comp {
 
 		void to_csv(const fs::path& path) const;
 
-		parsing_table_compressed compress_less() const;
 		parsing_table_compressed compress() const;
 	};
 

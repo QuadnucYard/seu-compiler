@@ -4,10 +4,12 @@
 #include <fmt/os.h>
 #include <fmt/ranges.h>
 #include <map>
+#include <tl/enumerate.hpp>
 #include <unordered_set>
 
-
 namespace comp {
+
+	using ssize_t = std::int64_t;
 
 	void parsing_table::to_csv(const fs::path& path) const {
 		auto out{fmt::output_file(path.string())};
@@ -17,71 +19,80 @@ namespace comp {
 		}
 	}
 
-	parsing_table_compressed parsing_table::compress_less() const {
-		struct table_row {
-			size_t r, c, l;
-		};
-
-		size_t n_col = action.cols();
-		std::vector<table_row> rows;
-		for (size_t i = 0; i < action.rows(); i++) {
-			table_row row{i, 0, 0};
-			size_t j = 0;
-			while (j < n_col && action[i][j] == ERR)
-				j++;
-			if (j == n_col)
-				continue;
-			row.c = j;
-			std::unordered_set<sid_t> cnt;
-			for (; j < n_col; j++)
-				if (action[i][j] != ERR) {
-					row.l = j - row.c + 1;
-					cnt.insert(action[i][j]);
+	std::tuple<ssize_t, sid_t> find_embed(const symbol_vec& tab, auto&& slice, size_t l) {
+		constexpr static auto ERR = parsing_table::ERR;
+		ssize_t best = tab.size() + 1; // 最优的嵌入位置
+		size_t least_conf = l + 1;	   // 最少冲突数
+		sid_t only = ERR;			   // 唯一的冲突值
+		// 先尝试不扩容的嵌入  i可以从负开始吗？可能会导致一个问题：空太少了
+		// [i, i + l)
+		for (ssize_t i = 0; i <= tab.size(); i++) {
+			size_t conf = 0;
+			sid_t cur_only = ERR;
+			bool not_only = false; // 是否冲突的不唯一
+			for (auto&& [j, x] : tl::views::enumerate(slice)) {
+				if (i + j < 0 || i + j >= tab.size() ||
+					tab[i + j] != ERR && x != ERR && tab[i + j] != x) {
+					conf++;
+					if (cur_only == ERR)
+						cur_only = x;
+					else if (x != cur_only)
+						not_only = true;
 				}
-			if (cnt.size() > 1)
-				rows.push_back(row);
-		}
-		std::sort(rows.begin(), rows.end(), [](const table_row& r1, const table_row& r2) {
-			return r1.l > r2.l || r1.l == r2.l && r1.r < r2.r;
-		}); // 排序稍微有点用
-
-		// 下面考虑一种简单的压缩，不涉及行的交错
-
-		std::vector<sid_t> tab;
-		// std::priority_queue<std::pair<size_t, size_t>> gaps; // len, offset
-		std::multimap<size_t, size_t> gaps;
-		for (auto& row : rows) {
-			size_t ins = tab.size();
-			if (auto it = gaps.lower_bound(row.l); it != gaps.end()) { // 有空位放
-				ptrdiff_t l = it->first - row.l;
-				ins = it->second;
-				gaps.erase(it);
-				// 如果有多余空间就把多出的 gap 插回去
-				if (l > 0)
-					gaps.emplace(l, ins + row.l);
 			}
-			if (ins == tab.size()) {
-				tab.insert(tab.end(), action.iter_row(row.r).begin() + row.c,
-						   action.iter_row(row.r).begin() + row.c + row.l);
-			} else {
-				std::copy_n(action.iter_row(row.r).begin() + row.c, row.l, tab.begin() + ins);
-			}
-			for (size_t j = row.c; j < row.c + row.l;) {
-				size_t k = j;
-				while (k < n_col && action[row.r][k] != ERR)
-					k++;
-				if (k == n_col)
-					break;
-				// 现在k指向的是ERR
-				j = k;
-				while (j < n_col && action[row.r][j] == ERR)
-					j++;
-				// 现在j指向的是非ERR
-				gaps.emplace(j - k, ins + k);
+			if (conf == 0) // 没有冲突的
+				return {i, ERR};
+			if (!not_only && (only == ERR || conf > least_conf)) {
+				// 如果有多个冲突值，那么找冲突数最多的嵌入位置更划算
+				best = i;
+				only = cur_only;
+				least_conf = conf;
 			}
 		}
+		if (least_conf != l + 1)
+			return {best, only};
+		only = ERR;
+		least_conf = l + 1;
+		// 然后是扩张式的嵌入
+		for (size_t i = tab.size() < l ? 0 : tab.size() - l; i <= tab.size(); i++) {
+			size_t conf = 0;
+			sid_t cur_only = ERR;
+			bool not_only = false; // 是否冲突的不唯一
+			for (auto&& [j, x] : tl::views::enumerate(slice)) {
+				if (i + j >= 0 && i + j < tab.size() && tab[i + j] != ERR && x != ERR &&
+					tab[i + j] != x) {
+					conf++;
+					if (cur_only == ERR)
+						cur_only = x;
+					else if (x != cur_only)
+						not_only = true;
+				}
+			}
+			if (conf == 0) // 没有冲突的
+				return {i, ERR};
+			if (!not_only && (only == ERR || conf > least_conf)) {
+				best = i;
+				only = cur_only;
+				least_conf = conf;
+			}
+		}
+		return {best, only};
+	}
 
-		return {};
+	std::tuple<ssize_t, sid_t> embed(symbol_vec& tab, symbol_vec& check, auto&& slice, size_t l,
+									 size_t base) {
+		constexpr static auto ERR = parsing_table::ERR;
+		auto [i, only] = find_embed(tab, slice, l);
+		if (i + l > tab.size()) {
+			tab.resize(i + l, ERR);
+			check.resize(tab.size(), ERR);
+		}
+		for (auto&& [j, x] : tl::views::enumerate(slice))
+			if (x != ERR && x != only) {
+				tab[i + j] = x;
+				check[i + j] = static_cast<sid_t>(base + j);
+			}
+		return {i, only};
 	}
 
 	parsing_table_compressed parsing_table::compress() const {
@@ -119,9 +130,10 @@ namespace comp {
 					cnt.insert(action[i][j]);
 				}
 			row.a = &action[i][row.c];
-			if (cnt.size() > 1)
-				rows.push_back(row);
-			pt.defact[i] = cnt.size() > 1 ? 0 : *cnt.begin();
+			// if (cnt.size() > 1)
+			rows.push_back(row);
+			// BUG 这里如果不筛选，结果会不一样
+				pt.defact[i] = cnt.size() > 1 ? 0 : *cnt.begin();
 		}
 
 		// 下面考虑贪心嵌入
@@ -129,31 +141,13 @@ namespace comp {
 
 		auto& tab = pt.table;
 
+		// 先看 pact，如果不对应那么就找defact
+
 		for (auto& row : rows) {
-			for (size_t i = 0; i <= tab.size(); i++) { // 开头
-				bool flag = true;
-				for (size_t j = 0; j < row.l; j++) {
-					if (i + j < tab.size() &&
-						(tab[i + j] != ERR && row.a[j] != ERR && tab[i + j] != row.a[j])) {
-						flag = false;
-						break;
-					}
-				}
-				if (flag) {
-					// [i, i + l]
-					if (i + row.l > tab.size()) {
-						tab.resize(i + row.l, ERR);
-						pt.check.resize(tab.size(), ERR);
-					}
-					for (size_t j = 0; j < row.l; j++)
-						if (row.a[j] != ERR) {
-							tab[i + j] = row.a[j];
-							pt.check[i + j] = static_cast<sid_t>(row.c + j);
-						}
-					pt.pact[row.r] = static_cast<sid_t>(i - row.c);
-					break;
-				}
-			}
+			// TODO 找一下最优的位置
+			auto [i, only] = embed(tab, pt.check, std::span{row.a, row.l}, row.l, row.c);
+			pt.pact[row.r] = static_cast<sid_t>(i - row.c);
+			pt.defact[row.r] = only;
 		}
 
 		sw.record();
@@ -170,56 +164,11 @@ namespace comp {
 				d--;
 			l = d - u;
 			// [u, u + l] 嵌入
-			size_t best = tab.size(), least_conf = l, best_last_conf = 0;
-			// 先尝试不扩容的嵌入
-			for (size_t i = 0; i <= tab.size(); i++) {
-				size_t conf = 0, last_conf = -1;
-				// 其实可以考虑从负数开始循环
-				for (size_t j = 0; j < l; j++) {
-					if (i + j >= tab.size() || tab[i + j] != ERR && goto_[u + j][k] != ERR &&
-												   tab[i + j] != goto_[u + j][k]) {
-						conf++;
-						last_conf = j;
-					}
-				}
-				if (conf < least_conf) {
-					best = i;
-					least_conf = conf;
-					best_last_conf = last_conf;
-				}
-			}
-			if (least_conf > 1) {
-				// 如果不行，那么就扩容
-				best = tab.size();
-				for (size_t i = tab.size() < l ? 0 : tab.size() - l; i <= tab.size(); i++) {
-					size_t conf = 0, last_conf = -1;
-					for (size_t j = 0; j < l; j++) {
-						if (tab[i + j] != ERR && goto_[u + j][k] != ERR &&
-							tab[i + j] != goto_[u + j][k]) {
-							conf++;
-							last_conf = j;
-						}
-					}
-					if (conf <= 1) {
-						best = i;
-						least_conf = conf;
-						best_last_conf = last_conf;
-						break;
-					}
-				}
-			}
-			if (best + l > tab.size()) {
-				tab.resize(best + l, ERR);
-				pt.check.resize(tab.size(), ERR);
-			}
-			for (size_t j = 0; j < l; j++)
-				if (tab[best + j] == ERR) {
-					tab[best + j] = goto_[u + j][k];
-					pt.check[best + j] = static_cast<sid_t>(u + j);
-				}
-			// goto[j][k] = table[pgoto[k] + j], u + pgoto[k] = best
+			auto&& slice = goto_.iter_col(k) | std::views::drop(u) | std::views::take(l);
+			auto [best, only] = embed(tab, pt.check, slice, l, u);
 			pt.pgoto[k] = static_cast<sid_t>(best - u);
-			pt.defgoto[k] = goto_[u + best_last_conf][k]; // 留给table里冲突的那个
+			pt.defgoto[k] = only;
+			// 留给table里冲突的那个
 			// 有个问题，如果是最后一个因为溢出而冲突，应该做裁剪
 		}
 		// 如果这列只有一个，放在defgoto

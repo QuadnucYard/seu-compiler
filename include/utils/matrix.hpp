@@ -1,5 +1,6 @@
 #pragma once
 #include <ranges>
+#include <tl/stride.hpp>
 #include <vector>
 
 namespace qy {
@@ -40,6 +41,10 @@ namespace qy {
 		auto iter_row(size_type r) {
 			return std::ranges::subrange(m_data.begin() + r * m_cols,
 										 m_data.begin() + (r + 1) * m_cols);
+		}
+
+		auto iter_col(size_type c) const {
+			return m_data | std::views::drop(c) | tl::views::stride(m_cols);
 		}
 
 	private:
