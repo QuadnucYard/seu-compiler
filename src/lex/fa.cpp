@@ -43,10 +43,7 @@ namespace comp {
 
 	void DFABuilder::add_re(const string& re) { all_dfa.push_back(nfa2dfa(re2nfa(re))); }
 
-	NFA DFABuilder::re2nfa(const string& re) const {
-		NFA nfa = tompson(re);
-		return nfa;
-	}
+	NFA DFABuilder::re2nfa(const string& re) const { return tompson(re); }
 
 	DFA DFABuilder::nfa2dfa(const NFA& nfa) const {
 		// 0. 初始NFA：1个accept

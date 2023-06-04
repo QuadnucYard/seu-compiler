@@ -7,21 +7,34 @@
 
 namespace qy {
 	class stopwatch {
-	public:
-		stopwatch() { m_time = std::chrono::high_resolution_clock::now(); }
+		using clock_t = std::chrono::high_resolution_clock;
+		using time_t = std::chrono::steady_clock::time_point;
+		using timespan_t = std::chrono::nanoseconds;
 
-		void record() {
-			auto now = std::chrono::high_resolution_clock::now();
-			m_periods.push_back(now - m_time);
+		struct record_t {
+			timespan_t time;
+			timespan_t elapsed;
+			std::string desc;
+		};
+
+	public:
+		stopwatch() { m_start = m_time = clock_t::now(); }
+
+		void record(std::string desc = "") {
+			auto now = clock_t::now();
+			m_periods.emplace_back(now - m_start, now - m_time, desc);
 			m_time = now;
 		}
 
 		void print(std::string_view prefix = "Stopwatch") {
-			fmt::print("{}: {:%S}\n", prefix, fmt::join(m_periods, " "));
+			fmt::print(">> {}\n", prefix);
+			for (auto& p : m_periods)
+				fmt::print("{:%S} {:%S} {}\n", p.time, p.elapsed, p.desc);
 		}
 
 	private:
-		std::chrono::steady_clock::time_point m_time;
-		std::vector<std::chrono::nanoseconds> m_periods;
+		time_t m_start;
+		time_t m_time;
+		std::vector<record_t> m_periods;
 	};
 } // namespace qy
