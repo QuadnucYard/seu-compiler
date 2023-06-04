@@ -21,7 +21,7 @@ namespace comp {
 			std::vector<RawRule> rules;
 		};
 
-		inline constexpr static string aug_start{"$accept"};
+		inline static string const aug_start{"$accept"};
 
 		SyntacticAnalyzer& analyzer;
 		string start_symbol;

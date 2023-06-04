@@ -139,6 +139,7 @@ namespace comp {
 	}
 
 	void YParser::finalize() {
+		rules[0].rules[0].rhs[0] = start_symbol;
 		// Register tokens
 		for (auto& group : rules) {
 			for (auto& r : group.rules) {
@@ -171,7 +172,6 @@ namespace comp {
 			i++;
 		}
 		// rules
-		rules[0].rules[0].rhs[0] = start_symbol;
 		for (size_t i = 0, k = 0; i < rules.size(); i++) {
 			for (auto&& r : rules[i].rules) {
 				symbol_vec sv;
