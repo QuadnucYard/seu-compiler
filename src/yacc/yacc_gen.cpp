@@ -53,6 +53,8 @@ extern YYSTYPE yylval;)",
 		temp.set_string("[[YYNNTS]]", analyzer.nterms.size());
 		temp.set_string("[[YYNRULES]]", analyzer.rules.size());
 		temp.set_string("[[YYMAXUTOK]]", analyzer.translate.size() - 1);
+		temp.set_string("[[YYSTYPE]]",
+						yparser.union_type.empty() ? "int" : "union " + yparser.union_type);
 	}
 
 	void YaccCodeGen::gen_translate() {

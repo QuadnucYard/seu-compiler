@@ -101,7 +101,7 @@ namespace comp {
 	void YParser::_rules() {
 		RawRuleGroup group;
 		while (section == 1 && tok.type != GToken::END) {
-			if (check_section())
+			if (check_section(false))
 				break;
 			assert(tok.type == GToken::ID);
 			group.lhs = tok._string();
