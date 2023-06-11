@@ -8,7 +8,7 @@
 namespace qy {
 	class stopwatch {
 		using clock_t = std::chrono::high_resolution_clock;
-		using time_t = std::chrono::steady_clock::time_point;
+		using time_t = clock_t::time_point;
 		using timespan_t = std::chrono::nanoseconds;
 
 		struct record_t {
