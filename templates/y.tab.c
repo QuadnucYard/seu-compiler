@@ -85,7 +85,9 @@ void parse() {
 [[ELSE]]
 		short yyn = LALR1_action[*state_sp][yychar];
 [[FI]]
-		if (yyn >= 0) {
+		if(yyn == 0)
+			break;
+		if (yyn > 0) {
 			*++symbol_sp = yychar;
 			*++state_sp = yyn;
 			*++yyvsp = yyval;
@@ -101,8 +103,6 @@ void parse() {
 			switch (yyn) {
 			[[reduce]]
 			}
-			if(yyn == 1)
-				break;
 
 			printf("%s ->", yytname[yyr1[yyn] + YYNTOKENS]);
 			for (int i = 0; i < yyr2[yyn]; i++)
