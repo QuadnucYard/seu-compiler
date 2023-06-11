@@ -8,7 +8,6 @@
 	int yylex();
 %}
 
-%error-verbose
 
 %token IDENTIFIER CONSTANT STRING_LITERAL SIZEOF
 %token PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
@@ -462,11 +461,11 @@ translation_unit
 	| control_line
 	;
 
-control_line: HINCLUDE '<' IDENTIFIER '.' IDENTIFIER '>' control_line
-			| HINCLUDE '<' IDENTIFIER '>' control_line
-			| HINCLUDE STRING_LITERAL control_line
-			|
-			;
+control_line
+	: HINCLUDE '<' IDENTIFIER '.' IDENTIFIER '>' control_line
+	| HINCLUDE '<' IDENTIFIER '>' control_line
+	| HINCLUDE STRING_LITERAL control_line
+	;
 
 external_declaration
 	: function_definition external_declaration

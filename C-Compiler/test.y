@@ -9,7 +9,7 @@
 	int yylex();
 %}
 
-%error-verbose
+
 
 %token ID
 
