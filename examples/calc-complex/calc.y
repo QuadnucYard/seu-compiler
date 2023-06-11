@@ -19,6 +19,7 @@
 
 %type <val> expr
 
+%token SIN COS TAN ABS
     
 %{
 	
@@ -28,6 +29,7 @@
 	#include <stdio.h>   
     #include <string.h>
     #include <stdlib.h>
+    #include <math.h>
     void yyerror(char*);
     int yylex(void);
 	extern char* yytext;
@@ -63,6 +65,10 @@ expr:
     |expr '/' expr    {$$ = $1 / $3;}
     |'-' expr %prec '*' {$$ = - $2;}
     |'('expr')'    {$$ = $2;}
+    | SIN'('expr')' { $$ = sin($3); }
+    | COS'('expr')' { $$ = cos($3); }
+    | TAN'('expr')' { $$ = tan($3); }
+    | ABS'('expr')' { $$ = abs($3); }
     ;
 	
 

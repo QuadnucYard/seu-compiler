@@ -1,3 +1,5 @@
+D			[0-9]
+E			([Ee][+-]?{D}+)
 
 %{
     /*
@@ -16,13 +18,27 @@
     	}
 
     /* 整数 */
-[0-9]+	{
+[1-9]{D}*	{
             yylval.val = atoi(yytext);
+            return NUM;
+    	}
+
+    /* 浮点数 */
+{D}+{E} |	 	
+    {D}*"."{D}+{E}? |
+    {D}+"."{D}*{E}?
+        {
+            yylval.val = atof(yytext);
             return NUM;
     	}
 
     /* 运算符 */
 [-+()=/*\n]	{return *yytext;}
+
+"sin" { return SIN; }
+"cos" { return COS; }
+"tan" { return TAN; }
+"abs" { return ABS; }
 
     /* 空白被忽略 */
 [ \t]    ;
