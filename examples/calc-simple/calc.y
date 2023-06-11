@@ -4,6 +4,7 @@
 	#include <string.h>
 	
 	int yylex();
+	char yytext[100];
 
 #define YYSTYPE_IS_DECLARED
 typedef float YYSTYPE; 
@@ -12,7 +13,6 @@ YYSTYPE yylval;
 
 %}
 
-%error-verbose
 
 %token NUM
 
@@ -41,11 +41,23 @@ term
 	;
 
 fact
-	: NUM			{ $$ = yylval; }
+	: NUM			{ $$ = yylval.val; }
 	| '(' expr ')'  { $$ = $2; }
 	;
 
 %%
+
+int yylex() {
+    static int tokens[] = {256, '+', 256, '*', 256, '\n', 0};
+	static const char* texts[] = {"6.8", "+", "7.5", "*", "-3", "\n", 0};
+	static int cnt = 0;
+	if (texts[cnt])
+		strcpy(yytext, texts[cnt]);
+	if (tokens[cnt] == 256)
+		yylval = atof(texts[cnt]);
+	printf("yylex\n");
+    return tokens[cnt++];
+}
 
 int main() {
 	parse();
