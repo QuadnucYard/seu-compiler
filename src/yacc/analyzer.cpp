@@ -48,19 +48,19 @@ namespace comp {
 	parsing_table SyntacticAnalyzer::process(const ParserOptions& options) {
 		qy::stopwatch sw;
 		get_nullables();
-		sw.record();
+		sw.record("get_nullables");
 		get_firsts();
-		sw.record();
+		sw.record("get_firsts");
 		auto sg = get_LR1_states();
-		sw.record();
+		sw.record("get_LR1_states");
 		if (!options.lr1_pda_dot.empty())
 			to_dot(sg, options.lr1_pda_dot);
 		auto pt = get_LR1_table(sg);
-		sw.record();
+		sw.record("get_LR1_table");
 		auto pt2 = get_LALR1_table(sg, pt);
-		sw.record();
+		sw.record("get_LALR1_table");
 		pt2.compress();
-		sw.record();
+		sw.record("compress (test)");
 		// pt.to_csv("lr1.csv");
 		// pt2.to_csv("lalr1.csv");
 		sw.print("Process");

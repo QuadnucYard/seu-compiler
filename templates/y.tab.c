@@ -34,6 +34,10 @@ typedef short yytype_uint8;
 
 static const yytype_uint8 yytranslate[] = [[yytranslate]];
 
+static const short yyprhs[] = [[yyprhs]];
+
+static const short yyrhs[] = [[yyrhs]];
+
 static const char* const yytname[] = [[yytname]];
 
 /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
@@ -75,9 +79,9 @@ void parse() {
 
 	while (yychar != 0 || *state_sp >= 1) {
 [[IF(C1)]]
-		short yyn = yydefact[*state_sp];
-		if (yyn == 0)
-			yyn = yytable[yypact[*state_sp] + yychar];
+		short yyn = yypact[*state_sp] + yychar;
+        yyn = 0 <= yyn && yyn <= YYLAST && yycheck[yyn] == yychar ?
+				yytable[yyn] : yydefact[*state_sp];
 [[ELSE]]
 		short yyn = LALR1_action[*state_sp][yychar];
 [[FI]]
@@ -97,9 +101,14 @@ void parse() {
 			switch (yyn) {
 			[[reduce]]
 			}
-			if(yyn==1)
+			if(yyn == 1)
 				break;
-			printf("%s -> \n", yytname[yyr1[yyn] + YYNTOKENS]);
+
+			printf("%s ->", yytname[yyr1[yyn] + YYNTOKENS]);
+			for (int i = 0; i < yyr2[yyn]; i++)
+				printf(" %s", yytname[yyrhs[yyprhs[yyn] + i]]);
+			printf("\n");
+
 			state_sp -= yyr2[yyn];
 			symbol_sp -= yyr2[yyn];
 			yyvsp -= yyr2[yyn];

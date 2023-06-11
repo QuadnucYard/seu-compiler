@@ -79,6 +79,18 @@ extern YYSTYPE yylval;)",
 						qy::format_array(analyzer.rules | std::views::transform([](auto&& t) {
 											 return t.rhs.size();
 										 })));
+		std::vector<size_t> yyprhs;
+		std::vector<sid_t> yyrhs;
+		sid_t ntokens = static_cast<sid_t>(analyzer.tokens.size());
+		for (size_t s = 0; auto& r : analyzer.rules) {
+			yyprhs.push_back(s);
+			for (auto s : r.rhs)
+				yyrhs.push_back(s > 0 ? s : ntokens - s);
+			yyrhs.push_back(-1);
+			s += r.rhs.size() + 1;
+		}
+		temp.set_string("[[yyprhs]]", qy::format_array(yyprhs));
+		temp.set_string("[[yyrhs]]", qy::format_array(yyrhs));
 	}
 
 	void YaccCodeGen::gen_table(const parsing_table& pt) {
