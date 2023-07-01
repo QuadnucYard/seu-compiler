@@ -8,3 +8,7 @@ build/
 # Include project files only
 .vscode
 .*/
+
+vsxmake2022
+
+output/

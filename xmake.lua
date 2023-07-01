@@ -5,6 +5,7 @@ set_languages("c++20")
 
 if is_plat("windows") then
     add_cxflags("/wd4819") -- Add this if using msvc
+    -- add_ldflags("/PROFILE")
 else
     add_cxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
     add_mxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
@@ -20,7 +21,10 @@ add_requires("vcpkg::tl-ranges", {alias = "tl-ranges"})
 
 add_includedirs("include")
 
--- add_defines("FMT_HEADER_ONLY")
+set_rundir("output")
+before_run(function () 
+    os.mkdir("output")
+end)
 
 function add_test_target(...)
     for _, name in ipairs{...} do
