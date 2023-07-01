@@ -4,7 +4,7 @@
 
 namespace comp {
 
-	class TompsonAlgo {
+	class ThompsonAlgo {
 	public:
 		constexpr static int CAT = 1;
 		constexpr static sid_t EPSILON = DFABuilder::EPSILON;
@@ -27,6 +27,6 @@ namespace comp {
 		NFA nfa;
 	};
 
-	inline NFA tompson(std::string_view regex) { return TompsonAlgo()(regex); }
+	inline NFA thompson(std::string_view regex) { return ThompsonAlgo()(regex); }
 
 } // namespace comp

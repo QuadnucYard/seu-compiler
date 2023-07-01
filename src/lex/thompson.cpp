@@ -1,11 +1,11 @@
-#include "lex/tompson.hpp"
+#include "lex/thompson.hpp"
 #include "lex/regex.hpp"
 #include <bitset>
 #include <unordered_set>
 
 namespace comp {
 
-	NFA TompsonAlgo::operator()(std::string_view regex) {
+	NFA ThompsonAlgo::operator()(std::string_view regex) {
 		string _regex;
 		for (char c : regex)
 			_regex.push_back(abs(c));
@@ -90,11 +90,11 @@ namespace comp {
 	}
 
 	auto get_range(std::string_view str) {
-		std::bitset<TompsonAlgo::CHARSET_SIZE> id_bitset;
+		std::bitset<ThompsonAlgo::CHARSET_SIZE> id_bitset;
 		size_t m = str.length();
 		const auto add_char = [&id_bitset](char c) {
 			if (auto matcher = wildcard_matcher::get(-c)) {
-				for (int i = 0; i < TompsonAlgo::CHARSET_SIZE; i++)
+				for (int i = 0; i < ThompsonAlgo::CHARSET_SIZE; i++)
 					if (matcher(i))
 						id_bitset.set(i);
 			} else {
@@ -121,7 +121,7 @@ namespace comp {
 		return id_bitset;
 	}
 
-	void TompsonAlgo::match_range(std::string_view str) {
+	void ThompsonAlgo::match_range(std::string_view str) {
 		auto id_bitset = !str.empty() && str[0] == -'^' ? get_range(str.substr(1)).flip()
 														: get_range(str);
 		int n = static_cast<int>(nfa.graph.size());
@@ -133,7 +133,7 @@ namespace comp {
 				nfa.graph.add_edge(new_sub.start, new_sub.end, c);
 	}
 
-	void TompsonAlgo::match_concat() {
+	void ThompsonAlgo::match_concat() {
 		op_stack.pop();
 		SubNFA nfa2 = nfa_stack.top();
 		nfa_stack.pop();
@@ -143,7 +143,7 @@ namespace comp {
 		nfa_stack.push({nfa1.start, nfa2.end});
 	}
 
-	void TompsonAlgo::match_alt() {
+	void ThompsonAlgo::match_alt() {
 		op_stack.pop();
 		SubNFA nfa2 = nfa_stack.top();
 		nfa_stack.pop();
@@ -158,7 +158,7 @@ namespace comp {
 		nfa_stack.emplace(n, n + 1);
 	}
 
-	void TompsonAlgo::match_opt() {
+	void ThompsonAlgo::match_opt() {
 		SubNFA& nfa1 = nfa_stack.top();
 		int n = static_cast<int>(nfa.graph.size());
 		nfa.graph.resize(nfa.graph.size() + 2);
@@ -168,7 +168,7 @@ namespace comp {
 		nfa1 = {n, n + 1};
 	}
 
-	void TompsonAlgo::match_star() {
+	void ThompsonAlgo::match_star() {
 		SubNFA& nfa1 = nfa_stack.top();
 		int n = static_cast<int>(nfa.graph.size());
 		nfa.graph.resize(n + 2);
@@ -179,7 +179,7 @@ namespace comp {
 		nfa1 = {n, n + 1};
 	}
 
-	void TompsonAlgo::match_plus() {
+	void ThompsonAlgo::match_plus() {
 		SubNFA& nfa1 = nfa_stack.top();
 		int n = static_cast<int>(nfa.graph.size());
 		nfa.graph.resize(n + 2);

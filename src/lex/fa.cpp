@@ -1,5 +1,5 @@
 #include "lex/fa.hpp"
-#include "lex/tompson.hpp"
+#include "lex/thompson.hpp"
 #include "utils/graphviz.hpp"
 #include "utils/myalgo.hpp"
 #include <bitset>
@@ -43,7 +43,7 @@ namespace comp {
 
 	void DFABuilder::add_re(const string& re) { all_dfa.push_back(nfa2dfa(re2nfa(re))); }
 
-	NFA DFABuilder::re2nfa(const string& re) const { return tompson(re); }
+	NFA DFABuilder::re2nfa(const string& re) const { return thompson(re); }
 
 	DFA DFABuilder::nfa2dfa(const NFA& nfa) const {
 		// 0. 初始NFA：1个accept
