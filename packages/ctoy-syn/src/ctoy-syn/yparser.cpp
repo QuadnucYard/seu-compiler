@@ -1,7 +1,7 @@
 #include "./yparser.hpp"
+#include "./analyzer.hpp"
 #include "ctoy-utils/exceptions.hpp"
 #include "ctoy-utils/string_utils.hpp"
-#include "./analyzer.hpp"
 #include <cassert>
 #include <fmt/std.h>
 
@@ -18,7 +18,7 @@ void YParser::parse() {
     next0();
     _declaration();
     _rules();
-    if (section == 2) { epilogue = lexer.get_epilogue()._string(); }
+    if (section == 2) { epilogue = lexer.get_epilogue().as_string(); }
 }
 
 void YParser::_declaration() {
@@ -27,7 +27,7 @@ void YParser::_declaration() {
         switch (tok.type) {
         case GToken::DIR: _directive(); break;
         case GToken::PRO:
-            prologues.push_back(tok._string());
+            prologues.push_back(tok.as_string());
             next0();
             break;
         }
@@ -37,23 +37,23 @@ void YParser::_declaration() {
 void YParser::_directive() {
     auto dir = std::get<string>(tok.val);
     if (dir == "%start") {
-        start_symbol = next0()._string();
+        start_symbol = next0().as_string();
         next0();
     } else if (dir == "%token") {
         string tag;
         while (next0().type != GToken::DIR) {
             switch (tok.type) {
-            case GToken::TAG: tag = std::move(tok._string()); break;
+            case GToken::TAG: tag = std::move(tok.as_string()); break;
             case GToken::STRING:
-                analyzer.tokens.back().literal = qy::unescape_string(tok._string());
+                analyzer.tokens.back().literal = qy::unescape_string(tok.as_string());
                 break;
             case GToken::INT:
-                analyzer.tokens.back().num = tok._int();
-                used_num.insert(tok._int());
+                analyzer.tokens.back().num = tok.as_int();
+                used_num.insert(tok.as_int());
                 break;
             case GToken::ID: {
                 sid_t tid = static_cast<sid_t>(analyzer.tokens.size());
-                auto kw = tok._string();
+                auto kw = tok.as_string();
                 symbol_map[kw] = tid;
                 analyzer.translate.emplace_back(tid);
                 analyzer.tokens.emplace_back(kw, "", tag, 0, true);
@@ -65,13 +65,13 @@ void YParser::_directive() {
     } else if (dir == "%type") {
         string tag;
         while (next0().type != GToken::DIR) {
-            if (tok.type == GToken::TAG) tag = tok._string();
-            else if (tok.type == GToken::ID) nterm_types.emplace(tok._string(), tag);
+            if (tok.type == GToken::TAG) tag = tok.as_string();
+            else if (tok.type == GToken::ID) nterm_types.emplace(tok.as_string(), tag);
             else break;
         }
     } else if (dir == "%union") {
         assert(next0().type == GToken::ACT);
-        union_type = tok._string();
+        union_type = tok.as_string();
         next0();
     } else if (dir == "%left" || dir == "%right" || dir == "%nonassoc") {
         auto flag = dir == "%left"    ? token::assoc_flag::LEFT
@@ -79,7 +79,7 @@ void YParser::_directive() {
                                       : token::assoc_flag::NONE;
         std::vector<string> tokens;
         while (next0().type != GToken::DIR)
-            tokens.push_back(std::move(tok._string()));
+            tokens.push_back(std::move(tok.as_string()));
         prec.emplace_back(flag, std::move(tokens));
     } else {
         throw syntax_error("Unknown directive.");
@@ -91,13 +91,13 @@ void YParser::_rules() {
     while (section == 1 && tok.type != GToken::END) {
         if (check_section(false)) break;
         assert(tok.type == GToken::ID);
-        group.lhs = tok._string();
-        assert(next0().type == GToken::OP && tok._char() == ':');
+        group.lhs = tok.as_string();
+        assert(next0().type == GToken::OP && tok.as_char() == ':');
         symbol_map.emplace(group.lhs, -static_cast<sid_t>(rules.size()));
         group.rules.push_back({});
         for (next0();; next0()) {
             if (tok.type == GToken::OP) {
-                auto op = tok._char();
+                auto op = tok.as_char();
                 if (op == '|') {
                     group.rules.push_back({});
                 } else if (op == ';') {
@@ -106,15 +106,15 @@ void YParser::_rules() {
                     break;
                 }
             } else if (tok.type == GToken::ACT) {
-                group.rules.back().action = tok._string();
+                group.rules.back().action = tok.as_string();
             } else if (tok.type == GToken::DIR) {
-                auto dir = tok._string();
+                auto dir = tok.as_string();
                 if (dir == "%empty") {
                 } else if (dir == "%prec") {
-                    group.rules.back().prec = next0()._string();
+                    group.rules.back().prec = next0().as_string();
                 }
             } else if (tok.type == GToken::ID || tok.type == GToken::CHAR) {
-                string s = tok._string();
+                string s = tok.as_string();
                 group.rules.back().rhs.push_back(s);
             } else {
                 // throw syntax_error(

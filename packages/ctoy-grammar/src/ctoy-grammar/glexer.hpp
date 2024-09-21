@@ -8,13 +8,6 @@ namespace comp {
 
 /// @brief Parser for grammar file.
 class GLexer {
-  protected:
-    std::istream& in;
-
-    int line{0}; // Line number, from 0
-    int column{0};
-    char peek{}, prev{};
-
   public:
     GLexer(std::istream& in);
 
@@ -104,5 +97,13 @@ class GLexer {
     /// @brief Read the current multi-line comment into the give string.
     /// @param s String to read to.
     void read_comment_ml(string& s);
+
+  protected:
+    std::istream& in;
+
+    int line{0}; // Line number, from 0
+    int column{0};
+    char peek{}, prev{};
 };
+
 } // namespace comp

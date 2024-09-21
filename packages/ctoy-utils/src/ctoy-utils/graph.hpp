@@ -1,18 +1,16 @@
 #pragma once
 
-#include <functional>
 #include <ranges>
 #include <stack>
 #include <type_traits>
-#include <unordered_map>
 #include <vector>
 
 #if __has_include(<fmt/core.h>)
 #define GRAPH_FMT
 #endif
 #ifdef GRAPH_FMT
-#include "fs.hpp"
 #include "graphviz.hpp"
+#include <filesystem>
 #endif
 
 namespace qy {
@@ -259,8 +257,8 @@ class basic_graph {
     }
 
 #ifdef GRAPH_FMT
-    void to_dot(const fs::path& path) const {
-        gv::digraph dot(path.string(), "G");
+    void to_dot(const std::filesystem::path& path) const {
+        graphviz::digraph dot(path.string(), "G");
         dot.rankdir("LR").node_option("shape", "circle");
         if constexpr (has_edge_weight) {
             for (auto&& [u, v, w] : edges())

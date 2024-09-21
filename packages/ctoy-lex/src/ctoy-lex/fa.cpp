@@ -13,7 +13,7 @@ namespace comp {
 using tl::views::enumerate;
 
 #ifdef GRAPH_FMT
-void DFA::to_dot(const fs::path& path) const {
+void DFA::to_dot(const std::filesystem::path& path) const {
     qy::graphviz::digraph dot(path.string(), "G");
     dot.rankdir("LR")
         .node_option("fontname", "Consolas")

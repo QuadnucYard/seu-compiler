@@ -1,17 +1,15 @@
 #include "./parsing_table.hpp"
 #include "ctoy-utils/stopwatch.hpp"
-#include <algorithm>
 #include <cassert>
 #include <fmt/os.h>
 #include <fmt/ranges.h>
-#include <map>
 #include <optional>
 #include <tl/enumerate.hpp>
 #include <tl/to.hpp>
 
 namespace comp {
 
-void parsing_table::to_csv(const fs::path& path) const {
+void parsing_table::to_csv(const std::filesystem::path& path) const {
     auto out{fmt::output_file(path.string())};
     for (size_t i = 0; i < action.rows(); i++) {
         out.print("{},{}\n", fmt::join(action.iter_row(i), ","), fmt::join(goto_.iter_row(i), ","));

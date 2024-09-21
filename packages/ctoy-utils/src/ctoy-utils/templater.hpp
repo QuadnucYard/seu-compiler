@@ -1,7 +1,7 @@
 #pragma once
 
-#include "fs.hpp"
 #include "string_utils.hpp"
+#include <filesystem>
 #include <fstream>
 #include <regex>
 #include <sstream>
@@ -19,7 +19,7 @@ namespace qy {
 class templater {
   public:
     templater(std::string_view string_or_path) {
-        if (fs::exists(string_or_path)) load(string_or_path);
+        if (std::filesystem::exists(string_or_path)) load(string_or_path);
         else tmpl = string_or_path;
     }
 
@@ -76,14 +76,14 @@ class templater {
 
     const std::string& str() const { return tmpl; }
 
-    void load(const fs::path& path) {
+    void load(const std::filesystem::path& path) {
         std::ifstream fin(path);
         std::ostringstream iss;
         iss << fin.rdbuf();
         tmpl = iss.str();
     }
 
-    void dump(const fs::path& path) const {
+    void dump(const std::filesystem::path& path) const {
         std::ofstream out(path);
         out << tmpl;
     }

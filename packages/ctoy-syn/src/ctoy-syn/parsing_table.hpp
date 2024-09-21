@@ -1,9 +1,9 @@
 #pragma once
-#include "ctoy-utils/fs.hpp"
+
 #include "ctoy-utils/matrix.hpp"
 #include "symbol.hpp"
+#include <filesystem>
 #include <unordered_map>
-
 
 namespace comp {
 
@@ -28,7 +28,7 @@ struct parsing_table {
     qy::matrix<sid_t> action;
     qy::matrix<sid_t> goto_;
 
-    void to_csv(const fs::path& path) const;
+    void to_csv(const std::filesystem::path& path) const;
 
     parsing_table_compressed compress() const;
 };

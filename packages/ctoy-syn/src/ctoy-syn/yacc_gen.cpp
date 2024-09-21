@@ -1,7 +1,7 @@
 #include "./yacc_gen.hpp"
-#include "ctoy-utils/outfmt.hpp"
 #include "./yacc.hpp"
 #include "./yparser.hpp"
+#include "ctoy-utils/outfmt.hpp"
 #include <fmt/ostream.h>
 #include <fmt/printf.h>
 #include <fmt/ranges.h>

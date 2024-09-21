@@ -4,7 +4,6 @@
 #include "symbol.hpp"
 #include <unordered_map>
 
-
 namespace comp {
 
 class SyntacticAnalyzer {
@@ -18,27 +17,27 @@ class SyntacticAnalyzer {
         unsigned dot;           // The position of the lookahead mark.
         symbol_set follow;      // Set of follow
 
-        inline size_t size() const { return prod->rhs.size(); }
+        size_t size() const { return prod->rhs.size(); }
 
-        inline bool has_next() const { return dot < size(); }
+        bool has_next() const { return dot < size(); }
 
-        inline sid_t next() const { return prod->rhs[dot]; }
+        sid_t next() const { return prod->rhs[dot]; }
 
-        inline bool has_next1() const { return dot + 1 < size(); }
+        bool has_next1() const { return dot + 1 < size(); }
 
-        inline sid_t next1() const { return prod->rhs[dot + 1]; }
+        sid_t next1() const { return prod->rhs[dot + 1]; }
 
-        inline item next_item() const { return {prod, dot + 1, follow}; }
+        item next_item() const { return {prod, dot + 1, follow}; }
 
-        inline key_type key() const { return {prod, dot}; }
+        key_type key() const { return {prod, dot}; }
 
-        inline bool weak_equals(const item& o) const { return prod == o.prod && dot == o.dot; }
+        bool weak_equals(const item& o) const { return prod == o.prod && dot == o.dot; }
 
-        inline bool operator==(const item& o) const = default;
+        bool operator==(const item& o) const = default;
 
-        // inline auto operator<=>(const item& o) const = default;
+        // auto operator<=>(const item& o) const = default;
 
-        inline size_t hashcode() const noexcept {
+        size_t hashcode() const noexcept {
             return prod->id ^ (dot << 8) ^ std::hash<symbol_set>{}(follow);
         }
     };
@@ -59,9 +58,9 @@ class SyntacticAnalyzer {
 
         bool operator==(const item_set& o) const;
 
-        inline size_t hashcode() const noexcept;
+        size_t hashcode() const noexcept;
 
-        inline size_t kern_hashcode() const noexcept;
+        size_t kern_hashcode() const noexcept;
     };
 
     struct state_graph {
@@ -86,7 +85,7 @@ class SyntacticAnalyzer {
     string to_string(const symbol_set& set) const;
     string to_string(const item& it) const;
     string to_string(const item_set& is) const;
-    void to_dot(const state_graph& sg, const fs::path& path) const;
+    void to_dot(const state_graph& sg, const std::filesystem::path& path) const;
 
   private:
     symbol_set single_set(sid_t s) const;

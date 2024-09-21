@@ -12,21 +12,21 @@ std::string unescape_regex(std::string_view s);
 struct wildcard_matcher {
     using matcher_type = bool (*)(int);
 
-    inline static bool dot(int c) { return c != '\n'; }
+    static bool dot(int c) { return c != '\n'; }
 
-    inline static bool d(int c) { return isdigit(c); }
+    static bool d(int c) { return isdigit(c); }
 
-    inline static bool D(int c) { return !isdigit(c); }
+    static bool D(int c) { return !isdigit(c); }
 
-    inline static bool w(int c) { return isalnum(c); }
+    static bool w(int c) { return isalnum(c); }
 
-    inline static bool W(int c) { return !isalnum(c); }
+    static bool W(int c) { return !isalnum(c); }
 
-    inline static bool s(int c) { return isspace(c); }
+    static bool s(int c) { return isspace(c); }
 
-    inline static bool S(int c) { return !isspace(c); }
+    static bool S(int c) { return !isspace(c); }
 
-    inline static matcher_type get(int c) {
+    static matcher_type get(int c) {
         switch (c) {
         case '.': return wildcard_matcher::dot;
         case 'd': return wildcard_matcher::d;

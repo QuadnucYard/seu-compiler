@@ -84,7 +84,3 @@ inline std::string label_escape(const std::string& s) {
 }
 
 } // namespace qy::graphviz
-
-namespace qy {
-namespace gv = graphviz;
-} // namespace  qy

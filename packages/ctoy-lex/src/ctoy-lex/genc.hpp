@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ctoy-utils/templater.hpp"
-#include <vector>
 
 namespace comp {
 
@@ -15,9 +14,9 @@ class LexCodeGen {
 
     void operator()(const DFA& dfa);
 
-    inline void dump(const fs::path& path) { tmpl.dump(path); }
+    void dump(const std::filesystem::path& path) { tmpl.dump(path); }
 
-    inline qy::templater& templater() { return tmpl; }
+    qy::templater& templater() { return tmpl; }
 
   private:
     void gen_nxt_table(const DFA& dfa);

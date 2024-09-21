@@ -21,14 +21,14 @@ struct DFA {
     vid_t start;                      // 初始状态
     std::vector<vid_t> accept_states; // 每个点的accept情况
 
-    inline DFA() = default;
+    DFA() = default;
 
-    inline DFA(size_t size) : graph(size), accept_states(size), start{} {}
+    DFA(size_t size) : graph(size), accept_states(size), start{} {}
 
-    inline constexpr size_t size() const { return graph.size(); }
+    size_t size() const { return graph.size(); }
 
 #ifdef GRAPH_FMT
-    void to_dot(const fs::path& path) const;
+    void to_dot(const std::filesystem::path& path) const;
 #endif
 };
 

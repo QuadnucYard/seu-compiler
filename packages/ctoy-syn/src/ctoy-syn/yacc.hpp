@@ -11,7 +11,7 @@ class Yacc {
   public:
     Yacc(const Options& options);
 
-    void process(const fs::path& src_path);
+    void process(const std::filesystem::path& src_path);
 
   private:
     Options options;

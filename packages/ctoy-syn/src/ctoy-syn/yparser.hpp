@@ -21,17 +21,6 @@ class YParser : GParser {
         std::vector<RawRule> rules;
     };
 
-    inline static string const aug_start{"$accept"};
-
-    SyntacticAnalyzer& analyzer;
-    string start_symbol;
-    std::unordered_set<sid_t> used_num;
-    std::vector<RawRuleGroup> rules;
-    std::unordered_map<string, sid_t> symbol_map;
-    std::vector<std::pair<token::assoc_flag, std::vector<string>>> prec;
-    std::unordered_map<string, string> nterm_types;
-    string union_type;
-
   public:
     YParser(std::istream& in, SyntacticAnalyzer& analyzer);
 
@@ -46,6 +35,18 @@ class YParser : GParser {
 
     void _rules();
 
+  private:
     friend class YaccCodeGen;
+
+    inline static string const aug_start{"$accept"};
+
+    SyntacticAnalyzer& analyzer;
+    string start_symbol;
+    std::unordered_set<sid_t> used_num;
+    std::vector<RawRuleGroup> rules;
+    std::unordered_map<string, sid_t> symbol_map;
+    std::vector<std::pair<token::assoc_flag, std::vector<string>>> prec;
+    std::unordered_map<string, string> nterm_types;
+    string union_type;
 };
 } // namespace comp

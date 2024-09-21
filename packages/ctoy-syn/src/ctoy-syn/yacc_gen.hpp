@@ -1,6 +1,5 @@
 #pragma once
 #include "ctoy-utils/templater.hpp"
-#include <vector>
 
 namespace comp {
 
@@ -34,8 +33,8 @@ class YaccCodeGen {
 
     void gen_compressed(const parsing_table& pt);
 
-    inline qy::templater& templater() { return temp; }
+    qy::templater& templater() { return temp; }
 
-    inline void dump(const fs::path& path) { temp.dump(path); }
+    void dump(const std::filesystem::path& path) { temp.dump(path); }
 };
 } // namespace comp

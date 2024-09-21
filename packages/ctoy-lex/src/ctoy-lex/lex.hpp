@@ -3,9 +3,8 @@
 #include "./fa.hpp"
 #include <filesystem>
 
-namespace fs = std::filesystem;
-
 namespace comp {
+
 class Lex {
   public:
     struct Options {
@@ -17,7 +16,7 @@ class Lex {
 
   public:
     Lex(const Options& options);
-    void process(const fs::path& src_path);
+    void process(const std::filesystem::path& src_path);
 
   private:
     Options options;

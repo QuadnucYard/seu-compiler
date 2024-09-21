@@ -12,11 +12,11 @@ struct GToken {
 
     std::variant<int, char, string> val;
 
-    int _int() const { return std::get<int>(val); }
+    int as_int() const { return std::get<int>(val); }
 
-    char _char() const { return std::get<char>(val); }
+    char as_char() const { return std::get<char>(val); }
 
-    string _string() const { return std::get<string>(val); }
+    string as_string() const { return std::get<string>(val); }
 };
 
 } // namespace comp

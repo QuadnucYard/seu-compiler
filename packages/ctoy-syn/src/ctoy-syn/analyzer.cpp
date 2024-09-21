@@ -36,11 +36,11 @@ bool SyntacticAnalyzer::item_set::operator==(const item_set& o) const {
                       o.items.begin() + o.kernel_size);
 }
 
-inline size_t comp::SyntacticAnalyzer::item_set::hashcode() const noexcept {
+size_t comp::SyntacticAnalyzer::item_set::hashcode() const noexcept {
     return kernel_size ^ qy::hash_range(items);
 }
 
-inline size_t comp::SyntacticAnalyzer::item_set::kern_hashcode() const noexcept {
+size_t comp::SyntacticAnalyzer::item_set::kern_hashcode() const noexcept {
     return kernel_size ^ qy::hash_range(items.begin(), items.begin() + kernel_size, &item::key);
 }
 
@@ -114,7 +114,7 @@ string SyntacticAnalyzer::to_string(const item_set& is) const {
     return s;
 }
 
-void SyntacticAnalyzer::to_dot(const state_graph& sg, const fs::path& path) const {
+void SyntacticAnalyzer::to_dot(const state_graph& sg, const std::filesystem::path& path) const {
     const auto _to_string_p = [this](const item& it) {
         string s{nterms[it.prod->lhs].name};
         s.append(R"( \-\>)");
