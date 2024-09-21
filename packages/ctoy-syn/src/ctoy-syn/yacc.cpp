@@ -1,6 +1,5 @@
 #include "./yacc.hpp"
 #include "./yparser.hpp"
-#include <fstream>
 
 const char* yacc_tmpl{""};
 
@@ -10,10 +9,7 @@ namespace comp {
 
 Yacc::Yacc(const Options& options) : options{options} {}
 
-void comp::Yacc::process(const std::filesystem::path& src_path) {
-    std::ifstream source_file(src_path);
-    if (!source_file.is_open()) throw std::runtime_error("File not found");
-
+void Yacc::process(std::istream& source_file) {
     auto yparser = YParser(source_file, analyzer);
     yparser.parse();
     yparser.finalize();

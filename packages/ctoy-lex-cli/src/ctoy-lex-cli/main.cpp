@@ -1,7 +1,7 @@
 #include "ctoy-lex/lex.hpp"
 #include <argparse/argparse.hpp>
+#include <fstream>
 #include <iostream>
-#include <vector>
 
 int main(int argc, char const* argv[]) {
     using namespace std::string_literals;
@@ -41,7 +41,10 @@ int main(int argc, char const* argv[]) {
         .scanner_dfa_dot = prog.get("--scanner-dfa"),
         .compress = prog.get<bool>("-C1"),
     });
-    lexer.process(input_file);
+
+    std::ifstream source_file(input_file);
+    if (!source_file.is_open()) throw std::runtime_error("File not found");
+    lexer.process(source_file);
 
     return 0;
 }

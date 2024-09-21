@@ -1,5 +1,6 @@
 #include "ctoy-syn/yacc.hpp"
 #include <argparse/argparse.hpp>
+#include <fstream>
 #include <iostream>
 
 int main(int argc, char const* argv[]) {
@@ -40,9 +41,11 @@ int main(int argc, char const* argv[]) {
     });
 
     try {
-        yacc.process(input_file);
+        std::ifstream source_file(input_file);
+        if (!source_file.is_open()) throw std::runtime_error("File not found");
+        yacc.process(source_file);
     } catch (const std::exception& err) {
-        std::cerr << "fuck!" << err.what() << std::endl;
+        std::cerr << "oh!" << err.what() << std::endl;
         return 2;
     }
 

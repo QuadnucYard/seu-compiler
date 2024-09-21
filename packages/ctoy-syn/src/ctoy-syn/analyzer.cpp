@@ -36,11 +36,11 @@ bool SyntacticAnalyzer::item_set::operator==(const item_set& o) const {
                       o.items.begin() + o.kernel_size);
 }
 
-size_t comp::SyntacticAnalyzer::item_set::hashcode() const noexcept {
+size_t SyntacticAnalyzer::item_set::hashcode() const noexcept {
     return kernel_size ^ qy::hash_range(items);
 }
 
-size_t comp::SyntacticAnalyzer::item_set::kern_hashcode() const noexcept {
+size_t SyntacticAnalyzer::item_set::kern_hashcode() const noexcept {
     return kernel_size ^ qy::hash_range(items.begin(), items.begin() + kernel_size, &item::key);
 }
 

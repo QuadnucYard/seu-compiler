@@ -8,10 +8,7 @@ namespace comp {
 
 Lex::Lex(const Options& options) : options{options} {}
 
-void Lex::process(const std::filesystem::path& src_path) {
-    std::ifstream source_file(src_path);
-    if (!source_file.is_open()) throw std::runtime_error("File not found");
-
+void Lex::process(std::istream& source_file) {
     qy::stopwatch sw;
 
     LParser lparser(source_file);

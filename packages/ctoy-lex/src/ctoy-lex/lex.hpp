@@ -1,7 +1,6 @@
 #pragma once
 
 #include "./fa.hpp"
-#include <filesystem>
 
 namespace comp {
 
@@ -16,7 +15,7 @@ class Lex {
 
   public:
     Lex(const Options& options);
-    void process(const std::filesystem::path& src_path);
+    void process(std::istream& source_file);
 
   private:
     Options options;
