@@ -1,4 +1,5 @@
 target("ctoy-grammar")
 	set_kind("static")
-	add_includedirs("src")
+	add_includedirs("src", {public = true})
     add_files("src/**/*.cpp")
+	add_deps("ctoy-utils")

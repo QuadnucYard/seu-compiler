@@ -1,33 +1,34 @@
 #pragma once
-#include "utils/templater.hpp"
+
+#include "ctoy-utils/templater.hpp"
 #include <vector>
 
 namespace comp {
 
-	struct DFA;
-	class Lex;
-	class LParser;
+struct DFA;
+class Lex;
+class LParser;
 
-	class LexCodeGen {
-	public:
-		LexCodeGen(const Lex& lexer, const LParser& lparser);
+class LexCodeGen {
+  public:
+    LexCodeGen(const Lex& lexer, const LParser& lparser);
 
-		void operator()(const DFA& dfa);
+    void operator()(const DFA& dfa);
 
-		inline void dump(const fs::path& path) { tmpl.dump(path); }
+    inline void dump(const fs::path& path) { tmpl.dump(path); }
 
-		inline qy::templater& templater() { return tmpl; }
+    inline qy::templater& templater() { return tmpl; }
 
-	private:
-		void gen_nxt_table(const DFA& dfa);
-		void gen_accept_table(const DFA& dfa);
-		void gen_all_table(const DFA& dfa);
-		void gen_case();
+  private:
+    void gen_nxt_table(const DFA& dfa);
+    void gen_accept_table(const DFA& dfa);
+    void gen_all_table(const DFA& dfa);
+    void gen_case();
 
-	private:
-		const Lex& lexer;
-		const LParser& lparser;
+  private:
+    const Lex& lexer;
+    const LParser& lparser;
 
-		qy::templater tmpl;
-	};
+    qy::templater tmpl;
+};
 } // namespace comp

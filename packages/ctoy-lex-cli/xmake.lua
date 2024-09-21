@@ -1,4 +1,5 @@
 target("ctoy-lex-cli")
-	add_includedirs("src")
+	add_includedirs("src", {public = true})
     add_files("src/**/*.cpp")
 	add_packages("argparse")
+	add_deps("ctoy-lex")

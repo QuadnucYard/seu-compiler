@@ -5,18 +5,18 @@
 
 namespace comp {
 
-	class Yacc {
-		using Options = ParserOptions;
+class Yacc {
+    using Options = ParserOptions;
 
-	public:
-		Yacc(const Options& options);
+  public:
+    Yacc(const Options& options);
 
-		void process(const fs::path& src_path);
+    void process(const fs::path& src_path);
 
-	private:
-		Options options;
-		SyntacticAnalyzer analyzer;
+  private:
+    Options options;
+    SyntacticAnalyzer analyzer;
 
-		friend class YaccCodeGen;
-	};
+    friend class YaccCodeGen;
+};
 } // namespace comp

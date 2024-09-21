@@ -1,36 +1,37 @@
 #pragma once
-#include "common/gparser.hpp"
+
+#include "ctoy-grammar/gparser.hpp"
 #include <unordered_map>
 
 namespace comp {
-	class LParser : GParser {
-		friend class Lex;
-		friend class LexCodeGen;
+class LParser : GParser {
+    friend class Lex;
+    friend class LexCodeGen;
 
-	private:
-		struct Rule {
-			string expr;
-			string action;
-		};
+  private:
+    struct Rule {
+        string expr;
+        string action;
+    };
 
-		std::unordered_map<string, string> definitions;
-		std::vector<Rule> rules;
+    std::unordered_map<string, string> definitions;
+    std::vector<Rule> rules;
 
-	public:
-		LParser(std::istream& in);
+  public:
+    LParser(std::istream& in);
 
-		void parse();
+    void parse();
 
-		/// @brief
-		void finalize();
+    /// @brief
+    void finalize();
 
-	private:
-		void _declaration();
+  private:
+    void _declaration();
 
-		void _directive();
+    void _directive();
 
-		void _rules();
+    void _rules();
 
-		GToken& _regex();
-	};
+    GToken& _regex();
+};
 } // namespace comp
