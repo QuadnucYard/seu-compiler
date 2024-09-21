@@ -1,0 +1,5 @@
+target("ctoy-syn")
+	set_kind("static")
+	add_includedirs("src")
+    add_files("src/**/*.cpp")
+	add_packages("fmt", "tl-ranges")
