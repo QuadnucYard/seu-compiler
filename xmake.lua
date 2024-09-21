@@ -1,34 +1,31 @@
 set_project("seu-compiler")
 
-set_languages("c++20")
+set_languages("c++latest")
 -- set_warnings("all", "error")
-
-if is_plat("windows") then
-    add_cxflags("/wd4819") -- Add this if using msvc
-    -- add_ldflags("/PROFILE")
-else
-    add_cxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
-    add_mxflags("-Wno-error=deprecated-declarations", "-fno-strict-aliasing", "-Wno-error=expansion-to-defined")
-end
 
 add_rules("mode.debug", "mode.release")
 -- add_rules("c.unity_build")
 -- add_rules("c++.unity_build")
 
-add_requires("vcpkg::fmt", {alias = "fmt"})
-add_requires("vcpkg::argparse", {alias = "argparse"})
-add_requires("vcpkg::tl-ranges", {alias = "tl-ranges"})
+-- add_requires("vcpkg::fmt", {alias = "fmt"})
+-- add_requires("vcpkg::argparse", {alias = "argparse"})
+-- add_requires("vcpkg::tl-ranges", {alias = "tl-ranges"})
+add_requires("tl-ranges")
+add_requires("fmt")
+add_requires("argparse")
 
 add_includedirs("include")
 
+add_includedirs("vcpkg_installed/x64-mingw-static/include")
+
 set_rundir("output")
-before_run(function () 
+before_run(function ()
     os.mkdir("output")
 end)
 
 function add_test_target(...)
     for _, name in ipairs{...} do
-        target("test_" .. name, function () 
+        target("test_" .. name, function ()
             add_files("test/test_" .. name .. ".cpp")
             add_packages("fmt")
         end)
@@ -87,9 +84,8 @@ target("example_templater")
 
 target("example_output")
     add_files("examples/output.cpp")
-    add_packages("fmt", "tl-ranges")
+    add_packages("fmt")
 
-    
 --
 -- If you want to known more usage about xmake, please see https://xmake.io
 --
@@ -158,4 +154,3 @@ target("example_output")
 --
 -- @endcode
 --
-

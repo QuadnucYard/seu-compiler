@@ -34,7 +34,8 @@ namespace comp {
 			inline bool weak_equals(const item& o) const { return prod == o.prod && dot == o.dot; }
 
 			inline bool operator==(const item& o) const = default;
-			inline auto operator<=>(const item& o) const = default;
+
+			// inline auto operator<=>(const item& o) const = default;
 
 			inline size_t hashcode() const noexcept {
 				return prod->id ^ (dot << 8) ^ std::hash<symbol_set>{}(follow);

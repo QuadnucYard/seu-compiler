@@ -130,8 +130,8 @@ namespace comp {
 					string s = tok._string();
 					group.rules.back().rhs.push_back(s);
 				} else {
-					throw syntax_error(
-						fmt::format("Unknown definition token: <{}>{}.", tok.type, tok.val));
+					// throw syntax_error(
+					// 	fmt::format("Unknown definition token: <{}>{}.", tok.type, tok.val));
 				}
 			}
 			next0();

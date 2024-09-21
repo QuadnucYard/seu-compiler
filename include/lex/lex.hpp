@@ -1,5 +1,8 @@
 #pragma once
 #include "fa.hpp"
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace comp {
 	class Lex {

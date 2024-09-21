@@ -14,6 +14,13 @@ namespace qy::graphviz {
 	private:
 		fmt::ostream out;
 
+		auto join_args(const arg_list& args) const {
+			return fmt::join(args | std::views::transform([](auto&& p) {
+								 return fmt::format("{} = \"{}\"", p.first, p.second);
+							 }),
+							 "");
+		}
+
 	public:
 		digraph(const std::string& path, std::string_view name) : out{fmt::output_file(path)} {
 			out.print("digraph \"{}\" {{\n", name);
@@ -67,12 +74,6 @@ namespace qy::graphviz {
 		}
 
 	private:
-		auto join_args(const arg_list& args) const {
-			return fmt::join(args | std::views::transform([](auto&& p) {
-								 return fmt::format("{} = \"{}\"", p.first, p.second);
-							 }),
-							 "");
-		}
 	};
 
 	inline std::string label_escape(const std::string& s) {

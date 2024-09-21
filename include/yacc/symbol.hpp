@@ -1,5 +1,6 @@
 #pragma once
 #include <bitset>
+#include <cstddef>
 #include <span>
 #include <string>
 #include <vector>
@@ -13,7 +14,7 @@ namespace comp {
 	/// @brief `bitset` 存储的符号集合
 	using symbol_set = std::bitset<128>;
 
-	using ssize_t = std::int64_t;
+	using ssize_t = std::ptrdiff_t;
 
 	using std::string;
 
