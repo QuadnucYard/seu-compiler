@@ -18,7 +18,7 @@ class GParser {
     }
 
     bool check_section(bool take_next = true) {
-        if (tok.type == GToken::DIR && tok.as_string() == "%%") {
+        if (tok.kind == GTokenKind::DIR && tok.as_string() == "%%") {
             section++;
             if (take_next) next0();
             return true;

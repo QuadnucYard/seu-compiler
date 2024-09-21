@@ -15,18 +15,20 @@ void LParser::parse() {
 void LParser::_declaration() {
     while (section == 0) {
         if (check_section(false)) break;
-        switch (tok.type) {
-        case GToken::DIR: _directive(); break;
-        case GToken::PRO:
+        switch (tok.kind) {
+        case GTokenKind::DIR: _directive(); break;
+        case GTokenKind::PRO:
             prologues.push_back(tok.as_string());
             next0();
             break;
-        case GToken::ID:
+        case GTokenKind::ID: {
             string a = tok.as_string();
             string b = _regex().as_string();
             definitions.emplace(a, b);
             next0();
             break;
+        }
+        default: break;
         }
     }
 }

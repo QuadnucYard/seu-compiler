@@ -1,5 +1,6 @@
 #include "./yparser.hpp"
 #include "./analyzer.hpp"
+#include "ctoy-grammar/gtoken.hpp"
 #include "ctoy-utils/exceptions.hpp"
 #include "ctoy-utils/string_utils.hpp"
 #include <cassert>
@@ -24,12 +25,13 @@ void YParser::parse() {
 void YParser::_declaration() {
     while (section == 0) {
         if (check_section()) break;
-        switch (tok.type) {
-        case GToken::DIR: _directive(); break;
-        case GToken::PRO:
+        switch (tok.kind) {
+        case GTokenKind::DIR: _directive(); break;
+        case GTokenKind::PRO:
             prologues.push_back(tok.as_string());
             next0();
             break;
+        default: break;
         }
     }
 }
@@ -41,17 +43,17 @@ void YParser::_directive() {
         next0();
     } else if (dir == "%token") {
         string tag;
-        while (next0().type != GToken::DIR) {
-            switch (tok.type) {
-            case GToken::TAG: tag = std::move(tok.as_string()); break;
-            case GToken::STRING:
+        while (next0().kind != GTokenKind::DIR) {
+            switch (tok.kind) {
+            case GTokenKind::TAG: tag = std::move(tok.as_string()); break;
+            case GTokenKind::STRING:
                 analyzer.tokens.back().literal = qy::unescape_string(tok.as_string());
                 break;
-            case GToken::INT:
+            case GTokenKind::INT:
                 analyzer.tokens.back().num = tok.as_int();
                 used_num.insert(tok.as_int());
                 break;
-            case GToken::ID: {
+            case GTokenKind::ID: {
                 sid_t tid = static_cast<sid_t>(analyzer.tokens.size());
                 auto kw = tok.as_string();
                 symbol_map[kw] = tid;
@@ -64,13 +66,13 @@ void YParser::_directive() {
         }
     } else if (dir == "%type") {
         string tag;
-        while (next0().type != GToken::DIR) {
-            if (tok.type == GToken::TAG) tag = tok.as_string();
-            else if (tok.type == GToken::ID) nterm_types.emplace(tok.as_string(), tag);
+        while (next0().kind != GTokenKind::DIR) {
+            if (tok.kind == GTokenKind::TAG) tag = tok.as_string();
+            else if (tok.kind == GTokenKind::ID) nterm_types.emplace(tok.as_string(), tag);
             else break;
         }
     } else if (dir == "%union") {
-        assert(next0().type == GToken::ACT);
+        assert(next0().kind == GTokenKind::ACT);
         union_type = tok.as_string();
         next0();
     } else if (dir == "%left" || dir == "%right" || dir == "%nonassoc") {
@@ -78,7 +80,7 @@ void YParser::_directive() {
                     : dir == "%right" ? token::assoc_flag::RIGHT
                                       : token::assoc_flag::NONE;
         std::vector<string> tokens;
-        while (next0().type != GToken::DIR)
+        while (next0().kind != GTokenKind::DIR)
             tokens.push_back(std::move(tok.as_string()));
         prec.emplace_back(flag, std::move(tokens));
     } else {
@@ -88,15 +90,15 @@ void YParser::_directive() {
 
 void YParser::_rules() {
     RawRuleGroup group;
-    while (section == 1 && tok.type != GToken::END) {
+    while (section == 1 && tok.kind != GTokenKind::END) {
         if (check_section(false)) break;
-        assert(tok.type == GToken::ID);
+        assert(tok.kind == GTokenKind::ID);
         group.lhs = tok.as_string();
-        assert(next0().type == GToken::OP && tok.as_char() == ':');
+        assert(next0().kind == GTokenKind::OP && tok.as_char() == ':');
         symbol_map.emplace(group.lhs, -static_cast<sid_t>(rules.size()));
         group.rules.push_back({});
         for (next0();; next0()) {
-            if (tok.type == GToken::OP) {
+            if (tok.kind == GTokenKind::OP) {
                 auto op = tok.as_char();
                 if (op == '|') {
                     group.rules.push_back({});
@@ -105,15 +107,15 @@ void YParser::_rules() {
                     group.rules.clear();
                     break;
                 }
-            } else if (tok.type == GToken::ACT) {
+            } else if (tok.kind == GTokenKind::ACT) {
                 group.rules.back().action = tok.as_string();
-            } else if (tok.type == GToken::DIR) {
+            } else if (tok.kind == GTokenKind::DIR) {
                 auto dir = tok.as_string();
                 if (dir == "%empty") {
                 } else if (dir == "%prec") {
                     group.rules.back().prec = next0().as_string();
                 }
-            } else if (tok.type == GToken::ID || tok.type == GToken::CHAR) {
+            } else if (tok.kind == GTokenKind::ID || tok.kind == GTokenKind::CHAR) {
                 string s = tok.as_string();
                 group.rules.back().rhs.push_back(s);
             } else {

@@ -18,7 +18,7 @@ GToken GLexer::scan_noop() {
         if (std::isalpha(peek)) return get_id();
         if (peek == ':' || peek == ';' || peek == '|') return get_op();
     }
-    return {GToken::END, EOF};
+    return {GTokenKind::END, EOF};
 }
 
 void GLexer::scan_skip() {
@@ -74,12 +74,12 @@ GToken GLexer::get_directive() {
     if (getc() == '{') return get_prologue();
     /* else if (peek == '%') {
                     getc();
-                    return {GToken::SEP, 0};
+                    return {GTokenKind::SEP, 0};
             } */
     do {
         s.push_back(peek);
     } while (std::isalnum(getc()));
-    return {GToken::DIR, s};
+    return {GTokenKind::DIR, s};
 }
 
 GToken GLexer::get_num() {
@@ -87,7 +87,7 @@ GToken GLexer::get_num() {
     do {
         v = v * 10 + peek - '0';
     } while (std::isdigit(getc()));
-    return {GToken::INT, v};
+    return {GTokenKind::INT, v};
 }
 
 GToken GLexer::get_id() {
@@ -95,7 +95,7 @@ GToken GLexer::get_id() {
     do {
         s.push_back(peek);
     } while (std::isalnum(getc()) || peek == '_');
-    return {GToken::ID, s};
+    return {GTokenKind::ID, s};
 }
 
 GToken GLexer::get_tag() {
@@ -103,7 +103,7 @@ GToken GLexer::get_tag() {
     while (getc() != '>')
         s.push_back(peek);
     getc();
-    return {GToken::TAG, s}; // 解析结果不包含尖括号
+    return {GTokenKind::TAG, s}; // 解析结果不包含尖括号
 }
 
 GToken GLexer::get_char() {
@@ -113,7 +113,7 @@ GToken GLexer::get_char() {
     } while (getc() != '\'');
     s.push_back(peek);
     getc();
-    return {GToken::CHAR, s};
+    return {GTokenKind::CHAR, s};
 }
 
 GToken GLexer::get_string() {
@@ -123,13 +123,13 @@ GToken GLexer::get_string() {
     } while (getc() != '"');
     s.push_back(peek);
     getc();
-    return {GToken::STRING, s};
+    return {GTokenKind::STRING, s};
 }
 
 GToken GLexer::get_op() {
     char c = peek;
     getc();
-    return {GToken::OP, c};
+    return {GTokenKind::OP, c};
 }
 
 GToken GLexer::get_regex(const std::unordered_map<string, string>& definitions) {
@@ -159,7 +159,7 @@ GToken GLexer::get_regex(const std::unordered_map<string, string>& definitions) 
             getc();
         }
     }
-    return {GToken::RE, s};
+    return {GTokenKind::RE, s};
 }
 
 GToken GLexer::get_codeblock() {
@@ -176,7 +176,7 @@ GToken GLexer::get_codeblock() {
     }
     s.push_back(peek);
     getc();
-    return {GToken::ACT, s};
+    return {GTokenKind::ACT, s};
 }
 
 GToken GLexer::get_prologue() {
@@ -192,13 +192,13 @@ GToken GLexer::get_prologue() {
     // 当前 peek == '}'
     s.pop_back();
     getc();
-    return {GToken::PRO, s};
+    return {GTokenKind::PRO, s};
 }
 
 GToken GLexer::get_epilogue() {
     std::ostringstream iss;
     iss << in.rdbuf();
-    return {GToken::EPI, iss.str()};
+    return {GTokenKind::EPI, iss.str()};
 }
 
 void GLexer::read_line(string& s) {
