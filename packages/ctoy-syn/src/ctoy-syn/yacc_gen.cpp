@@ -10,7 +10,7 @@
 namespace comp {
 
 YaccCodeGen::YaccCodeGen(const Yacc& parser, const YParser& yparser, std::string_view tmpl)
-    : parser{parser}, yparser{yparser}, analyzer{parser.analyzer}, temp{tmpl} {}
+    : temp{tmpl}, parser{parser}, yparser{yparser}, analyzer{parser.analyzer} {}
 
 void YaccCodeGen::gen_inc() {
     std::ofstream tab_inc_file(parser.options.header_file);

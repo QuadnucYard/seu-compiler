@@ -60,7 +60,7 @@ DFA DFABuilder::nfa2dfa(const NFA& nfa) const {
 DFA DFABuilder::hopcroft(const DFA& dfa) const {
     using vertex_set = std::bitset<MAXV>;
 
-    std::vector<vertex_set> partition = [&dfa, this] {
+    std::vector<vertex_set> partition = [&dfa] {
         vertex_set s1, s2;
         for (size_t i = 0; i < dfa.size(); i++) {
             (dfa.accept_states[i] == NON_ACCEPT ? s1 : s2).set(i);

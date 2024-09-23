@@ -45,7 +45,7 @@ void YParser::_directive() {
         string tag;
         while (next0().kind != GTokenKind::DIR) {
             switch (tok.kind) {
-            case GTokenKind::TAG: tag = std::move(tok.as_string()); break;
+            case GTokenKind::TAG: tag = tok.as_string(); break;
             case GTokenKind::STRING:
                 analyzer.tokens.back().literal = qy::unescape_string(tok.as_string());
                 break;
@@ -81,7 +81,7 @@ void YParser::_directive() {
                                       : token::assoc_flag::NONE;
         std::vector<string> tokens;
         while (next0().kind != GTokenKind::DIR)
-            tokens.push_back(std::move(tok.as_string()));
+            tokens.push_back(tok.as_string());
         prec.emplace_back(flag, std::move(tokens));
     } else {
         throw syntax_error("Unknown directive.");
@@ -161,7 +161,7 @@ void YParser::finalize() {
         i++;
     }
     // rules
-    for (size_t i = 0, k = 0; i < rules.size(); i++) {
+    for (size_t i = 0; i < rules.size(); i++) {
         for (auto&& r : rules[i].rules) {
             symbol_vec sv;
             for (auto& s : r.rhs)

@@ -57,7 +57,7 @@ std::string unescape_regex(std::string_view s) {
             if (c == ']') {
                 match('[');
                 res += -c;
-            } else if (c == '.' || c == '^' && res.back() == -'[') {
+            } else if (c == '.' || (c == '^' && res.back() == -'[')) {
                 res += -c;
             } else {
                 res += c;

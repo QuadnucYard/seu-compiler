@@ -49,9 +49,10 @@ std::tuple<bool, size_t, sid_t> parsing_table_compressed::find_embed(auto&& slic
             // 如果冲突的是唯一的，那么取冲突最少的
             bool strong_conflict = false;
             for (auto&& [j, x] : tl::views::enumerate(slice)) {
-                if (i + j < tab.size() && (x != ERR && guard[i + j].contains(base + j) &&
-                                               guard[i + j].at(base + j) != x ||
-                                           check[i + j] == base + j && !is_compat(tab[i + j], x))) {
+                if (i + j < tab.size() &&
+                    ((x != ERR && guard[i + j].contains(base + j) &&
+                      guard[i + j].at(base + j) != x) ||
+                     (check[i + j] == base + j && !is_compat(tab[i + j], x)))) {
                     strong_conflict = true;
                     break;
                 }

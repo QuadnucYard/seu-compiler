@@ -133,7 +133,7 @@ GToken GLexer::get_op() {
 }
 
 GToken GLexer::get_regex(const std::unordered_map<string, string>& definitions) {
-    int bra = 0;
+    // int bra = 0;
     std::string s;
     while (!isspace(peek)) {
         if (peek == '\\') {
@@ -143,11 +143,11 @@ GToken GLexer::get_regex(const std::unordered_map<string, string>& definitions) 
         } else if (peek == '(') {
             s.push_back(peek);
             getc();
-            bra++;
+            // bra++;
         } else if (peek == ')') {
             s.push_back(peek);
             getc();
-            bra--;
+            // bra--;
         } else if (peek == '"') read_string(s);
         else if (peek == '[') read_closure(s, '[', ']');
         else if (peek == '{') {

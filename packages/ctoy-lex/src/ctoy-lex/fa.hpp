@@ -23,7 +23,7 @@ struct DFA {
 
     DFA() = default;
 
-    DFA(size_t size) : graph(size), accept_states(size), start{} {}
+    DFA(size_t size) : graph(size), start{}, accept_states(size) {}
 
     size_t size() const { return graph.size(); }
 

@@ -1,7 +1,7 @@
 set_project("seu-compiler")
 
 set_languages("c++latest")
--- set_warnings("all", "error")
+set_warnings("all")
 
 add_rules("mode.debug", "mode.release")
 -- add_rules("c.unity_build")
