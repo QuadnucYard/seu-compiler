@@ -136,9 +136,8 @@ NFA DFABuilder::reverse(const DFA& fa) const {
     nfa.accept = fa.start;
     nfa.graph = fa.graph.reversed();
     nfa.graph.resize(n + 1);
-    for (size_t i = 0; i < n; i++) {
-        if (fa.accept_states[i] != NON_ACCEPT)
-            nfa.graph.add_edge(n, static_cast<sid_t>(i), EPSILON);
+    for (sid_t i = 0; i < n; i++) {
+        if (fa.accept_states[i] != NON_ACCEPT) nfa.graph.add_edge(n, i, EPSILON);
     }
     auto _g = easy(nfa.graph);
     return nfa;

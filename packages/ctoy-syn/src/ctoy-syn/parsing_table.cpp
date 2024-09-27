@@ -1,6 +1,8 @@
 #include "./parsing_table.hpp"
+#include "ctoy-syn/symbol.hpp"
 #include "ctoy-utils/stopwatch.hpp"
 #include <cassert>
+#include <cstddef>
 #include <fmt/os.h>
 #include <fmt/ranges.h>
 #include <optional>
@@ -52,7 +54,7 @@ std::tuple<bool, size_t, sid_t> parsing_table_compressed::find_embed(auto&& slic
                 if (i + j < tab.size() &&
                     ((x != ERR && guard[i + j].contains(base + j) &&
                       guard[i + j].at(base + j) != x) ||
-                     (check[i + j] == base + j && !is_compat(tab[i + j], x)))) {
+                     (check[i + j] == static_cast<sid_t>(base + j) && !is_compat(tab[i + j], x)))) {
                     strong_conflict = true;
                     break;
                 }
@@ -125,12 +127,14 @@ parsing_table_compressed parsing_table::compress() const {
     static constexpr sid_t DUMMY_P = -100000;
 
     auto check_act = [n_col = action.cols(), &pt, this](size_t n_row) {
-        for (int i = 0; i < n_row; i++) {
-            for (int j = 0; j < n_col; j++) {
+        for (size_t i = 0; i < n_row; i++) {
+            for (size_t j = 0; j < n_col; j++) {
                 if (auto x = action[i][j]; x != ERR) {
-                    auto yyn = pt.pact[i] + j;
-                    yyn = yyn >= 0 && yyn < pt.check.size() && pt.check[yyn] == j ? pt.table[yyn]
-                                                                                  : pt.defact[i];
+                    auto yyn = pt.pact[i] + static_cast<sid_t>(j);
+                    yyn = yyn >= 0 && yyn < static_cast<sid_t>(pt.check.size()) &&
+                                  pt.check[yyn] == static_cast<sid_t>(j)
+                              ? pt.table[yyn]
+                              : pt.defact[i];
                     if (yyn != x) {
                         fmt::print("fail! act[{},{}], expect {}, but get {}\n", i, j, x, yyn);
                     }
@@ -139,12 +143,14 @@ parsing_table_compressed parsing_table::compress() const {
         }
     };
     auto check_goto = [n_row = goto_.rows(), &pt, this](size_t n_col) {
-        for (int i = 0; i < n_row; i++) {
-            for (int j = 0; j < n_col; j++) {
+        for (size_t i = 0; i < n_row; i++) {
+            for (size_t j = 0; j < n_col; j++) {
                 if (auto x = goto_[i][j]; x != ERR) {
-                    auto yyn = pt.pgoto[j] + i;
-                    yyn = yyn >= 0 && yyn < pt.check.size() && pt.check[yyn] == i ? pt.table[yyn]
-                                                                                  : pt.defgoto[j];
+                    auto yyn = pt.pgoto[j] + static_cast<sid_t>(i);
+                    yyn = yyn >= 0 && yyn < static_cast<sid_t>(pt.check.size()) &&
+                                  pt.check[yyn] == static_cast<sid_t>(i)
+                              ? pt.table[yyn]
+                              : pt.defgoto[j];
                     if (yyn != x) {
                         fmt::print("fail! goto[{},{}], expect {}, but get {}\n", i, j, x, yyn);
                     }

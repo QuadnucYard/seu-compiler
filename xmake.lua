@@ -1,7 +1,7 @@
 set_project("seu-compiler")
 
 set_languages("c++latest")
-set_warnings("all")
+set_warnings("allextra")
 
 add_rules("mode.debug", "mode.release")
 -- add_rules("c.unity_build")
@@ -14,7 +14,7 @@ add_requires("tl-ranges")
 add_requires("fmt")
 add_requires("argparse")
 
-add_includedirs("vcpkg_installed/x64-mingw-static/include")
+add_sysincludedirs("vcpkg_installed/x64-mingw-static/include")
 
 set_rundir("output")
 before_run(function ()

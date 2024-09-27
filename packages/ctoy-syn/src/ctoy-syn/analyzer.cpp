@@ -365,7 +365,7 @@ parsing_table SyntacticAnalyzer::get_LR1_table(const state_graph& LR1_states) co
         }
         for (auto& it : states[i].items) {
             if (it.has_next()) continue;
-            size_t m_prev = it.prod->prec;
+            auto m_prev = it.prod->prec;
             for (size_t j = 0; j < n_tokens; j++) {
                 if (!it.follow.test(j)) continue;
                 if (LR1_action[i][j] == parsing_table::ERR) {
@@ -448,7 +448,7 @@ parsing_table SyntacticAnalyzer::get_LALR1_table(const state_graph& LR1_states,
 
     // 现在 remap[i] != i 的都是要删除的。可以保证都是大号映射到小号
     for (ptrdiff_t i = n_states - 1; i >= 0; i--) {
-        if (remap[i] != i) {
+        if (remap[i] != static_cast<size_t>(i)) {
             LALR1_action.remove_row(i);
             LALR1_goto.remove_row(i);
             states.erase(states.begin() + i);

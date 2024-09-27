@@ -229,13 +229,13 @@ class basic_graph {
                 deg[v]++;
         for (id_t i = 0; i < n; i++)
             if (!deg[i]) queue.push_back(i);
-        for (id_t i = 0; i < queue.size(); i++) {
+        for (size_t i = 0; i < queue.size(); i++) {
             id_t u = queue[i];
             for (id_t v : iter_nexts(u)) {
                 if (--deg[v] == 0) queue.push_back(v);
             }
         }
-        if (assert_acyclic && n != queue.size()) throw std::runtime_error("Not acyclic!");
+        if (assert_acyclic && g.size() != queue.size()) throw std::runtime_error("Not acyclic!");
         // If the graph is not acyclic, it will throw index error.
         return queue;
     }

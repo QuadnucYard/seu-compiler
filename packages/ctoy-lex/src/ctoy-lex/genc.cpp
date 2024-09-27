@@ -53,11 +53,12 @@ void LexCodeGen::gen_nxt_table(const DFA& dfa) {
     std::vector<int> nultrans(size + 1, 0);
     int catchall = 0;
     for (int i = 0; i < size; i++) {
-        if (dfa.accept_states[i] == lparser.rules.size() - 1) catchall = i + 1;
+        if (dfa.accept_states[i] == static_cast<sid_t>(lparser.rules.size() - 1)) catchall = i + 1;
     }
 
     for (int i = 1; i <= size; i++) {
-        nultrans[i] = dfa.accept_states[i - 1] == lparser.rules.size() - 1 ? catchall : 0;
+        nultrans[i] =
+            dfa.accept_states[i - 1] == static_cast<sid_t>(lparser.rules.size() - 1) ? catchall : 0;
     }
     tmpl.set_string("[[YY_NUL_TRANS]]", qy::format_array(nultrans, {.with_brace = false}));
 };
@@ -117,11 +118,11 @@ void LexCodeGen::gen_all_table(const DFA& dfa) {
         }
     }
     std::vector<int> eq;
-    for (int i = 0; i < equivalent_class.size(); i++) {
+    for (size_t i = 0; i < equivalent_class.size(); i++) {
         auto it = std::find(eq.begin(), eq.end(), equivalent_class[i]);
         if (it == eq.end()) eq.push_back(equivalent_class[i]);
     }
-    for (int i = 0; i < equivalent_class.size(); i++) {
+    for (size_t i = 0; i < equivalent_class.size(); i++) {
         auto it = std::find(eq.begin(), eq.end(), equivalent_class[i]);
         int dis = it - eq.begin();
         if (dis != equivalent_class[i]) equivalent_class[i] = dis;
@@ -133,11 +134,12 @@ void LexCodeGen::gen_all_table(const DFA& dfa) {
     std::vector<int> nultrans(size + 1, 0);
     int catchall = 0;
     for (int i = 0; i < size; i++) {
-        if (dfa.accept_states[i] == lparser.rules.size() - 1) catchall = i + 1;
+        if (dfa.accept_states[i] == static_cast<sid_t>(lparser.rules.size() - 1)) catchall = i + 1;
     }
 
     for (int i = 1; i <= size; i++) {
-        nultrans[i] = dfa.accept_states[i - 1] == lparser.rules.size() - 1 ? catchall : 0;
+        nultrans[i] =
+            dfa.accept_states[i - 1] == static_cast<sid_t>(lparser.rules.size() - 1) ? catchall : 0;
     }
     tmpl.set_string("[[YY_NUL_TRANS]]", qy::format_array(nultrans, {.with_brace = false}));
 
@@ -182,14 +184,15 @@ void LexCodeGen::gen_all_table(const DFA& dfa) {
     std::vector<int> nxt_tbl = {};
     std::vector<int> base_tbl = {};
 
-    for (int i = 0; i < valid_len.size(); i++) {
+    for (size_t i = 0; i < valid_len.size(); i++) {
         // 如果valid的first和second都为0需要判断，如果nxt[0]合法则继续，否则break
-        if (valid_len[i].second == 0 && yy_nxt[i][0] == -i) { continue; }
+        if (valid_len[i].second == 0 && yy_nxt[i][0] == static_cast<sid_t>(-i)) { continue; }
         int len = valid_len[i].second - valid_len[i].first + 1;
-        for (int temp = 0; temp <= nxt_tbl.size(); temp++) {
+        for (size_t temp = 0; temp <= nxt_tbl.size(); temp++) {
             bool safe = true;
             for (int t = 0; t < len; t++) {
-                if (temp + t < nxt_tbl.size() && nxt_tbl[t + temp] != -1000 && yy_nxt[i][t] != -i) {
+                if (temp + t < nxt_tbl.size() && nxt_tbl[t + temp] != -1000 &&
+                    yy_nxt[i][t] != static_cast<sid_t>(-i)) {
                     safe = false;
                     break;
                 }
@@ -201,7 +204,7 @@ void LexCodeGen::gen_all_table(const DFA& dfa) {
                 }
                 // 补充考虑状态0的情况
                 for (size_t j = 0; j < yy_nxt[i].size(); j++) {
-                    if (i == 0 || yy_nxt[i][j] != -i) {
+                    if (i == 0 || yy_nxt[i][j] != static_cast<sid_t>(-i)) {
                         nxt_tbl[temp + j] = yy_nxt[i][j];
                         chk_tbl[temp + j] = i;
                     }
